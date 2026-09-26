@@ -464,12 +464,41 @@ body.sheet-open{
 .calendar-day-total{margin-top:5px;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}
 .calendar-color-stack{display:flex;gap:3px;align-items:center;margin-top:9px;min-height:5px}
 .calendar-color-segment{height:5px;border-radius:999px;min-width:4px;flex:1}
-.calendar-legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:12px;font-size:10px;color:var(--muted)}
-.calendar-legend-item{display:flex;align-items:center;gap:5px}
-.calendar-legend-dot{width:7px;height:7px;border-radius:50%}
+.calendar-hover-note{
+  position:fixed;
+  z-index:520;
+  width:min(260px,calc(100vw - 28px));
+  padding:11px 12px;
+  border-radius:13px;
+  background:rgba(24,27,40,.96);
+  color:#fff;
+  box-shadow:0 14px 34px rgba(18,22,42,.22);
+  font-size:11px;
+  line-height:1.45;
+  white-space:pre-line;
+  pointer-events:none;
+  opacity:0;
+  visibility:hidden;
+  transform:translateY(4px);
+  transition:opacity .12s ease,transform .12s ease
+}
+.calendar-hover-note.active{opacity:1;visibility:visible;transform:translateY(0)}
 @media (hover:hover){.calendar-cell:hover{transform:translateY(-1px);background:rgba(255,255,255,.78)}}
 @media(max-width:560px){.calendar-cell{min-height:66px;padding:7px 5px}.calendar-color-stack{margin-top:7px}.calendar-view-sub{font-size:10px}}
 .secondary-action{border:1px solid rgba(255,255,255,.74);background:rgba(255,255,255,.50);border-radius:12px;padding:9px 12px;font-weight:500;color:var(--ink)}
+.data-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.data-transfer-scrim{position:fixed;inset:0;display:grid;place-items:center;padding:18px;background:rgba(255,255,255,.90);z-index:420}
+.data-dialog{width:min(520px,calc(100vw - 28px));max-height:min(680px,calc(100vh - 28px));overflow:auto;padding:23px;border-radius:24px;background:linear-gradient(150deg,rgba(255,255,255,.97),rgba(246,248,253,.92));border:1px solid rgba(255,255,255,.9);box-shadow:0 28px 80px rgba(25,32,66,.20)}
+.data-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.data-dialog-title{margin:0;font-size:24px;line-height:1.08;font-weight:600;letter-spacing:-.03em}
+.data-dialog-close{position:relative;width:34px;height:34px;flex:none;padding:0;border:0;border-radius:50%;background:rgba(120,125,140,.10);color:#777b87}
+.data-dialog-close::before,.data-dialog-close::after{content:"";position:absolute;left:50%;top:50%;width:14px;height:1.6px;border-radius:2px;background:currentColor;transform:translate(-50%,-50%) rotate(45deg)}
+.data-dialog-close::after{transform:translate(-50%,-50%) rotate(-45deg)}
+.data-help{margin:10px 0 14px;font-size:11px;line-height:1.5;color:var(--muted)}
+.data-select{width:100%;padding:10px 11px;border:1px solid rgba(120,125,140,.18);border-radius:11px;background:rgba(250,251,254,.9);color:var(--ink);font:inherit}
+.import-area{width:100%;min-height:230px;resize:vertical;padding:12px;border:1px solid rgba(120,125,140,.18);border-radius:14px;outline:none;background:rgba(250,251,254,.82);color:var(--ink);font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+.import-area:focus{border-color:rgba(95,99,255,.45);box-shadow:0 0 0 3px rgba(95,99,255,.08)}
+.data-dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
 .records-section{contain:layout paint;content-visibility:auto;contain-intrinsic-size:520px}
 .record-row{
   display:grid;
@@ -533,7 +562,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.23</div>
+<div class="app-version" aria-label="Версия">v0.3.24</div>
 
 <main class="shell">
   <header class="top">
@@ -577,11 +606,19 @@ body.sheet-open{
     <section class="stats-section" style="margin-top:44px">
       <h2 class="stats-title">Статистика</h2>
       <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Всего</div><div class="stat-value" id="allTotal">0 ч</div><div class="stat-note">за весь период</div></div>
-        <div class="stat-card"><div class="stat-label">Активные дни</div><div class="stat-value" id="activeDays">0</div><div class="stat-note">с записями</div></div>
-        <div class="stat-card wide"><div class="stat-label">Среднее в активный день</div><div class="stat-value" id="avgDay">0 мин</div></div>
+        <div class="stat-card"><div class="stat-label">Всего времени</div><div class="stat-value" id="allTotal">0 ч</div><div class="stat-note">за весь период</div></div>
+        <div class="stat-card"><div class="stat-label">Последние 30 дней</div><div class="stat-value" id="last30Total">0 ч</div><div class="stat-note" id="last30ActiveNote">0 активных дней</div></div>
+        <div class="stat-card"><div class="stat-label">Среднее занятие</div><div class="stat-value" id="avgSessionStats">0 мин</div><div class="stat-note" id="sessionCountNote">0 занятий</div></div>
+        <div class="stat-card"><div class="stat-label">Среднее в активный день</div><div class="stat-value" id="avgDay">0 мин</div><div class="stat-note">за весь период</div></div>
+      </div>
+      <div class="stat-extra-grid">
+        <div class="stat-mini"><div class="stat-mini-label">Активных дней</div><div class="stat-mini-value" id="activeDays">0</div><div class="stat-mini-note">за весь период</div></div>
+        <div class="stat-mini"><div class="stat-mini-label">Всего занятий</div><div class="stat-mini-value" id="allSessions">0</div><div class="stat-mini-note">за весь период</div></div>
+        <div class="stat-mini"><div class="stat-mini-label">Самый продуктивный день</div><div class="stat-mini-value" id="bestDayTime">0 мин</div><div class="stat-mini-note" id="bestDayDate">Нет данных</div></div>
+        <div class="stat-mini"><div class="stat-mini-label">Среднее занятие · 30 дней</div><div class="stat-mini-value" id="last30Avg">0 мин</div><div class="stat-mini-note" id="last30SessionNote">0 занятий</div></div>
       </div>
       <div class="breakdown" style="margin-top:12px"><div class="breakdown-head"><strong>По привычкам</strong><span>за весь период</span></div><div id="statsBreakdown"></div></div>
+      <div class="breakdown" style="margin-top:12px"><div class="breakdown-head"><strong>По типам</strong><span>за весь период</span></div><div id="statsTypeBreakdown" class="type-list"></div></div>
     </section>
   </section>
 
@@ -598,7 +635,7 @@ body.sheet-open{
         </div>
       </div>
       <div class="month-calendar" id="monthCalendar"></div>
-      <div class="calendar-legend" id="calendarLegend"></div>
+      <div class="calendar-hover-note" id="calendarHoverNote"></div>
     </section>
   </section>
 
@@ -607,6 +644,10 @@ body.sheet-open{
       <div class="breakdown-head">
         <h2 class="stats-title" style="margin:0">Привычки</h2>
         <button class="secondary-action" id="addHabit">+ Добавить</button>
+      </div>
+      <div class="data-tools">
+        <button class="secondary-action" id="exportData">Экспорт данных</button>
+        <button class="secondary-action" id="importData">Импорт из Google Таблиц</button>
       </div>
       <div class="breakdown" style="margin-top:12px"><div id="settingsRows"></div></div>
       <div class="breakdown records-section" style="margin-top:12px">
@@ -681,6 +722,22 @@ body.sheet-open{
         <button class="sheet-btn sheet-save" id="saveEntry">Сохранить</button>
       </div>
       <div class="sheet-hint">Можно записывать любое количество минут одним занятием.</div>
+    </div>
+  </section>
+</div>
+
+<div class="data-transfer-scrim" id="dataTransfer" hidden>
+  <section class="data-dialog" role="dialog" aria-modal="true" aria-labelledby="dataDialogTitle">
+    <div class="data-dialog-head">
+      <h2 class="data-dialog-title" id="dataDialogTitle">Импорт из Google Таблиц</h2>
+      <button class="data-dialog-close" id="dataDialogClose" aria-label="Закрыть">×</button>
+    </div>
+    <div class="data-help">Вставь сюда два столбика из Google Таблиц: <b>день</b> и <b>количество минут</b>. Табуляция определяется автоматически. Строку с заголовком можно оставить.<br><br>Пример:<br><code>26.09.2026&nbsp;&nbsp;&nbsp;&nbsp;45</code><br><code>27.09.2026&nbsp;&nbsp;&nbsp;&nbsp;60</code></div>
+    <label class="field"><span class="field-label">Привязать импорт к привычке</span><select class="data-select" id="importHabit"></select></label>
+    <label class="field" style="margin-top:12px"><span class="field-label">Данные из таблицы</span><textarea class="import-area" id="importText" placeholder="26.09.2026&#9;45&#10;27.09.2026&#9;60"></textarea></label>
+    <div class="data-dialog-actions">
+      <button class="secondary-action" id="dataDialogCancel">Отмена</button>
+      <button class="secondary-action" id="dataImportConfirm">Импортировать</button>
     </div>
   </section>
 </div>
@@ -1065,7 +1122,7 @@ body.sheet-open{
 
   function getStats(){
     if(statsCache)return statsCache;
-    var byHabit={},byDate={},byDateColor={},habitColorById={},countByDate={},byType={},activeByMonth={},total=0,sessionCount=0,longest=0;
+    var byHabit={},byDate={},byDateHabit={},byDateColor={},habitColorById={},countByDate={},byType={},activeByMonth={},total=0,sessionCount=0,longest=0;
     for(var i=0;i<entries.length;i++){
       var e=entries[i];
       var minutes=Number(e.minutes)||0;
@@ -1075,6 +1132,8 @@ body.sheet-open{
       byDate[e.date]=(byDate[e.date]||0)+minutes;
       countByDate[e.date]=(countByDate[e.date]||0)+1;
       byHabit[e.habitId]=(byHabit[e.habitId]||0)+minutes;
+      if(!byDateHabit[e.date])byDateHabit[e.date]={};
+      byDateHabit[e.date][e.habitId]=(byDateHabit[e.date][e.habitId]||0)+minutes;
       var entryColor=e.color||'yellow';
       if(!byDateColor[e.date])byDateColor[e.date]={};
       byDateColor[e.date][entryColor]=(byDateColor[e.date][entryColor]||0)+minutes;
@@ -1088,12 +1147,27 @@ body.sheet-open{
       var monthKey=dateKeys[di].slice(0,7);
       activeByMonth[monthKey]=(activeByMonth[monthKey]||0)+1;
     }
+    var todayKey=localDate(new Date());
+    var cutoffObj=dateObj(todayKey);cutoffObj.setDate(cutoffObj.getDate()-29);
+    var cutoffKey=localDate(cutoffObj);
+    var last30Total=0,last30Sessions=0,last30ActiveDays=0,bestDayDate='',bestDayTotal=0;
+    for(var dki=0;dki<dateKeys.length;dki++){
+      var dk=dateKeys[dki],dayValue=byDate[dk]||0;
+      if(dk>=cutoffKey&&dk<=todayKey){
+        last30Total+=dayValue;
+        last30Sessions+=countByDate[dk]||0;
+        last30ActiveDays++;
+      }
+      if(dayValue>bestDayTotal){bestDayTotal=dayValue;bestDayDate=dk}
+    }
+
     var habitTotals=habits.map(function(h){
       return {habit:h,total:byHabit[h.id]||0};
     }).sort(function(a,b){return b.total-a.total});
     statsCache={
       byHabit:byHabit,
       byDate:byDate,
+      byDateHabit:byDateHabit,
       byDateColor:byDateColor,
       habitColorById:habitColorById,
       countByDate:countByDate,
@@ -1103,7 +1177,12 @@ body.sheet-open{
       total:total,
       sessionCount:sessionCount,
       activeDays:activeDays,
-      longest:longest
+      longest:longest,
+      last30Total:last30Total,
+      last30Sessions:last30Sessions,
+      last30ActiveDays:last30ActiveDays,
+      bestDayDate:bestDayDate,
+      bestDayTotal:bestDayTotal
     };
     return statsCache;
   }
@@ -1276,16 +1355,39 @@ body.sheet-open{
     $('insights').innerHTML=insights.map(function(t){return '<div class="insight"><span class="insight-mark"></span><div class="insight-text">'+t+'</div></div>'}).join('');
   }
 
+  function getTypeBreakdownHTML(byType){
+    var items=TYPE_OPTIONS.map(function(t){
+      return {label:t.label,total:byType[t.id]||0,color:COLOR_BY_ID[t.defaultColor]||'#6e73ff'};
+    }).filter(function(x){return x.total>0});
+    if(!items.length)return '<div class="empty">Нет данных.</div>';
+    var max=Math.max(60,Math.max.apply(Math,items.map(function(x){return x.total})));
+    return items.map(function(x){
+      var pct=Math.round(x.total/max*100);
+      return '<div class="break-row"><div class="break-left"><div class="break-name"><span class="color-dot" style="background:'+x.color+';margin-right:7px;vertical-align:1px"></span>'+x.label+'</div><div class="mini-progress"><i style="--row-color:'+x.color+';width:'+pct+'%"></i></div></div><div class="break-value">'+fmt(x.total)+'</div></div>';
+    }).join('');
+  }
+
   function renderStats(){
-    var stats=getStats();
-    var total=stats.total;
-    var active=stats.activeDays;
+    var stats=getStats(),total=stats.total,active=stats.activeDays;
     $('allTotal').textContent=fmt(total);
     $('activeDays').textContent=active;
+    $('allSessions').textContent=stats.sessionCount;
     $('avgDay').textContent=fmt(active?total/active:0);
 
-    var totals=allTotals();
-    $('statsBreakdown').innerHTML=getStatsBreakdownHTML(totals);
+    var avgSession=stats.sessionCount?Math.round(total/stats.sessionCount):0;
+    $('avgSessionStats').textContent=fmt(avgSession);
+    $('sessionCountNote').textContent=stats.sessionCount+' '+(stats.sessionCount===1?'занятие':'занятий');
+
+    $('last30Total').textContent=fmt(stats.last30Total);
+    $('last30ActiveNote').textContent=stats.last30ActiveDays+' '+(stats.last30ActiveDays===1?'активный день':'активных дней');
+    $('last30Avg').textContent=fmt(stats.last30Sessions?stats.last30Total/stats.last30Sessions:0);
+    $('last30SessionNote').textContent=stats.last30Sessions+' '+(stats.last30Sessions===1?'занятие':'занятий');
+
+    $('bestDayTime').textContent=fmt(stats.bestDayTotal||0);
+    $('bestDayDate').textContent=stats.bestDayDate?formatFullDate(stats.bestDayDate):'Нет данных';
+
+    $('statsBreakdown').innerHTML=getStatsBreakdownHTML(allTotals());
+    $('statsTypeBreakdown').innerHTML=getTypeBreakdownHTML(stats.byType);
   }
 
   function renderSettings(){
@@ -1327,21 +1429,23 @@ body.sheet-open{
   }
 
   function calendarTooltip(date,stats){
-    var habitMap={};
+    var lines=[formatFullDate(date)+' · '+fmt(stats.byDate[date]||0)],habitTotals=stats.byDateHabit[date]||{},habitMap={};
     for(var i=0;i<habits.length;i++)habitMap[habits[i].id]=habits[i];
-    var dayEntries=entries.filter(function(e){return e.date===date});
-    dayEntries.sort(function(a,b){return (Number(b.minutes)||0)-(Number(a.minutes)||0)});
-    var lines=[date+' · '+fmt(stats.byDate[date]||0)],seen={};
-    for(var j=0;j<dayEntries.length;j++){
-      var e=dayEntries[j],name=habitMap[e.habitId]?habitMap[e.habitId].name:'Удаленная привычка';
-      if(seen[name])continue;
-      seen[name]=1;
-      var mins=0,count=0;
-      for(var k=0;k<dayEntries.length;k++)if(dayEntries[k].habitId===e.habitId){mins+=Number(dayEntries[k].minutes)||0;count++}
-      lines.push(name+': '+fmt(mins)+(count>1?' · '+count+' записи':''));
-      if(lines.length>=6)break;
-    }
+    var ids=Object.keys(habitTotals).sort(function(a,b){return habitTotals[b]-habitTotals[a]});
+    for(var j=0;j<ids.length&&lines.length<6;j++)lines.push((habitMap[ids[j]]?habitMap[ids[j]].name:'Удаленная привычка')+': '+fmt(habitTotals[ids[j]]));
+    if(lines.length===1)lines.push('Нет записей');
     return lines.join('\n');
+  }
+
+  function positionCalendarHoverNote(cell){
+    var note=$('calendarHoverNote');if(!note||!cell)return;
+    var rect=cell.getBoundingClientRect(),pad=12,gap=8;
+    note.style.left='0px';note.style.top='0px';note.classList.add('active');
+    var nr=note.getBoundingClientRect();
+    var left=Math.min(Math.max(pad,rect.left+(rect.width-nr.width)/2),window.innerWidth-pad-nr.width);
+    var top=rect.top-gap-nr.height;
+    if(top<pad)top=Math.min(window.innerHeight-pad-nr.height,rect.bottom+gap);
+    note.style.left=Math.round(left)+'px';note.style.top=Math.round(Math.max(pad,top))+'px';
   }
 
   function renderCalendarView(){
@@ -1365,13 +1469,26 @@ body.sheet-open{
         stack+='<span class="calendar-color-segment" style="background:'+COLOR_BY_ID[colorId]+';flex:'+Math.max(.15,ratio)+'"></span>';
       }
       var cls='calendar-cell'+(muted?' muted':'')+(total?' has-data':'')+(date===today?' today':'');
-      html+='<div class="'+cls+'" data-calendar-date="'+date+'" title="'+clean(calendarTooltip(date,stats))+'"><div class="calendar-day-number">'+day+'</div><div class="calendar-day-total">'+(total?fmt(total):'')+'</div><div class="calendar-color-stack">'+stack+'</div></div>';
+      html+='<div class="'+cls+'" data-calendar-date="'+date+'" data-calendar-tooltip="'+clean(calendarTooltip(date,stats))+'"><div class="calendar-day-number">'+day+'</div><div class="calendar-day-total">'+(total?fmt(total):'')+'</div><div class="calendar-color-stack">'+stack+'</div></div>';
     }
     $('monthCalendar').innerHTML=html;
-    $('calendarLegend').innerHTML=COLOR_OPTIONS.map(function(c){
-      return '<span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:'+c.color+'"></span>'+c.label+'</span>';
-    }).join('');
   }
+
+  var calendarHoverCell=null;
+  $('monthCalendar').addEventListener('mouseover',function(e){
+    var cell=e.target.closest('[data-calendar-date]');
+    if(!cell||cell===calendarHoverCell)return;
+    calendarHoverCell=cell;
+    $('calendarHoverNote').textContent=cell.getAttribute('data-calendar-tooltip')||'Нет записей';
+    positionCalendarHoverNote(cell);
+  });
+  $('monthCalendar').addEventListener('mouseout',function(e){
+    if(!calendarHoverCell)return;
+    var next=e.relatedTarget&&e.relatedTarget.closest?e.relatedTarget.closest('[data-calendar-date]'):null;
+    if(next===calendarHoverCell)return;
+    calendarHoverCell=null;
+    $('calendarHoverNote').classList.remove('active');
+  });
 
   function renderToday(){
     updateHeader();
@@ -1502,9 +1619,22 @@ body.sheet-open{
     syncMenuSelection();
   }
 
+  function renderVisibleCategories(){
+    var defs={sport:'спорт',accounting:'бухгалтер',reading:'чтени',speech:'дикци'},buttons=document.querySelectorAll('[data-visible-category]'),visible=0;
+    for(var i=0;i<buttons.length;i++){
+      var button=buttons[i],query=defs[button.getAttribute('data-visible-category')]||'';
+      var habit=habits.find(function(h){return (h.name||'').toLowerCase().indexOf(query)>=0});
+      button.hidden=!habit;
+      if(habit)visible++;
+    }
+    var wrap=document.querySelector('.quick-categories');
+    if(wrap)wrap.hidden=!visible;
+  }
+
   function openSheet(){
     if(!habits.length){showToast('Сначала добавь привычку');return}
 
+    renderVisibleCategories();
     chosenHabit=habits[0].id;
     chosenType='active';
     chosenColor='blue';
@@ -1609,6 +1739,113 @@ body.sheet-open{
     showToast('Запись сохранена');
   }
 
+  function exportData(){
+    var payload={
+      app:'Habit Timesheet',
+      version:(document.querySelector('.app-version')||{}).textContent||'',
+      exportedAt:new Date().toISOString(),
+      habits:habits.map(function(h){return {id:h.id,name:h.name}}),
+      entries:entries.map(function(e){return {id:e.id,habitId:e.habitId,date:e.date,minutes:e.minutes,note:e.note,type:e.type,color:e.color}})
+    };
+    var blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});
+    var url=URL.createObjectURL(blob),link=document.createElement('a');
+    link.href=url;link.download='habit-timesheet-'+localDate()+'.json';
+    document.body.appendChild(link);link.click();link.remove();
+    setTimeout(function(){URL.revokeObjectURL(url)},0);
+    showToast('Данные экспортированы');
+  }
+
+  function openImportDialog(){
+    if(!habits.length){showToast('Сначала добавь привычку');return}
+    $('importHabit').innerHTML=habits.map(function(h){return '<option value="'+clean(h.id)+'">'+clean(h.name)+'</option>';}).join('');
+    $('importHabit').value=habits.some(function(h){return h.id===chosenHabit})?chosenHabit:habits[0].id;
+    $('importText').value='';
+    $('dataTransfer').hidden=false;
+    setTimeout(function(){$('importText').focus()},0);
+  }
+
+  function closeImportDialog(){
+    $('dataTransfer').hidden=true;
+  }
+
+  function parseImportDate(value){
+    var v=String(value||'').trim(),m;
+    if(!v)return null;
+    m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if(m){
+      var y=+m[1],mo=+m[2],d=+m[3],date=new Date(y,mo-1,d);
+      return date.getFullYear()===y&&date.getMonth()===mo-1&&date.getDate()===d?localDate(date):null;
+    }
+    m=v.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/);
+    if(m){
+      var day=+m[1],month=+m[2],year=+m[3];if(year<100)year+=2000;
+      var date2=new Date(year,month-1,day);
+      return date2.getFullYear()===year&&date2.getMonth()===month-1&&date2.getDate()===day?localDate(date2):null;
+    }
+    var parsed=new Date(v);
+    return isNaN(parsed.getTime())?null:localDate(new Date(parsed.getFullYear(),parsed.getMonth(),parsed.getDate()));
+  }
+
+  function parseSheetImport(textValue){
+    var lines=String(textValue||'').replace(/\r/g,'').split('\n'),rows=[],errors=0;
+    for(var i=0;i<lines.length;i++){
+      var line=lines[i].trim();if(!line)continue;
+      var parts=line.split('\t');
+      if(parts.length<2)parts=line.split(';');
+      if(parts.length<2)parts=line.split(/\s{2,}/);
+      if(parts.length<2)continue;
+      var first=parts[0].trim(),second=parts.slice(1).join('').trim();
+      if(i===0&&(/день|дата|date/i.test(first)||/минут|minutes|min/i.test(second)))continue;
+      var date=parseImportDate(first);
+      var minutes=Number(second.replace(',','.').replace(/[^\d.-]/g,''));
+      if(!date||!isFinite(minutes)||minutes<=0){errors++;continue}
+      rows.push({date:date,minutes:Math.round(minutes)});
+    }
+    return {rows:rows,errors:errors};
+  }
+
+  function persistEntriesBatch(newEntries){
+    if(!newEntries.length)return true;
+    localMutationEpoch++;
+    if(storageMode==='indexeddb'){
+      var batch=cloneData(newEntries);
+      queueIDBWrite(function(){
+        return new Promise(function(resolve,reject){
+          var tx=db.transaction(IDB_ENTRIES,'readwrite'),store=tx.objectStore(IDB_ENTRIES);
+          for(var i=0;i<batch.length;i++)store.put(batch[i]);
+          tx.oncomplete=function(){resolve()};
+          tx.onerror=function(){reject(tx.error||new Error('IndexedDB batch write failed'))};
+          tx.onabort=function(){reject(tx.error||new Error('IndexedDB batch write aborted'))};
+        });
+      });
+      scheduleLocalBackup();
+      return true;
+    }
+    return backupToLocalStorage();
+  }
+
+  function importFromSheet(){
+    var parsed=parseSheetImport($('importText').value);
+    if(!parsed.rows.length){showToast('Не нашёл корректных строк для импорта');return}
+    var habitId=$('importHabit').value,habit=habits.find(function(h){return h.id===habitId});
+    if(!habit){showToast('Выбери привычку');return}
+    var preset=presetForHabit(habit.name)||{};
+    if(!confirm('Импортировать '+parsed.rows.length+' '+(parsed.rows.length===1?'строку':'строк')+' для «'+habit.name+'»?'))return;
+
+    var newEntries=parsed.rows.map(function(row){
+      return {id:uid(),habitId:habit.id,date:row.date,minutes:row.minutes,note:'Импорт из Google Таблиц',type:preset.type||'active',color:preset.color||'blue'};
+    });
+    entries=entries.concat(newEntries);
+    if(!persistEntriesBatch(newEntries)){
+      entries.splice(entries.length-newEntries.length,newEntries.length);
+      showToast('Не удалось сохранить импорт');return;
+    }
+    invalidateDataCaches();
+    closeImportDialog();
+    renderActiveView();
+    showToast('Импортировано '+newEntries.length+' '+(newEntries.length===1?'запись':'записей')+(parsed.errors?'. Пропущено строк: '+parsed.errors:''));
+  }
+
   function addHabit(){
     var name=prompt('Название привычки');
     if(!name||!name.trim())return;
@@ -1628,6 +1865,12 @@ body.sheet-open{
   }
 
   document.getElementById('openSheet').onclick=openSheet;
+  document.getElementById('exportData').onclick=exportData;
+  document.getElementById('importData').onclick=openImportDialog;
+  document.getElementById('dataDialogClose').onclick=closeImportDialog;
+  document.getElementById('dataDialogCancel').onclick=closeImportDialog;
+  document.getElementById('dataImportConfirm').onclick=importFromSheet;
+  document.getElementById('dataTransfer').addEventListener('click',function(e){if(e.target===this)closeImportDialog()});
   document.getElementById('closeSheet').onclick=closeSheet;
   document.getElementById('cancelSheet').onclick=closeSheet;
   document.getElementById('saveEntry').onclick=saveEntry;
@@ -1755,6 +1998,7 @@ body.sheet-open{
   },{passive:true});
 
   document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&!$('dataTransfer').hidden){closeImportDialog();return}
     if(e.key==='Escape'&&activeMenuKind){closeMenus();return}
     if(e.key==='Escape'&&!$('sheet').hidden)closeSheet();
     if((e.ctrlKey||e.metaKey)&&e.key==='Enter'&&!$('sheet').hidden)saveEntry();
