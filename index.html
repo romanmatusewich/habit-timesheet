@@ -643,7 +643,7 @@ body.sheet-open{
   var HABITS_KEY='habit-timesheet-habits';
   var ENTRIES_KEY='habit-timesheet-entries';
   var PERF_MODE=window.__PERF_MODE===true||window.location.search.indexOf('perf=1')>=0;
-  var IDB_NAME='habit-timesheet-db'+(PERF_MODE?'-perf':'');
+  var IDB_NAME='habit-timesheet-db'+(PERF_MODE?'-perf':'')+(window.__PERF_DB_SUFFIX||'');
   var IDB_VERSION=1;
   var IDB_HABITS='habits';
   var IDB_ENTRIES='entries';
