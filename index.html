@@ -597,7 +597,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.28</div>
+<div class="app-version" aria-label="Версия">v0.3.29</div>
 
 <main class="shell">
   <header class="top">
@@ -1170,6 +1170,66 @@ body.sheet-open{
     return false;
   }
 
+  async function runAugustAllocationMigrationV2(){
+    var markerKey='habit-timesheet-august-allocation-v2';
+    var accounting=findHabitByIdOrName('accounting','бухгалтерия');
+    var reading=findHabitByIdOrName('reading','чтение');
+    if(!accounting||!reading)return false;
+
+    var changed=false,newEntries=[];
+    var startDate='2026-08-20',endDate='2026-09-01';
+
+    for(var i=entries.length-1;i>=0;i--){
+      var e=entries[i];
+      if(e.habitId!==IMPORT_SUMMARY_HABIT.id||String(e.date)<startDate||String(e.date)>=endDate)continue;
+
+      var total=Math.max(0,Math.round(Number(e.minutes)||0));
+      var accountingMinutes=Math.floor(total*.75);
+      var readingMinutes=total-accountingMinutes;
+
+      entries.splice(i,1);
+      changed=true;
+
+      if(accountingMinutes>0)newEntries.push({
+        id:uid(),
+        habitId:accounting.id,
+        date:e.date,
+        minutes:accountingMinutes,
+        note:'Распределено из сводки Google Таблиц · 75%',
+        type:'active',
+        color:'blue'
+      });
+      if(readingMinutes>0)newEntries.push({
+        id:uid(),
+        habitId:reading.id,
+        date:e.date,
+        minutes:readingMinutes,
+        note:'Распределено из сводки Google Таблиц · 25%',
+        type:'reading',
+        color:'yellow'
+      });
+    }
+
+    if(!changed)return false;
+    entries=entries.concat(newEntries);
+    invalidateDataCaches();
+
+    // Write the complete resulting dataset before recording the migration marker.
+    if(storageMode==='indexeddb'&&db){
+      await idbStoreAll(cloneData(habits),cloneData(entries));
+      await idbRequest(db.transaction(IDB_META,'readwrite').objectStore(IDB_META).put({key:markerKey,value:true}));
+      backupToLocalStorage();
+    }else{
+      if(!backupToLocalStorage())throw new Error('Local storage write failed');
+      localStorage.setItem(markerKey,'1');
+    }
+
+    showToast('20–31 августа распределено: 75% Бухгалтерия · 25% Чтение');
+    return true;
+  }
+
+
+
   function deleteEntryFromStorage(id){
     localMutationEpoch++;
     if(storageMode==='indexeddb'){
@@ -1232,6 +1292,7 @@ body.sheet-open{
     storageMode='indexeddb';
     await runTrainingAllocationMigration();
     await runAugustAllocationMigration();
+    await runAugustAllocationMigrationV2();
     invalidateDataCaches();
     menusDirty=true;
     entryRenderLimit=Math.min(entryRenderLimit,Math.max(60,entries.length));
@@ -1264,13 +1325,14 @@ body.sheet-open{
           await idbStoreAll(cloneData(habits),cloneData(entries));
         }
       }else{
-        scheduleIndexedDBReconcile();
+        await reconcileFromIndexedDB();
       }
 
       storageMode='indexeddb';
 
       await runTrainingAllocationMigration();
       await runAugustAllocationMigration();
+      await runAugustAllocationMigrationV2();
       scheduleLocalBackup();
       window.__STORAGE_READY=true;
     }catch(e){
