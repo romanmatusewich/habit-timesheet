@@ -45,7 +45,7 @@ th{font-size:11px;color:#757a89;font-weight:600}
     <div id="status">Готово. Тест безопасен: исходные localStorage-данные восстанавливаются после завершения. Версия приложения и baseline определяются автоматически.</div>
     <div id="results"></div>
     <div id="history"></div>
-    <div class="note"><b>Как читать результаты:</b> «Время до кадра» включает JavaScript и реакцию рендера до следующего кадра; «Макс. кадр» — максимальный интервал между callback requestAnimationFrame во время нагрузки. Composite Performance Index нормирован на baseline = 100: выше 100 — быстрее baseline, ниже 100 — медленнее. «Изменение» — это процент изменения индекса относительно baseline. Это воспроизводимый локальный benchmark, но он не заменяет Chrome DevTools Performance и реальный INP пользователя. <a href="../" target="_blank" rel="noreferrer">Открыть приложение</a></div>
+    <div class="note"><b>Как читать результаты:</b> «Время до кадра» включает JavaScript и реакцию рендера до следующего кадра; «Макс. кадр» — максимальный интервал между callback requestAnimationFrame во время нагрузки. Composite Performance Index нормирован на baseline = 100: выше 100 — быстрее baseline, ниже 100 — медленнее. «Изменение» — это подписанное изменение индекса относительно baseline. Протокол P1.0 фиксирован: 100/1000/5000/10000 записей, 3 повтора, те же метрики и веса. Изменение этих правил требует нового идентификатора протокола и не смешивается с P1.0. Это воспроизводимый локальный benchmark, но он не заменяет Chrome DevTools Performance и реальный INP пользователя. <a href="../" target="_blank" rel="noreferrer">Открыть приложение</a></div>
   </section>
 </main>
 <iframe id="runner" class="hidden-frame" title="performance runner"></iframe>
@@ -507,7 +507,12 @@ th{font-size:11px;color:#757a89;font-weight:600}
     });
 
     html+='</tbody></table>';
-    html+='<div class="history-title">Зафиксированные несопоставимые результаты</div><div class="history-sub legacy">Предыдущий результат 88.7 для v0.3.13 показываем отдельно и не включаем в P1.0: тогда benchmark подготавливал данные для IndexedDB в другой базе, поэтому сравнение было методологически некорректным.</div>';
+    html+='<div class="history-title">Архив измерений, которые не входят в тренд P1.0</div>';
+    html+='<div class="history-sub legacy">Эти числа не смешиваются с новой историей. Они сохранены только для прозрачности.</div>';
+    html+='<table class="history-table"><thead><tr><th>Версия</th><th>Старый индекс</th><th>Статус</th><th>Причина исключения</th></tr></thead><tbody>';
+    html+='<tr><td>v0.3.11</td><td>—</td><td>нет валидного результата</td><td>старый harness</td></tr>';
+    html+='<tr><td>v0.3.12 → v0.3.13</td><td>88.7</td><td>не сравнимо</td><td>IndexedDB подготавливалась в другой тестовой базе</td></tr>';
+    html+='</tbody></table>';
     historyEl.innerHTML=html;
   }
 
