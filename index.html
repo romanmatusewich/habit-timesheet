@@ -284,8 +284,6 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   background:
     radial-gradient(circle at 50% 12%,rgba(255,255,255,.18),transparent 42%),
     rgba(220,224,235,.34);
-  backdrop-filter:blur(12px);
-  -webkit-backdrop-filter:blur(12px);
   overscroll-behavior:contain;
   z-index:100
 }
@@ -359,48 +357,29 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .color-row{display:flex;align-items:center;gap:8px}
 .color-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
 
-.popover{
+.menu-layer{position:fixed;inset:0;z-index:300;pointer-events:none}
+.menu-layer.active{pointer-events:auto}
+.menu-popover{
+  position:fixed;
+  max-height:300px;
+  overflow:auto;
   contain:layout paint;
-  position:absolute;
-  left:0;right:0;
-  top:calc(100% + 8px);
-  border:1px solid rgba(255,255,255,.85);
-  background:rgba(248,249,252,.96);
+  background:rgba(248,249,252,.985);
+  border:1px solid rgba(255,255,255,.90);
   border-radius:17px;
   box-shadow:0 18px 42px rgba(29,34,60,.14),inset 0 1px 0 rgba(255,255,255,.98);
-
-  overflow:hidden;
-  z-index:150;
-  max-height:290px;
-  overflow-y:auto;
-  contain:layout paint
+  transform:translateY(-4px) scale(.985);
+  transform-origin:top left;
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .12s ease,transform .12s ease,visibility 0s linear .12s
 }
+.menu-popover.active{opacity:1;visibility:visible;transform:translateY(0) scale(1);transition:opacity .12s ease,transform .12s ease}
 .menu-section{padding:9px 10px 5px;font-size:10px;color:var(--muted);font-weight:500}
 .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:7px 10px 10px}
-.quick{
-  border:1px solid rgba(255,255,255,.72);
-  background:rgba(239,241,247,.80);
-  border-radius:11px;
-  padding:9px 10px;
-  text-align:left;
-  color:var(--ink);
-  font-size:12px;
-  font-weight:500;
-  transition:background-color .12s ease;
-}
-.option{
-  width:100%;
-  display:block;
-  border:0;
-  background:transparent;
-  text-align:left;
-  padding:12px 14px;
-  font-size:15px;
-  line-height:1.2;
-  color:var(--ink);
-  border-top:1px solid rgba(30,34,50,.05)
-}
-.option.selected{background:rgba(225,228,255,.88);color:var(--blue-deep);font-weight:600}
+.quick{border:1px solid rgba(255,255,255,.72);background:rgba(239,241,247,.90);border-radius:11px;padding:9px 10px;text-align:left;color:var(--ink);font-size:12px;font-weight:500;transition:background-color .12s ease}
+.option{width:100%;display:block;border:0;background:transparent;text-align:left;padding:12px 14px;font-size:15px;line-height:1.2;color:var(--ink);border-top:1px solid rgba(30,34,50,.05)}
+.option.selected{background:rgba(225,228,255,.92);color:var(--blue-deep);font-weight:600}
 
 .calendar{
   contain:layout paint;
@@ -508,7 +487,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.15</div>
+<div class="app-version" aria-label="Версия">v0.3.16</div>
 
 <main class="shell">
   <header class="top">
@@ -582,6 +561,8 @@ body.sheet-open{
   <button class="mobile-tab" data-view="settings">Настройки</button>
 </nav>
 
+<div class="menu-layer" id="menuLayer"><div class="menu-popover" id="menuPopover"></div></div>
+
 <div class="scrim" id="sheet" hidden>
   <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
     <div class="sheet-head">
@@ -593,13 +574,11 @@ body.sheet-open{
       <div class="field">
         <span class="field-label">Привычка</span>
         <button class="custom-select" id="habitButton"><span id="habitButtonText">Бухгалтерия</span><span class="chevron">⌄</span></button>
-        <div class="popover" id="habitPopover" hidden></div>
       </div>
 
       <div class="field">
         <span class="field-label">Тип записи</span>
         <button class="custom-select" id="typeButton"><span id="typeButtonText">Активное обучение</span><span class="chevron">⌄</span></button>
-        <div class="popover" id="typePopover" hidden></div>
       </div>
 
       <label class="field">
@@ -618,7 +597,6 @@ body.sheet-open{
           <span class="color-row"><span class="color-dot" id="colorDot"></span><span id="colorButtonText">Желтый</span></span>
           <span class="chevron">⌄</span>
         </button>
-        <div class="popover" id="colorPopover" hidden></div>
       </div>
 
       <div class="field date-wrap">
@@ -708,7 +686,9 @@ body.sheet-open{
   var chosenColor='yellow';
   var menusDirty=true;
   var statsCache=null;
+  var menuHTMLCache={habit:null,type:null,color:null};
   var menuOptionCache={habit:[],type:[],color:[]};
+  var activeMenuKind='';
   var calendarNodes=null;
   var chartNodes=null;
   var entryRenderLimit=60;
@@ -922,7 +902,7 @@ body.sheet-open{
     menusDirty=true;
     entryRenderLimit=Math.min(entryRenderLimit,Math.max(60,entries.length));
     renderActiveView();
-    scheduleMenuWarmup();
+
   }
 
   function scheduleIndexedDBReconcile(){
@@ -954,7 +934,7 @@ body.sheet-open{
       }
 
       storageMode='indexeddb';
-      scheduleMenuWarmup();
+
       scheduleLocalBackup();
       window.__STORAGE_READY=true;
     }catch(e){
@@ -996,6 +976,9 @@ body.sheet-open{
     renderCache.habitBreakdownHTML=null;
     renderCache.statsBreakdownHTML=null;
     renderCache.habitBreakdownMax=0;
+    menuHTMLCache.habit=null;
+    menuHTMLCache.type=null;
+    menuHTMLCache.color=null;
   }
 
   function getSortedEntries(){
@@ -1284,53 +1267,88 @@ body.sheet-open{
   }
 
   function closeMenus(){
-    $('habitPopover').hidden=true;
-    $('typePopover').hidden=true;
-    $('colorPopover').hidden=true;
-    $('calendar').hidden=true;
+    $('menuPopover').classList.remove('active');
+    $('menuLayer').classList.remove('active');
+    activeMenuKind='';
     $('habitButton').classList.remove('open');
     $('typeButton').classList.remove('open');
     $('colorButton').classList.remove('open');
   }
 
-  var menuWarmupScheduled=false;
-
-  function scheduleMenuWarmup(){
-    if(menuWarmupScheduled||!menusDirty)return;
-    menuWarmupScheduled=true;
-    var run=function(){
-      menuWarmupScheduled=false;
-      if(!menusDirty)return;
-      populateMenus();
-      menusDirty=false;
-      syncMenuSelection();
-    };
-    if(typeof requestIdleCallback==='function'){
-      requestIdleCallback(run,{timeout:1500});
-    }else{
-      setTimeout(run,180);
-    }
-  }
-
   function syncMenuSelection(){
-    var habitOptions=menuOptionCache.habit;
-    var typeOptions=menuOptionCache.type;
-    var colorOptions=menuOptionCache.color;
-    for(var i=0;i<habitOptions.length;i++)habitOptions[i].classList.toggle('selected',habitOptions[i].getAttribute('data-habit-option')===chosenHabit);
-    for(var j=0;j<typeOptions.length;j++)typeOptions[j].classList.toggle('selected',typeOptions[j].getAttribute('data-type-option')===chosenType);
-    for(var k=0;k<colorOptions.length;k++)colorOptions[k].classList.toggle('selected',colorOptions[k].getAttribute('data-color-option')===chosenColor);
+    var nodes=menuOptionCache[activeMenuKind]||[];
+    var attr=activeMenuKind==='habit'?'data-habit-option':activeMenuKind==='type'?'data-type-option':'data-color-option';
+    var chosen=activeMenuKind==='habit'?chosenHabit:activeMenuKind==='type'?chosenType:chosenColor;
+    for(var i=0;i<nodes.length;i++)nodes[i].classList.toggle('selected',nodes[i].getAttribute(attr)===chosen);
   }
 
-  function showMenu(id,buttonId){
-    var menu=$(id);
-    var willOpen=menu.hidden;
-    closeMenus();
-    if(willOpen){
-      if(menusDirty){populateMenus();menusDirty=false}
-      syncMenuSelection();
-      menu.hidden=false;
-      if(buttonId)$(buttonId).classList.add('open');
+  function buildMenu(kind){
+    if(menuHTMLCache[kind]!==null)return;
+
+    if(kind==='habit'){
+      var popularHabits=[
+        {label:'Спорт',match:'спорт'},
+        {label:'Бухгалтерия',match:'бухгалтер'},
+        {label:'Чтение',match:'чтени'},
+        {label:'Дикция и речь',match:'дикци'}
+      ];
+      var qh=popularHabits.map(function(q){
+        var h=habits.find(function(x){return x.name.toLowerCase().indexOf(q.match)>=0});
+        return h?'<button class="quick" data-quick-habit="'+h.id+'">'+q.label+'</button>':'';
+      }).join('');
+      menuHTMLCache.habit='<div class="menu-section">Популярные категории</div><div class="quick-grid">'+qh+'</div><div class="menu-section">Все привычки</div>'+
+        habits.map(function(h){return '<button class="option" data-habit-option="'+h.id+'">'+clean(h.name)+'</button>';}).join('');
+    }else if(kind==='type'){
+      var popularTypes=[
+        {label:'Спорт',type:'sport',color:'green'},
+        {label:'Активное обучение',type:'active',color:'blue'},
+        {label:'Пассивное обучение',type:'passive',color:'yellow'},
+        {label:'Работа',type:'work',color:'purple'}
+      ];
+      var qt=popularTypes.map(function(q){
+        return '<button class="quick" data-quick-type="'+q.type+'" data-quick-color="'+q.color+'">'+q.label+'</button>';
+      }).join('');
+      menuHTMLCache.type='<div class="menu-section">Популярные категории</div><div class="quick-grid">'+qt+'</div><div class="menu-section">Все типы</div>'+
+        TYPE_OPTIONS.map(function(t){return '<button class="option" data-type-option="'+t.id+'">'+t.label+'</button>';}).join('');
+    }else{
+      menuHTMLCache.color=COLOR_OPTIONS.map(function(c){
+        return '<button class="option" data-color-option="'+c.id+'"><span class="color-row"><span class="color-dot" style="background:'+c.color+'"></span><span>'+c.label+'</span></span></button>';
+      }).join('');
     }
+  }
+
+  function positionMenu(button){
+    var menu=$('menuPopover'),rect=button.getBoundingClientRect(),edge=14,gap=8;
+    var width=Math.min(rect.width,360,window.innerWidth-edge*2);
+    var left=Math.min(Math.max(edge,rect.left),window.innerWidth-edge-width);
+    var spaceBelow=window.innerHeight-rect.bottom-gap-edge;
+    var spaceAbove=rect.top-gap-edge;
+    var openBelow=spaceBelow>=180||spaceBelow>=spaceAbove;
+    var maxHeight=Math.min(300,Math.max(180,openBelow?spaceBelow:spaceAbove));
+    var top=openBelow?rect.bottom+gap:Math.max(edge,rect.top-gap-maxHeight);
+    menu.style.left=Math.round(left)+'px';
+    menu.style.top=Math.round(top)+'px';
+    menu.style.width=Math.round(width)+'px';
+    menu.style.maxHeight=Math.round(maxHeight)+'px';
+    $('menuLayer').classList.add('active');
+    menu.classList.add('active');
+  }
+
+  function showMenu(kind,buttonId){
+    var menu=$('menuPopover'),button=$(buttonId);
+    var same=activeMenuKind===kind&&menu.classList.contains('active');
+    closeMenus();
+    if(same)return;
+    activeMenuKind=kind;
+    buildMenu(kind);
+    menu.innerHTML=menuHTMLCache[kind];
+    menuOptionCache.habit=[];menuOptionCache.type=[];menuOptionCache.color=[];
+    if(kind==='habit')menuOptionCache.habit=menu.querySelectorAll('[data-habit-option]');
+    else if(kind==='type')menuOptionCache.type=menu.querySelectorAll('[data-type-option]');
+    else menuOptionCache.color=menu.querySelectorAll('[data-color-option]');
+    syncMenuSelection();
+    positionMenu(button);
+    button.classList.add('open');
   }
 
   function presetForHabit(habitName){
@@ -1378,57 +1396,9 @@ body.sheet-open{
     syncMenuSelection();
   }
 
-  function populateMenus(){
-    var popularHabits=[
-      {label:'Спорт',match:'спорт'},
-      {label:'Бухгалтерия',match:'бухгалтер'},
-      {label:'Чтение',match:'чтени'},
-      {label:'Дикция и речь',match:'дикци'}
-    ];
-
-    var qh=popularHabits.map(function(q){
-      var h=habits.find(function(x){return x.name.toLowerCase().indexOf(q.match)>=0});
-      return h?'<button class="quick" data-quick-habit="'+h.id+'">'+q.label+'</button>':'';
-    }).join('');
-
-    $('habitPopover').innerHTML=
-      '<div class="menu-section">Популярные категории</div>'+
-      '<div class="quick-grid">'+qh+'</div>'+
-      '<div class="menu-section">Все привычки</div>'+
-      habits.map(function(h){
-        return '<button class="option '+(h.id===chosenHabit?'selected':'')+'" data-habit-option="'+h.id+'">'+clean(h.name)+'</button>';
-      }).join('');
-
-    var popularTypes=[
-      {label:'Спорт',type:'sport',color:'green'},
-      {label:'Активное обучение',type:'active',color:'blue'},
-      {label:'Пассивное обучение',type:'passive',color:'yellow'},
-      {label:'Работа',type:'work',color:'purple'}
-    ];
-    var qt=popularTypes.map(function(q){
-      return '<button class="quick" data-quick-type="'+q.type+'" data-quick-color="'+q.color+'">'+q.label+'</button>';
-    }).join('');
-
-    $('typePopover').innerHTML=
-      '<div class="menu-section">Популярные категории</div>'+
-      '<div class="quick-grid">'+qt+'</div>'+
-      '<div class="menu-section">Все типы</div>'+
-      TYPE_OPTIONS.map(function(t){
-        return '<button class="option '+(t.id===chosenType?'selected':'')+'" data-type-option="'+t.id+'">'+t.label+'</button>';
-      }).join('');
-
-    $('colorPopover').innerHTML=COLOR_OPTIONS.map(function(c){
-      return '<button class="option '+(c.id===chosenColor?'selected':'')+'" data-color-option="'+c.id+'"><span class="color-row"><span class="color-dot" style="background:'+c.color+'"></span><span>'+c.label+'</span></span></button>';
-    }).join('');
-
-    menuOptionCache.habit=document.querySelectorAll('[data-habit-option]');
-    menuOptionCache.type=document.querySelectorAll('[data-type-option]');
-    menuOptionCache.color=document.querySelectorAll('[data-color-option]');
-  }
-
   function openSheet(){
     if(!habits.length){showToast('Сначала добавь привычку');return}
-    scheduleMenuWarmup();
+
     chosenHabit=habits[0].id;
     chosenType='active';
     chosenColor='blue';
@@ -1556,54 +1526,54 @@ body.sheet-open{
   document.getElementById('saveEntry').onclick=saveEntry;
   document.getElementById('addHabit').onclick=addHabit;
 
-  document.getElementById('habitButton').onclick=function(){showMenu('habitPopover','habitButton')};
-  document.getElementById('typeButton').onclick=function(){showMenu('typePopover','typeButton')};
-  document.getElementById('colorButton').onclick=function(){showMenu('colorPopover','colorButton')};
+  document.getElementById('habitButton').onclick=function(){showMenu('habit','habitButton')};
+  document.getElementById('typeButton').onclick=function(){showMenu('type','typeButton')};
+  document.getElementById('colorButton').onclick=function(){showMenu('color','colorButton')};
 
-  document.getElementById('habitPopover').onclick=function(e){
-    var quick=e.target.closest('[data-quick-habit]');
-    var option=e.target.closest('[data-habit-option]');
-    var id=quick?quick.getAttribute('data-quick-habit'):option?option.getAttribute('data-habit-option'):null;
-    if(!id)return;
-    var h=habits.find(function(x){return x.id===id});
-    var preset=presetForHabit(h?h.name:'')||{};
-    applySelection(id,preset.type||chosenType,preset.color||chosenColor);
-    closeMenus();
-  };
-
-  document.getElementById('typePopover').onclick=function(e){
-    var quick=e.target.closest('[data-quick-type]');
-    var option=e.target.closest('[data-type-option]');
-    if(quick){
-      var t=quick.getAttribute('data-quick-type');
-      var c=quick.getAttribute('data-quick-color');
-      var linkedHabit=habits.find(function(h){return (h.name||'').toLowerCase().indexOf(t==='sport'?'спорт':t==='reading'?'чтени':'')>=0});
-      applySelection(linkedHabit?linkedHabit.id:chosenHabit,t,c);
+  document.getElementById('menuPopover').onclick=function(e){
+    var quickHabit=e.target.closest('[data-quick-habit]');
+    var habitOption=e.target.closest('[data-habit-option]');
+    if(quickHabit||habitOption){
+      var node=quickHabit||habitOption;
+      var id=node.getAttribute(quickHabit?'data-quick-habit':'data-habit-option');
+      var h=habits.find(function(x){return x.id===id});
+      var preset=presetForHabit(h?h.name:'')||{};
+      applySelection(id,preset.type||chosenType,preset.color||chosenColor);
       closeMenus();
       return;
     }
-    if(option){
-      var typeId=option.getAttribute('data-type-option');
-      var type=TYPE_OPTIONS.find(function(x){return x.id===typeId});
-      var linked=habits.find(function(h){
-        var n=(h.name||'').toLowerCase();
-        if(typeId==='sport')return n.indexOf('спорт')>=0;
-        if(typeId==='reading')return n.indexOf('чтени')>=0;
-        return false;
-      });
-      applySelection(linked?linked.id:chosenHabit,typeId,type?type.defaultColor:chosenColor);
+    var quickType=e.target.closest('[data-quick-type]');
+    var typeOption=e.target.closest('[data-type-option]');
+    if(quickType||typeOption){
+      if(quickType){
+        var t=quickType.getAttribute('data-quick-type');
+        var c=quickType.getAttribute('data-quick-color');
+        var linkedHabit=habits.find(function(h){
+          var n=(h.name||'').toLowerCase();
+          return t==='sport'?n.indexOf('спорт')>=0:t==='reading'?n.indexOf('чтени')>=0:false;
+        });
+        applySelection(linkedHabit?linkedHabit.id:chosenHabit,t,c);
+      }else{
+        var typeId=typeOption.getAttribute('data-type-option');
+        var type=TYPE_OPTIONS.find(function(x){return x.id===typeId});
+        var linked=habits.find(function(h){
+          var n=(h.name||'').toLowerCase();
+          return typeId==='sport'?n.indexOf('спорт')>=0:typeId==='reading'?n.indexOf('чтени')>=0:false;
+        });
+        applySelection(linked?linked.id:chosenHabit,typeId,type?type.defaultColor:chosenColor);
+      }
+      closeMenus();
+      return;
+    }
+    var colorOption=e.target.closest('[data-color-option]');
+    if(colorOption){
+      var colorId=colorOption.getAttribute('data-color-option');
+      var color=COLOR_OPTIONS.find(function(x){return x.id===colorId});
+      chosenColor=colorId;
+      $('colorButtonText').textContent=color.label;
+      $('colorDot').style.background=color.color;
       closeMenus();
     }
-  };
-
-  document.getElementById('colorPopover').onclick=function(e){
-    var b=e.target.closest('[data-color-option]');if(!b)return;
-    chosenColor=b.getAttribute('data-color-option');
-    var c=COLOR_OPTIONS.find(function(x){return x.id===chosenColor});
-    $('colorButtonText').textContent=c.label;
-    $('colorDot').style.background=c.color;
-    syncMenuSelection();
-    closeMenus();
   };
 
   document.getElementById('dateButton').onclick=function(){
@@ -1634,13 +1604,23 @@ body.sheet-open{
     if(e.target===this)closeSheet();
   });
 
+  function repositionOpenMenu(){
+    if(!activeMenuKind)return;
+    var buttonId=activeMenuKind==='habit'?'habitButton':activeMenuKind==='type'?'typeButton':'colorButton';
+    var button=$(buttonId);
+    if(button)positionMenu(button);
+  }
+
+  window.addEventListener('resize',repositionOpenMenu,{passive:true});
+  window.addEventListener('scroll',repositionOpenMenu,{passive:true});
+
   document.addEventListener('keydown',function(e){
     if(e.key==='Escape'&&!$('sheet').hidden)closeSheet();
     if((e.ctrlKey||e.metaKey)&&e.key==='Enter'&&!$('sheet').hidden)saveEntry();
   });
 
   document.addEventListener('click',function(e){
-    if(!e.target.closest('.field')&&!e.target.closest('.sheet'))closeMenus();
+    if(!e.target.closest('.field')&&!e.target.closest('.sheet')&&!e.target.closest('#menuLayer'))closeMenus();
 
     var more=e.target.closest('#showMoreEntries');
     if(more){
@@ -1708,7 +1688,7 @@ body.sheet-open{
   });
 
   render();
-  scheduleMenuWarmup();
+
   window.__APP_READY=true;
   window.__STORAGE_READY=false;
   initIndexedDB();
