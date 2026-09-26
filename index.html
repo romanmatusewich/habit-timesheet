@@ -162,19 +162,40 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .day{height:100%;flex:1;display:flex;align-items:flex-end;justify-content:center;position:relative}
 .bar{
   width:22px;
-  min-height:7px;
+  min-height:0;
   border-radius:11px 11px 5px 5px;
-  background:linear-gradient(180deg,#6e73ff 0%,#4b51e6 62%,#3b3fd0 100%);
+  background:linear-gradient(180deg,#767cff 0%,#6870ff 24%,#5661f4 53%,#4858ea 78%,#3e50df 100%);
   box-shadow:
-    0 7px 14px rgba(76,83,230,.20),
-    -1px 0 0 rgba(255,89,171,.20),
-    1px 0 0 rgba(66,202,255,.22);
-  transition:transform .14s ease
+    0 7px 14px rgba(76,83,230,.16),
+    -1px 0 0 rgba(255,89,171,.14),
+    1px 0 0 rgba(66,202,255,.16);
+  transition:transform .14s ease,filter .14s ease
 }
-.bar.empty{
-  background:linear-gradient(180deg,rgba(111,118,143,.20),rgba(111,118,143,.12));
-  box-shadow:none
+.bar.today{
+  background:linear-gradient(180deg,#7d82ff 0%,#6f76ff 24%,#5d68f5 54%,#4b5bea 78%,#4254e2 100%);
 }
+.chart-day-hover-note{
+  position:absolute;
+  z-index:520;
+  left:50%;
+  bottom:calc(100% + 8px);
+  width:min(270px,calc(100vw - 28px));
+  padding:12px 13px;
+  border-radius:15px;
+  background:rgba(25,28,42,.96);
+  color:#fff;
+  box-shadow:0 16px 38px rgba(18,22,42,.24),inset 0 1px 0 rgba(255,255,255,.08);
+  font-size:11px;
+  line-height:1.48;
+  white-space:pre-line;
+  pointer-events:none;
+  opacity:0;
+  visibility:hidden;
+  transform:translateX(calc(-50% + var(--tip-shift,0px))) translateY(7px) scale(.985);
+  transition:opacity .16s ease,transform .16s ease
+}
+.chart-day-hover-note.active{opacity:1;visibility:visible;transform:translateX(calc(-50% + var(--tip-shift,0px))) translateY(0) scale(1)}
+.chart-day-hover-note.below{top:calc(100% + 8px);bottom:auto}
 .bar.muted{opacity:.80}
 .bar.today{
   box-shadow:
@@ -207,11 +228,12 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .stats-chart-card{min-width:0;padding:16px;border-radius:20px;background:linear-gradient(150deg,rgba(255,255,255,.58),rgba(255,255,255,.34));border:1px solid rgba(255,255,255,.72);box-shadow:var(--shadow-soft),inset 0 1px 0 rgba(255,255,255,.9)}
 .stats-chart-title{font-size:13px;font-weight:600}
 .stats-chart-note{margin-top:3px;font-size:10px;color:var(--muted)}
-.weekly-chart{display:flex;align-items:flex-end;gap:6px;height:126px;margin-top:14px}
+.weekly-chart{display:flex;align-items:flex-end;gap:7px;height:126px;margin-top:14px}
 .weekly-bar-wrap{height:100%;flex:1;display:flex;align-items:flex-end;justify-content:center}
-.weekly-bar{width:100%;max-width:18px;min-height:4px;border-radius:7px 7px 4px 4px;background:linear-gradient(180deg,#6e73ff,#49cfff);box-shadow:0 5px 12px rgba(78,91,235,.16)}
-.weekly-labels{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:6px}
-.weekly-label{font-size:9px;color:var(--muted);text-align:center}
+.weekly-bar{width:100%;max-width:18px;min-height:4px;border-radius:7px 7px 4px 4px;background:linear-gradient(180deg,#747aff 0%,#626cf6 36%,#505fe9 68%,#45bff2 100%);box-shadow:0 5px 12px rgba(78,91,235,.12)}
+.weekly-labels{display:grid;grid-template-columns:repeat(8,1fr);gap:7px;margin-top:7px}
+.weekly-label{font-size:9px;color:var(--muted);text-align:center;line-height:1.2}
+.weekly-label-range{display:block;font-size:8px;color:#969aa8}
 .type-donut-wrap{display:grid;place-items:center;height:126px;margin-top:10px}
 .type-donut{width:94px;height:94px;border-radius:50%;background:conic-gradient(#d7dbe5 0deg 360deg);position:relative;box-shadow:0 8px 20px rgba(50,57,100,.10)}
 .type-donut::after{content:"";position:absolute;inset:25px;border-radius:50%;background:#f1f3f8;box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}
@@ -223,6 +245,11 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .stat-label{font-size:12px;color:var(--muted);font-weight:400}
 .stat-value{margin-top:8px;font-size:25px;line-height:1.04;font-weight:600;letter-spacing:-.035em}
 .stat-note{margin-top:4px;font-size:12px;color:var(--muted)}
+.stat-extra-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+.stat-mini{min-width:0;padding:13px 14px;border-radius:17px;background:linear-gradient(150deg,rgba(255,255,255,.54),rgba(255,255,255,.32));border:1px solid rgba(255,255,255,.72);box-shadow:0 8px 22px rgba(36,42,71,.06),inset 0 1px 0 rgba(255,255,255,.88)}
+.stat-mini-label{font-size:10px;color:var(--muted);line-height:1.3}
+.stat-mini-value{margin-top:6px;font-size:18px;line-height:1.05;font-weight:600;letter-spacing:-.025em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat-mini-note{margin-top:4px;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .breakdown{contain:layout paint;
   margin-top:12px;
   padding:17px;
@@ -574,6 +601,8 @@ body.sheet-open{
   .sheet-title{font-size:27px}
   .row-two{gap:14px}
   .cal-day{height:30px}
+  .stat-extra-grid{gap:8px}
+  .stat-mini{padding:12px}
   .habit-stats-table-head{grid-template-columns:minmax(0,1fr) 64px 40px;gap:7px}
   .habit-stats-row{grid-template-columns:minmax(0,1fr) 64px 40px;gap:7px}
 }
@@ -603,7 +632,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.31</div>
+<div class="app-version" aria-label="Версия">v0.3.32</div>
 
 <main class="shell">
   <header class="top">
@@ -622,6 +651,7 @@ body.sheet-open{
         <div class="chart-wrap">
           <div class="chart" id="weekChart"></div>
           <div class="chart-labels" id="chartLabels"></div>
+          <div class="chart-day-hover-note" id="chartDayHoverNote"></div>
           <div class="chart-mark" id="chartMark"></div>
         </div>
       </div>
@@ -1584,12 +1614,19 @@ body.sheet-open{
 
     var max=Math.max(60,Math.max.apply(Math,totals));
     var names=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+    var note=$('chartDayHoverNote');
+    if(note){
+      note.classList.remove('active','below');
+      note.style.setProperty('--tip-shift','0px');
+    }
     for(var i=0;i<7;i++){
-      var date=dates[i],total=totals[i],bar=chartNodes.bars[i];
-      bar.className='bar'+(total?'':' empty')+(date===currentDate?' today':' muted');
-      bar.style.height=Math.max(7,total?Math.round(total/max*100):7)+'%';
-      bar.style.background=gradientForDay(date,total)||'linear-gradient(180deg,#6e73ff 0%,#4b51e6 62%,#3b3fd0 100%)';
-      bar.title=total?fmt(total):'Нет записей';
+      var date=dates[i],total=totals[i],bar=chartNodes.bars[i],day=bar.parentNode;
+      day.setAttribute('data-chart-date',date);
+      bar.className='bar'+(date===currentDate?' today':' muted');
+      bar.style.height=total?Math.max(5,Math.round(total/max*100))+'%':'0%';
+      bar.style.display=total?'block':'none';
+      bar.style.background=gradientForDay(date,total)||'linear-gradient(180deg,#747aff 0%,#626cf6 36%,#505fe9 68%,#45bff2 100%)';
+      bar.removeAttribute('title');
       chartNodes.labels[i].textContent=names[i];
     }
     $('chartMark').textContent=Math.round(max*.55);
@@ -1704,8 +1741,10 @@ body.sheet-open{
       return '<div class="weekly-bar-wrap"><div class="weekly-bar" style="height:'+pct+'%" title="'+fmt(x.total)+'"></div></div>';
     }).join('');
     $('weeklyStatsLabels').innerHTML=weeks.map(function(x){
-      var d=dateObj(x.start);
-      return '<div class="weekly-label">'+d.getDate()+'.'+String(d.getMonth()+1).padStart(2,'0')+'</div>';
+      var a=dateObj(x.start),b=dateObj(x.end);
+      var am=a.getDate()+'.'+String(a.getMonth()+1).padStart(2,'0');
+      var bm=b.getDate()+'.'+String(b.getMonth()+1).padStart(2,'0');
+      return '<div class="weekly-label">'+am+'–<br><span class="weekly-label-range">'+bm+'</span></div>';
     }).join('');
 
     var donut=typeDonutData(stats.byType,total);
@@ -1816,6 +1855,42 @@ body.sheet-open{
     $('monthCalendar').innerHTML=html;
   }
 
+  function positionChartHoverNote(day){
+    var note=$('chartDayHoverNote');if(!note||!day)return;
+    if(note.parentNode!==day)day.appendChild(note);
+    var rect=day.getBoundingClientRect(),pad=12;
+    note.classList.remove('below');
+    note.style.setProperty('--tip-shift','0px');
+    note.classList.add('active');
+    var nr=note.getBoundingClientRect();
+    var center=rect.left+rect.width/2,minCenter=pad+nr.width/2,maxCenter=window.innerWidth-pad-nr.width/2;
+    var shift=Math.max(-rect.width/2,Math.min(rect.width/2,Math.max(minCenter,Math.min(maxCenter,center))-center));
+    note.style.setProperty('--tip-shift',Math.round(shift)+'px');
+    if(rect.top<nr.height+24)note.classList.add('below');
+  }
+
+  var chartHoverDay=null,chartHoverTimer=0;
+  $('weekChart').addEventListener('mouseover',function(e){
+    var day=e.target.closest('[data-chart-date]');
+    if(!day||day===chartHoverDay||!day.querySelector('.bar:not([style*="display: none"])'))return;
+    var date=day.getAttribute('data-chart-date'),stats=getStats();
+    if(!(stats.byDate[date]||0))return;
+    clearTimeout(chartHoverTimer);
+    chartHoverDay=day;
+    chartHoverTimer=setTimeout(function(){
+      if(chartHoverDay!==day)return;
+      $('chartDayHoverNote').textContent=calendarTooltip(date,stats);
+      positionChartHoverNote(day);
+    },550);
+  });
+  $('weekChart').addEventListener('mouseout',function(e){
+    var next=e.relatedTarget&&e.relatedTarget.closest?e.relatedTarget.closest('[data-chart-date]'):null;
+    if(next===chartHoverDay)return;
+    clearTimeout(chartHoverTimer);
+    chartHoverDay=null;
+    $('chartDayHoverNote').classList.remove('active','below');
+  });
+
   var calendarHoverCell=null,calendarHoverTimer=0;
   $('monthCalendar').addEventListener('mouseover',function(e){
     var cell=e.target.closest('[data-calendar-date]');
@@ -1837,6 +1912,8 @@ body.sheet-open{
   });
 
   function renderToday(){
+    var note=$('chartDayHoverNote');
+    if(note&&note.parentNode!==$('weekChart'))$('weekChart').appendChild(note);
     updateHeader();
     renderChart();
     renderMainStats();
