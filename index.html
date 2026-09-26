@@ -41,6 +41,10 @@ html,body{
   -webkit-font-smoothing:antialiased;
 }
 body{min-height:100vh;overflow-x:hidden}
+.chart-card,.stats-section{contain:layout paint}
+@media (hover:none){
+  .record-button:hover,.bar:hover,.quick:hover,.option:hover,.cal-day:hover{filter:none;transform:none}
+}
 body::before{
   content:"";
   position:fixed;
@@ -49,7 +53,6 @@ body::before{
   background:
     radial-gradient(circle at 18% 78%, rgba(255,110,169,.10), transparent 24%),
     radial-gradient(circle at 72% 35%, rgba(83,106,255,.08), transparent 26%);
-  filter:blur(26px);
   opacity:.9;
 }
 button,input{font:inherit}
@@ -91,7 +94,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 8px 24px rgba(53,61,105,.10);
   backdrop-filter:blur(18px) saturate(145%);
   -webkit-backdrop-filter:blur(18px) saturate(145%);
-  transition:transform .16s ease,background .16s ease,color .16s ease,box-shadow .16s ease
+  transition:transform .14s ease, color .14s ease
 }
 .record-button:hover{
   background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(255,255,255,.58));
@@ -113,8 +116,8 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
     inset -1px 0 0 rgba(80,198,255,.12),
     inset 0 1px 0 rgba(255,255,255,.96),
     0 20px 55px rgba(38,47,87,.12);
-  backdrop-filter:blur(24px) saturate(150%);
-  -webkit-backdrop-filter:blur(24px) saturate(150%);
+  /* Glass appearance is simulated with translucency/highlights here.
+     The full-page blur is intentionally reserved for the modal scrim. */
 }
 .chart-card::before{
   content:"";
@@ -155,7 +158,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
     0 7px 14px rgba(76,83,230,.22),
     -1px 0 0 rgba(255,89,171,.20),
     1px 0 0 rgba(66,202,255,.22);
-  transition:height .22s ease,transform .18s ease,filter .18s ease
+  transition:transform .14s ease
 }
 .bar.muted{opacity:.76}
 .bar.today{
@@ -165,7 +168,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
     -1px 0 0 rgba(255,93,177,.35),
     1px 0 0 rgba(67,207,255,.30)
 }
-.bar:hover{transform:translateY(-2px);filter:saturate(1.1)}
+.bar:hover{transform:translateY(-2px)}
 .chart-labels{
   position:absolute;
   left:4px;right:4px;bottom:0;
@@ -184,8 +187,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   background:linear-gradient(150deg,rgba(255,255,255,.62),rgba(255,255,255,.40));
   border:1px solid rgba(255,255,255,.76);
   box-shadow:var(--shadow-soft),inset 0 1px 0 rgba(255,255,255,.9);
-  backdrop-filter:blur(18px) saturate(135%);
-  -webkit-backdrop-filter:blur(18px) saturate(135%)
+
 }
 .stat-card.wide{grid-column:1/-1}
 .stat-label{font-size:12px;color:var(--muted);font-weight:400}
@@ -221,8 +223,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   border-radius:17px;
   background:linear-gradient(150deg,rgba(255,255,255,.55),rgba(255,255,255,.32));
   box-shadow:var(--shadow-soft),inset 0 1px 0 rgba(255,255,255,.88);
-  backdrop-filter:blur(15px);
-  -webkit-backdrop-filter:blur(15px)
+
 }
 .insight-mark{width:6px;height:6px;flex:none;margin-top:6px;border-radius:50%;background:linear-gradient(135deg,#5a61ff,#52cbff)}
 .insight-text{font-size:12px;line-height:1.45;color:var(--ink)}
@@ -241,8 +242,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   border:1px solid rgba(255,255,255,.75);
   border-radius:16px;
   background:rgba(244,246,251,.55);
-  backdrop-filter:blur(24px) saturate(150%);
-  -webkit-backdrop-filter:blur(24px) saturate(150%);
+
   box-shadow:0 14px 38px rgba(35,42,77,.14),inset 0 1px 0 rgba(255,255,255,.9);
   z-index:40
 }
@@ -254,7 +254,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   font-weight:400;
   padding:7px 11px;
   border-radius:11px;
-  transition:.16s
+  transition:transform .12s ease,opacity .12s ease,background-color .12s ease
 }
 .mobile-tab.active{
   color:var(--ink);
@@ -288,8 +288,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
     inset 1px 0 0 rgba(255,95,167,.12),
     inset -1px 0 0 rgba(58,207,255,.14),
     inset 0 1px 0 rgba(255,255,255,.98);
-  backdrop-filter:blur(30px) saturate(155%);
-  -webkit-backdrop-filter:blur(30px) saturate(155%)
+
 }
 .sheet::before{
   content:"";
@@ -345,6 +344,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .color-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
 
 .popover{
+  contain:layout paint;
   position:absolute;
   left:0;right:0;
   top:calc(100% + 8px);
@@ -352,8 +352,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   background:rgba(252,252,253,.96);
   border-radius:17px;
   box-shadow:0 18px 42px rgba(29,34,60,.14),inset 0 1px 0 rgba(255,255,255,.98);
-  backdrop-filter:blur(22px) saturate(145%);
-  -webkit-backdrop-filter:blur(22px) saturate(145%);
+
   overflow:hidden;
   z-index:150;
   max-height:290px;
@@ -390,6 +389,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .option.selected{background:rgba(225,228,255,.88);color:var(--blue-deep);font-weight:600}
 
 .calendar{
+  contain:layout paint;
   position:absolute;
   left:0;right:0;
   top:calc(100% + 8px);
@@ -449,6 +449,9 @@ body.sheet-open{overflow:hidden}
   .sheet-title{font-size:27px}
   .row-two{gap:14px}
   .cal-day{height:30px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
 }
 @media(max-height:760px){
   .record-button{margin-top:70px}
@@ -633,6 +636,8 @@ body.sheet-open{overflow:hidden}
   var chosenHabit=habits[0]?habits[0].id:'';
   var chosenType='active';
   var chosenColor='yellow';
+  var statsCache=null;
+  var domCache={};
 
   function $(id){return document.getElementById(id)}
   function uid(){return 'id-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,9)}
@@ -679,8 +684,27 @@ body.sheet-open{overflow:hidden}
     return (Math.round((minutes/60)*10)/10)+' ч';
   }
 
+  function invalidateStats(){statsCache=null}
+
+  function getStats(){
+    if(statsCache)return statsCache;
+    var byHabit={},byDate={},byType={},total=0,sessionCount=0;
+    for(var i=0;i<entries.length;i++){
+      var e=entries[i];
+      var minutes=Number(e.minutes)||0;
+      total+=minutes;
+      sessionCount++;
+      byDate[e.date]=(byDate[e.date]||0)+minutes;
+      byHabit[e.habitId]=(byHabit[e.habitId]||0)+minutes;
+      byType[e.type||'active']=(byType[e.type||'active']||0)+minutes;
+    }
+    var activeDays=Object.keys(byDate).length;
+    statsCache={byHabit:byHabit,byDate:byDate,byType:byType,total:total,sessionCount:sessionCount,activeDays:activeDays};
+    return statsCache;
+  }
+
   function dayTotal(date){
-    return entries.filter(function(e){return e.date===date}).reduce(function(s,e){return s+e.minutes},0);
+    return getStats().byDate[date]||0;
   }
 
   function weekDates(end){
@@ -692,8 +716,9 @@ body.sheet-open{overflow:hidden}
   }
 
   function allTotals(){
+    var stats=getStats();
     return habits.map(function(h){
-      return {habit:h,total:entries.filter(function(e){return e.habitId===h.id}).reduce(function(s,e){return s+e.minutes},0)};
+      return {habit:h,total:stats.byHabit[h.id]||0};
     }).sort(function(a,b){return b.total-a.total});
   }
 
@@ -744,10 +769,11 @@ body.sheet-open{overflow:hidden}
   }
 
   function renderMainStats(){
+    var stats=getStats();
     var today=dayTotal(currentDate);
-    var todaySessions=entries.filter(function(e){return e.date===currentDate}).length;
-    var total=entries.reduce(function(s,e){return s+e.minutes},0);
-    var average=entries.length?Math.round(total/entries.length):0;
+    var todaySessions=entries.reduce(function(n,e){return n+(e.date===currentDate?1:0)},0);
+    var total=stats.total;
+    var average=stats.sessionCount?Math.round(total/stats.sessionCount):0;
     var totals=allTotals(),top=totals[0];
 
     $('todayTotal').textContent=fmt(today);
@@ -763,21 +789,23 @@ body.sheet-open{overflow:hidden}
     }).join('')||'<div class="break-row"><div class="break-name">Нет привычек</div><div class="break-value">—</div></div>';
 
     var monthPrefix=currentDate.slice(0,7);
-    var monthActive=new Set(entries.filter(function(e){return e.date.slice(0,7)===monthPrefix}).map(function(e){return e.date})).size;
+    var monthActive=Object.keys(stats.byDate).reduce(function(n,d){return n+(d.slice(0,7)===monthPrefix?1:0)},0);
     var weekTotal=weekDates(currentDate).reduce(function(s,d){return s+dayTotal(d)},0);
     var insights=[];
     if(weekTotal)insights.push('За эту неделю накоплено <b>'+fmt(weekTotal)+'</b>.');
     if(monthActive)insights.push('В этом месяце активность была <b>'+monthActive+' '+(monthActive===1?'день':'дней')+'</b>.');
-    if(entries.length>1){
-      var longest=Math.max.apply(Math,entries.map(function(e){return e.minutes}));
+    if(stats.sessionCount>1){
+      var longest=0;
+      for(var li=0;li<entries.length;li++)longest=Math.max(longest,Number(entries[li].minutes)||0);
       insights.push('Самое длинное занятие — <b>'+fmt(longest)+'</b>.');
     }
     $('insights').innerHTML=insights.map(function(t){return '<div class="insight"><span class="insight-mark"></span><div class="insight-text">'+t+'</div></div>'}).join('');
   }
 
   function renderStats(){
-    var total=entries.reduce(function(s,e){return s+e.minutes},0);
-    var active=new Set(entries.map(function(e){return e.date})).size;
+    var stats=getStats();
+    var total=stats.total;
+    var active=stats.activeDays;
     $('allTotal').textContent=fmt(total);
     $('activeDays').textContent=active;
     $('avgDay').textContent=fmt(active?total/active:0);
@@ -802,9 +830,13 @@ body.sheet-open{overflow:hidden}
   }
 
   function closeMenus(){
-    document.querySelectorAll('.popover').forEach(function(p){p.hidden=true});
+    $('habitPopover').hidden=true;
+    $('typePopover').hidden=true;
+    $('colorPopover').hidden=true;
     $('calendar').hidden=true;
-    document.querySelectorAll('.custom-select').forEach(function(b){b.classList.remove('open')});
+    $('habitButton').classList.remove('open');
+    $('typeButton').classList.remove('open');
+    $('colorButton').classList.remove('open');
   }
 
   function showMenu(id,buttonId){
@@ -812,6 +844,8 @@ body.sheet-open{overflow:hidden}
     var willOpen=menu.hidden;
     closeMenus();
     if(willOpen){
+      // Rebuild only when the menu actually opens.
+      populateMenus();
       menu.hidden=false;
       if(buttonId)$(buttonId).classList.add('open');
     }
@@ -839,7 +873,6 @@ body.sheet-open{overflow:hidden}
     $('typeButtonText').textContent=type.label;
     $('colorButtonText').textContent=color.label;
     $('colorDot').style.background=color.color;
-    populateMenus();
   }
 
   function populateMenus(){
@@ -896,7 +929,6 @@ body.sheet-open{overflow:hidden}
     calendarDate=currentDate;
     applySelection(chosenHabit,chosenType,chosenColor);
     $('dateButtonText').textContent=formatFullDate(currentDate);
-    renderCalendar();
     closeMenus();
     $('sheet').hidden=false;
     document.body.classList.add('sheet-open');
@@ -953,6 +985,7 @@ body.sheet-open{overflow:hidden}
 
     currentDate=calendarDate||currentDate;
     if(!persist()){entries.pop();showToast('Не удалось сохранить данные');return}
+    invalidateStats();
     closeSheet();render();showToast('Запись сохранена');
   }
 
@@ -960,7 +993,7 @@ body.sheet-open{overflow:hidden}
     var name=prompt('Название привычки');
     if(!name||!name.trim())return;
     habits.push({id:uid(),name:name.trim(),goal:30});
-    persist();render();showToast('Привычка добавлена');
+    persist();invalidateStats();render();showToast('Привычка добавлена');
   }
 
   document.getElementById('openSheet').onclick=openSheet;
@@ -1015,7 +1048,7 @@ body.sheet-open{overflow:hidden}
     var c=COLOR_OPTIONS.find(function(x){return x.id===chosenColor});
     $('colorButtonText').textContent=c.label;
     $('colorDot').style.background=c.color;
-    populateMenus();closeMenus();
+    closeMenus();
   };
 
   document.getElementById('dateButton').onclick=function(){
@@ -1060,7 +1093,7 @@ body.sheet-open{overflow:hidden}
       if(habit&&confirm('Удалить «'+habit.name+'» и все записи этой привычки?')){
         habits=habits.filter(function(h){return h.id!==id});
         entries=entries.filter(function(x){return x.habitId!==id});
-        persist();render();showToast('Привычка удалена');
+        persist();invalidateStats();render();showToast('Привычка удалена');
       }
     }
   });
