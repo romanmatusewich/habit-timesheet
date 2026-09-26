@@ -494,8 +494,10 @@ body.sheet-open{
 .calendar-color-stack{display:flex;gap:3px;align-items:center;margin-top:9px;min-height:5px}
 .calendar-color-segment{height:5px;border-radius:999px;min-width:4px;flex:1}
 .calendar-hover-note{
-  position:fixed;
+  position:absolute;
   z-index:520;
+  left:50%;
+  bottom:calc(100% + 8px);
   width:min(270px,calc(100vw - 28px));
   padding:12px 13px;
   border-radius:15px;
@@ -508,11 +510,11 @@ body.sheet-open{
   pointer-events:none;
   opacity:0;
   visibility:hidden;
-  transform:translateY(7px) scale(.985);
+  transform:translateX(calc(-50% + var(--tip-shift,0px))) translateY(7px) scale(.985);
   transition:opacity .16s ease,transform .16s ease
 }
-.calendar-hover-note.active{opacity:1;visibility:visible;transform:translateY(0) scale(1)}
-.calendar-hover-note.active{opacity:1;visibility:visible;transform:translateY(0)}
+.calendar-hover-note.active{opacity:1;visibility:visible;transform:translateX(calc(-50% + var(--tip-shift,0px))) translateY(0) scale(1)}
+.calendar-hover-note.below{top:calc(100% + 8px);bottom:auto}
 @media (hover:hover){.calendar-cell:hover{transform:translateY(-1px);background:rgba(255,255,255,.78)}}
 @media(max-width:560px){.calendar-cell{min-height:66px;padding:7px 5px}.calendar-color-stack{margin-top:7px}.calendar-view-sub{font-size:10px}}
 .secondary-action{border:1px solid rgba(255,255,255,.74);background:rgba(255,255,255,.50);border-radius:12px;padding:9px 12px;font-weight:500;color:var(--ink)}
@@ -595,7 +597,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.26</div>
+<div class="app-version" aria-label="Версия">v0.3.27</div>
 
 <main class="shell">
   <header class="top">
@@ -1017,6 +1019,83 @@ body.sheet-open{
     return backupToLocalStorage();
   }
 
+  function findHabitByIdOrName(id,name){
+    var byId=habits.find(function(h){return h.id===id});
+    if(byId)return byId;
+    var target=(name||'').toLowerCase();
+    return habits.find(function(h){return (h.name||'').toLowerCase()===target})||null;
+  }
+
+  function ensureHabit(id,name){
+    var existing=findHabitByIdOrName(id,name);
+    if(existing)return existing;
+    var habit={id:id,name:name,goal:30};
+    habits.push(habit);
+    return habit;
+  }
+
+  function splitMinutes(total,weights){
+    var n=Math.max(0,Math.round(Number(total)||0)),a=Math.floor(n*weights[0]),b=Math.floor(n*weights[1]),c=n-a-b;
+    return [a,b,c];
+  }
+
+  async function runTrainingAllocationMigration(){
+    var markerKey='habit-timesheet-training-allocation-v1';
+    var done=false;
+    try{
+      if(storageMode==='indexeddb'&&db){
+        var meta=await idbGetMeta(markerKey);
+        done=!!(meta&&meta.value===true);
+      }else done=localStorage.getItem(markerKey)==='1';
+    }catch(e){done=false}
+    if(done)return false;
+
+    var training=ensureHabit('training','Тренинг');
+    var readAloud=ensureHabit('reading-aloud','Чтение вслух');
+    var accounting=findHabitByIdOrName('accounting','бухгалтерия');
+    var reading=findHabitByIdOrName('reading','чтение');
+
+    var changed=false,newEntries=[];
+    var start='2026-09-01',splitDate='2026-09-14',end='2026-09-24';
+
+    for(var i=entries.length-1;i>=0;i--){
+      var e=entries[i];
+      if(e.habitId!==IMPORT_SUMMARY_HABIT.id||String(e.date)<start||String(e.date)>=end)continue;
+      var total=Math.max(0,Math.round(Number(e.minutes)||0));
+      if(String(e.date)>=splitDate){
+        var train=Math.round(total*.80),keep=total-train;
+        if(train>0)newEntries.push({id:uid(),habitId:training.id,date:e.date,minutes:train,note:'Распределено из импорта Google Таблиц',type:'active',color:'purple'});
+        if(keep>0){e.minutes=keep;changed=true}else{entries.splice(i,1);changed=true}
+      }else{
+        var parts=splitMinutes(total,[.70,.20,.10]);
+        var targets=[reading,accounting,readAloud],types=[{type:'reading',color:'yellow'},{type:'active',color:'blue'},{type:'reading',color:'purple'}];
+        entries.splice(i,1);
+        changed=true;
+        for(var j=0;j<3;j++)if(targets[j]&&parts[j]>0){
+          newEntries.push({id:j===0?e.id:uid(),habitId:targets[j].id,date:e.date,minutes:parts[j],note:'Распределено из импорта Google Таблиц',type:types[j].type,color:types[j].color});
+        }
+      }
+    }
+
+    if(newEntries.length)entries=entries.concat(newEntries);
+    if(changed||habits.some(function(h){return h.id===training.id||h.id===readAloud.id})){
+      invalidateDataCaches();
+      persistAll();
+    }
+
+    try{
+      if(storageMode==='indexeddb'&&db){
+        await idbRequest(db.transaction(IDB_META,'readwrite').objectStore(IDB_META).put({key:markerKey,value:true}));
+      }else localStorage.setItem(markerKey,'1');
+    }catch(e){}
+    if(changed){
+      showToast('Данные за сентябрь распределены по привычкам');
+      return true;
+    }
+    return false;
+  }
+
+
   function deleteEntryFromStorage(id){
     localMutationEpoch++;
     if(storageMode==='indexeddb'){
@@ -1076,6 +1155,8 @@ body.sheet-open{
     }
     habits=normalizeStoredHabits(idbHabits);
     entries=normalizeStoredEntries(idbEntries);
+    storageMode='indexeddb';
+    await runTrainingAllocationMigration();
     invalidateDataCaches();
     menusDirty=true;
     entryRenderLimit=Math.min(entryRenderLimit,Math.max(60,entries.length));
@@ -1113,6 +1194,7 @@ body.sheet-open{
 
       storageMode='indexeddb';
 
+      await runTrainingAllocationMigration();
       scheduleLocalBackup();
       window.__STORAGE_READY=true;
     }catch(e){
@@ -1524,16 +1606,22 @@ body.sheet-open{
 
   function positionCalendarHoverNote(cell){
     var note=$('calendarHoverNote');if(!note||!cell)return;
-    var rect=cell.getBoundingClientRect(),pad=12,gap=8;
-    note.style.left='0px';note.style.top='0px';note.classList.add('active');
+    if(note.parentNode!==cell)cell.appendChild(note);
+    var rect=cell.getBoundingClientRect(),pad=12;
+    note.classList.remove('below');
+    note.style.setProperty('--tip-shift','0px');
+    note.classList.add('active');
     var nr=note.getBoundingClientRect();
-    var left=Math.min(Math.max(pad,rect.left+(rect.width-nr.width)/2),window.innerWidth-pad-nr.width);
-    var top=rect.top-gap-nr.height;
-    if(top<pad)top=Math.min(window.innerHeight-pad-nr.height,rect.bottom+gap);
-    note.style.left=Math.round(left)+'px';note.style.top=Math.round(Math.max(pad,top))+'px';
+    var center=rect.left+rect.width/2,minCenter=pad+nr.width/2,maxCenter=window.innerWidth-pad-nr.width/2;
+    var shift=Math.max(-rect.width/2,Math.min(rect.width/2,Math.max(minCenter,Math.min(maxCenter,center))-center));
+    note.style.setProperty('--tip-shift',Math.round(shift)+'px');
+    if(rect.top<nr.height+24)note.classList.add('below');
   }
 
   function renderCalendarView(){
+    var note=$('calendarHoverNote');
+    if(note&&note.parentNode!==$('monthCalendar'))$('monthCalendar').appendChild(note);
+    note&&note.classList.remove('active','below');
     var d=dateObj(calendarViewDate),year=d.getFullYear(),month=d.getMonth();
     var first=new Date(year,month,1),firstDay=(first.getDay()+6)%7,daysInMonth=new Date(year,month+1,0).getDate(),prevDays=new Date(year,month,0).getDate();
     var stats=getStats(),names=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'],html='';
@@ -1666,6 +1754,7 @@ body.sheet-open{
   function presetForHabit(habitName){
     var n=(habitName||'').toLowerCase();
     if(n.indexOf('спорт')>=0)return {type:'sport',color:'green'};
+    if(n.indexOf('чтени вслух')>=0)return {type:'reading',color:'purple'};
     if(n.indexOf('чтени')>=0)return {type:'reading',color:'yellow'};
     if(n.indexOf('бухгалтер')>=0)return {type:'active',color:'blue'};
     if(n.indexOf('дикци')>=0||n.indexOf('реч')>=0)return {type:'active',color:'purple'};
