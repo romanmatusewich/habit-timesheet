@@ -632,7 +632,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.32</div>
+<div class="app-version" aria-label="Версия">v0.3.33</div>
 
 <main class="shell">
   <header class="top">
@@ -1850,7 +1850,8 @@ body.sheet-open{
         stack+='<span class="calendar-color-segment" style="background:'+COLOR_BY_ID[colorId]+';flex:'+Math.max(.15,ratio)+'"></span>';
       }
       var cls='calendar-cell'+(muted?' muted':'')+(total?' has-data':'')+(date===today?' today':'');
-      html+='<div class="'+cls+'" data-calendar-date="'+date+'" data-calendar-tooltip="'+clean(calendarTooltip(date,stats))+'"><div class="calendar-day-number">'+day+'</div><div class="calendar-day-total">'+(total?fmt(total):'')+'</div><div class="calendar-color-stack">'+stack+'</div></div>';
+      var tooltipAttr=total?' data-calendar-tooltip="'+clean(calendarTooltip(date,stats))+'"':'';
+      html+='<div class="'+cls+'" data-calendar-date="'+date+'"'+tooltipAttr+'><div class="calendar-day-number">'+day+'</div><div class="calendar-day-total">'+(total?fmt(total):'')+'</div><div class="calendar-color-stack">'+stack+'</div></div>';
     }
     $('monthCalendar').innerHTML=html;
   }
@@ -1895,6 +1896,8 @@ body.sheet-open{
   $('monthCalendar').addEventListener('mouseover',function(e){
     var cell=e.target.closest('[data-calendar-date]');
     if(!cell||cell===calendarHoverCell)return;
+    var hoverDate=cell.getAttribute('data-calendar-date');
+    if(!(getStats().byDate[hoverDate]||0))return;
     clearTimeout(calendarHoverTimer);
     calendarHoverCell=cell;
     calendarHoverTimer=setTimeout(function(){
