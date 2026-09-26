@@ -718,6 +718,7 @@ body.sheet-open{
           <div class="calendar-view-sub" id="calendarRangeLabel"></div>
         </div>
         <div class="calendar-view-nav">
+          <select class="calendar-filter" id="calendarFilter" aria-label="Фильтр календаря"><option value="*">Все привычки</option></select><button class="calendar-nav-btn" id="calendarToday" type="button">Сегодня</button>
           <button class="calendar-nav-btn" id="calendarPrevMonth" type="button" aria-label="Предыдущий месяц">‹</button>
           <button class="calendar-nav-btn" id="calendarNextMonth" type="button" aria-label="Следующий месяц">›</button>
         </div>
@@ -927,6 +928,7 @@ body.sheet-open{
   var nodeCache={};
   var renderCache={habitBreakdownHTML:null,statsBreakdownHTML:null,habitBreakdownMax:0};
   var calendarViewDate=currentDate;
+  var calendarFilterHabitId='*';
   var domCache={
     views:document.querySelectorAll('.view'),
     navs:document.querySelectorAll('[data-view]')
@@ -1656,6 +1658,23 @@ body.sheet-open{
     if(rect.top<nr.height+24)note.classList.add('below');
   }
 
+  function calendarDateData(date,stats){
+    if(calendarFilterHabitId==='*')return {total:stats.byDate[date]||0,colorTotals:stats.byDateColor[date]||{}};
+    var total=(stats.byDateHabit[date]&&stats.byDateHabit[date][calendarFilterHabitId])||0;
+    var habit=habits.find(function(h){return h.id===calendarFilterHabitId}),colorId=habit&&habit.defaultColor?habit.defaultColor:'blue';
+    return {total:total,colorTotals:total?{[colorId]:total}:{}};
+  }
+
+  function calendarTooltipFiltered(date,stats){
+    var data=calendarDateData(date,stats),lines=[formatFullDate(date)+' · '+fmt(data.total)];
+    if(calendarFilterHabitId==='*'){
+      return calendarTooltip(date,stats);
+    }
+    var habit=habits.find(function(h){return h.id===calendarFilterHabitId});
+    if(habit&&data.total)lines.push(habit.name+': '+fmt(data.total));
+    return lines.join('\\n');
+  }
+
   function renderCalendarView(){
     var note=$('calendarHoverNote');
     if(note&&note.parentNode!==$('monthCalendar'))$('monthCalendar').appendChild(note);
@@ -1663,7 +1682,10 @@ body.sheet-open{
     var d=dateObj(calendarViewDate),year=d.getFullYear(),month=d.getMonth();
     var first=new Date(year,month,1),firstDay=(first.getDay()+6)%7,daysInMonth=new Date(year,month+1,0).getDate(),prevDays=new Date(year,month,0).getDate();
     var stats=getStats(),names=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'],html='';
-    $('calendarRangeLabel').textContent=monthLabel(calendarViewDate);
+    var filter=$('calendarFilter');
+    if(filter){filter.innerHTML='<option value="*">Все привычки</option>'+habits.map(function(h){return '<option value="'+clean(h.id)+'">'+clean(h.name)+'</option>';}).join('');filter.value=calendarFilterHabitId;}
+    var selectedHabit=habits.find(function(h){return h.id===calendarFilterHabitId});
+    $('calendarRangeLabel').textContent=monthLabel(calendarViewDate)+(selectedHabit?' · '+clean(selectedHabit.name):'');
     for(var w=0;w<7;w++)html+='<div class="calendar-weekday">'+names[w]+'</div>';
 
     var today=localDate(new Date());
@@ -1672,7 +1694,7 @@ body.sheet-open{
       if(i<firstDay){day=prevDays-firstDay+i+1;muted=true;date=localDate(new Date(year,month-1,day))}
       else if(i<firstDay+daysInMonth){day=i-firstDay+1;muted=false;date=localDate(new Date(year,month,day))}
       else{day=i-firstDay-daysInMonth+1;muted=true;date=localDate(new Date(year,month+1,day))}
-      var total=stats.byDate[date]||0,colorTotals=stats.byDateColor[date]||{};
+      var data=calendarDateData(date,stats),total=data.total,colorTotals=data.colorTotals;
       var colors=Object.keys(colorTotals).filter(function(id){return colorTotals[id]>0&&COLOR_BY_ID[id]}).sort(function(a,b){return colorTotals[b]-colorTotals[a]});
       var stack='';
       for(var c=0;c<colors.length&&c<5;c++){
@@ -1680,7 +1702,7 @@ body.sheet-open{
         stack+='<span class="calendar-color-segment" style="background:'+COLOR_BY_ID[colorId]+';flex:'+Math.max(.15,ratio)+'"></span>';
       }
       var cls='calendar-cell'+(muted?' muted':'')+(total?' has-data':'')+(date===today?' today':'');
-      var tooltipAttr=total?' data-calendar-tooltip="'+clean(calendarTooltip(date,stats))+'"':'';
+      var tooltipAttr=total?' data-calendar-tooltip="'+clean(calendarTooltipFiltered(date,stats))+'"':'';
       html+='<div class="'+cls+'" data-calendar-date="'+date+'"'+tooltipAttr+'><div class="calendar-day-number">'+day+'</div><div class="calendar-day-total">'+(total?fmt(total):'')+'</div><div class="calendar-color-stack">'+stack+'</div></div>';
     }
     $('monthCalendar').innerHTML=html;
@@ -1727,7 +1749,7 @@ body.sheet-open{
     var cell=e.target.closest('[data-calendar-date]');
     if(!cell||cell===calendarHoverCell)return;
     var hoverDate=cell.getAttribute('data-calendar-date');
-    if(!(getStats().byDate[hoverDate]||0))return;
+    if(!calendarDateData(hoverDate,getStats()).total)return;
     clearTimeout(calendarHoverTimer);
     calendarHoverCell=cell;
     calendarHoverTimer=setTimeout(function(){
@@ -2275,6 +2297,8 @@ body.sheet-open{
   document.getElementById('calendarNextMonth').onclick=function(){
     var d=dateObj(calendarViewDate);d.setDate(1);d.setMonth(d.getMonth()+1);calendarViewDate=localDate(d);renderCalendarView();
   };
+  document.getElementById('calendarToday').onclick=function(){calendarViewDate=localDate(new Date());renderCalendarView();};
+  document.getElementById('calendarFilter').onchange=function(e){calendarFilterHabitId=e.target.value||'*';renderCalendarView();};
 
   document.getElementById('sheet').addEventListener('click',function(e){
     if(e.target===this)closeSheet();
