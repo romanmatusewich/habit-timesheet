@@ -508,7 +508,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.0</div>
+<div class="app-version" aria-label="Версия">v0.3.12</div>
 
 <main class="shell">
   <header class="top">
@@ -642,7 +642,7 @@ body.sheet-open{
 
   var HABITS_KEY='habit-timesheet-habits';
   var ENTRIES_KEY='habit-timesheet-entries';
-  var PERF_MODE=window.location.search.indexOf('perf=1')>=0;
+  var PERF_MODE=window.__PERF_MODE===true||window.location.search.indexOf('perf=1')>=0;
   var IDB_NAME='habit-timesheet-db'+(PERF_MODE?'-perf':'');
   var IDB_VERSION=1;
   var IDB_HABITS='habits';
@@ -1632,8 +1632,11 @@ body.sheet-open{
     };
   });
 
+  window.__APP_READY=false;
   render();
-  initIndexedDB();
+  initIndexedDB().then(function(){
+    window.__APP_READY=true;
+  });
 })();
 </script>
 </body>
