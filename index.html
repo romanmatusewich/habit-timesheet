@@ -508,7 +508,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.14</div>
+<div class="app-version" aria-label="Версия">v0.3.15</div>
 
 <main class="shell">
   <header class="top">
@@ -922,6 +922,7 @@ body.sheet-open{
     menusDirty=true;
     entryRenderLimit=Math.min(entryRenderLimit,Math.max(60,entries.length));
     renderActiveView();
+    scheduleMenuWarmup();
   }
 
   function scheduleIndexedDBReconcile(){
@@ -953,6 +954,7 @@ body.sheet-open{
       }
 
       storageMode='indexeddb';
+      scheduleMenuWarmup();
       scheduleLocalBackup();
       window.__STORAGE_READY=true;
     }catch(e){
@@ -1291,6 +1293,25 @@ body.sheet-open{
     $('colorButton').classList.remove('open');
   }
 
+  var menuWarmupScheduled=false;
+
+  function scheduleMenuWarmup(){
+    if(menuWarmupScheduled||!menusDirty)return;
+    menuWarmupScheduled=true;
+    var run=function(){
+      menuWarmupScheduled=false;
+      if(!menusDirty)return;
+      populateMenus();
+      menusDirty=false;
+      syncMenuSelection();
+    };
+    if(typeof requestIdleCallback==='function'){
+      requestIdleCallback(run,{timeout:1500});
+    }else{
+      setTimeout(run,180);
+    }
+  }
+
   function syncMenuSelection(){
     var habitOptions=menuOptionCache.habit;
     var typeOptions=menuOptionCache.type;
@@ -1407,6 +1428,7 @@ body.sheet-open{
 
   function openSheet(){
     if(!habits.length){showToast('Сначала добавь привычку');return}
+    scheduleMenuWarmup();
     chosenHabit=habits[0].id;
     chosenType='active';
     chosenColor='blue';
@@ -1686,6 +1708,7 @@ body.sheet-open{
   });
 
   render();
+  scheduleMenuWarmup();
   window.__APP_READY=true;
   window.__STORAGE_READY=false;
   initIndexedDB();
