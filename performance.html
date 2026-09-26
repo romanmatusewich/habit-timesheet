@@ -30,14 +30,14 @@ th{font-size:11px;color:#757a89;font-weight:600}
 <body>
 <main>
   <h1>Performance Lab</h1>
-  <p class="lead">Реальный браузерный A/B-тест: одна и та же машина, одинаковые синтетические данные, одинаковый способ загрузки, три повтора на каждом наборе. Сравнивается baseline <b>v0.3.11</b> (до IndexedDB, commit f6338efdc1ec) с текущей <b>v0.3.12</b> (IndexedDB). Замеры выполняются через High Resolution Time API и кадры браузера; это не Lighthouse и не теоретический расчёт.</p>
+  <p class="lead">Реальный браузерный A/B-тест на одном устройстве: одинаковые синтетические данные, одинаковый iframe, три повтора на каждом наборе. Baseline фиксирован commit <b>f6338efdc1ec686ba5a7bd16e2416a69f065801f</b>; текущая версия определяется автоматически по номеру версии приложения.</p>
 
   <section class="card">
     <div class="row">
       <button id="run" type="button">Запустить полный тест</button>
       <button id="clear" type="button">Очистить результаты</button>
     </div>
-    <div id="status">Готово. Тест безопасен: исходные localStorage-данные восстанавливаются после завершения.</div>
+    <div id="status">Готово. Тест безопасен: исходные localStorage-данные восстанавливаются после завершения. Версия приложения и baseline определяются автоматически.</div>
     <div id="results"></div>
     <div class="note"><b>Как читать результаты:</b> «Время до кадра» включает JavaScript и реакцию рендера до следующего кадра; «Макс. кадр» — максимальный интервал между callback requestAnimationFrame во время нагрузки. Composite Performance Index нормирован на baseline = 100: выше 100 — быстрее baseline, ниже 100 — медленнее. «Изменение» — это процент изменения индекса относительно baseline. Это воспроизводимый локальный benchmark, но он не заменяет Chrome DevTools Performance и реальный INP пользователя. <a href="../" target="_blank" rel="noreferrer">Открыть приложение</a></div>
   </section>
@@ -127,73 +127,93 @@ th{font-size:11px;color:#757a89;font-weight:600}
     })
   }
 
-  function waitForReady(win,timeoutMs){
-    var start=performance.now();
-    return new Promise(function(resolve){
-      var timeout=setTimeout(function(){resolve(performance.now()-start)},timeoutMs||5000);
-      function check(){
-        if(win.__APP_READY===true){
-          clearTimeout(timeout);
-          resolve(performance.now()-start);
-          return;
-        }
-        win.requestAnimationFrame(check);
-      }
-      check();
-    });
-  }
-
-  function waitLoad(srcdoc,afterLoad){
-    return new Promise(function(resolve,reject){
-      var t0=performance.now(),done=false;
-      var timeout=setTimeout(function(){
-        if(done)return;
-        done=true;
-        reject(new Error('iframe timeout while loading benchmark app'));
-      },20000);
-
-      function finish(){
-        if(done)return;
-        done=true;
-        clearTimeout(timeout);
-        Promise.resolve(afterLoad()).then(function(){
-          resolve(performance.now()-t0);
-        }).catch(function(error){
-          reject(error);
-        });
-      }
-      runner.onload=finish;
-      runner.onerror=function(){
-        if(done)return;
-        done=true;
-        clearTimeout(timeout);
-        reject(new Error('iframe load error'));
-      };
-      runner.removeAttribute('src');
-      runner.removeAttribute('srcdoc');
-      runner.srcdoc=srcdoc;
-    });
-  }
+  var benchRunId=0;
+  var BASELINE_LABEL='v0.3.11';
+  var CURRENT_LABEL='v0.3.12';
 
   function nextFrame(win,count){
     count=count||1;
     return new Promise(function(resolve){
       var remaining=count;
       function tick(){
-        if(--remaining<=0){resolve();return}
+        remaining--;
+        if(remaining<=0){resolve();return}
         win.requestAnimationFrame(tick);
       }
       win.requestAnimationFrame(tick);
     });
   }
 
+  function waitForReady(win,timeoutMs){
+    timeoutMs=timeoutMs||5000;
+    var started=performance.now();
+    return new Promise(function(resolve){
+      var timer=setInterval(function(){
+        try{
+          if(win.__APP_READY===true){
+            clearInterval(timer);
+            resolve(performance.now()-started);
+          }
+        }catch(e){}
+      },5);
+      setTimeout(function(){
+        clearInterval(timer);
+        resolve(performance.now()-started);
+      },timeoutMs);
+    });
+  }
+
+  function waitLoad(srcdoc,useCurrent,dbSuffix){
+    return new Promise(function(resolve,reject){
+      var t0=performance.now(),done=false;
+      var timeout=setTimeout(function(){
+        if(done)return;
+        done=true;
+        reject(new Error('iframe timeout while loading '+(useCurrent?'current':'baseline')));
+      },20000);
+
+      function fail(message){
+        if(done)return;
+        done=true;
+        clearTimeout(timeout);
+        reject(new Error(message));
+      }
+
+      runner.onload=function(){
+        if(done)return;
+        Promise.resolve().then(async function(){
+          var win=runner.contentWindow;
+          if(useCurrent)await waitForReady(win,6000);
+        }).then(function(){
+          if(done)return;
+          done=true;
+          clearTimeout(timeout);
+          resolve(performance.now()-t0);
+        }).catch(function(error){
+          fail('iframe runtime error: '+(error&&error.message?error.message:String(error)));
+        });
+      };
+      runner.onerror=function(){fail('iframe load error')};
+      runner.removeAttribute('src');
+      runner.removeAttribute('srcdoc');
+
+      var source=srcdoc;
+      if(useCurrent){
+        source=source.replace('<head>','<head><script>window.__PERF_MODE=true;window.__PERF_DB_SUFFIX="'+dbSuffix+'";</script>');
+      }else{
+        source=source.replace('<head>','<head><script>window.__APP_READY=true;</script>');
+      }
+      runner.srcdoc=source;
+    });
+  }
+
   async function measurePaint(win,action){
     await nextFrame(win,2);
-    var t0=performance.now();
+    var start=performance.now();
     action();
-    var sync=performance.now()-t0;
+    var sync=performance.now()-start;
     await nextFrame(win,2);
-    return {sync:sync,paint:performance.now()-t0};
+    return {sync:sync,paint:performance.now()-start};
   }
 
   async function stressFrames(win){
@@ -204,8 +224,8 @@ th{font-size:11px;color:#757a89;font-weight:600}
       doc.querySelector('[data-view="settings"]')
     ].filter(Boolean);
     if(!navs.length)return {max:0,p50:0,longFrames:0,samples:0};
-    var frameTimes=[],running=true,last=null;
 
+    var frameTimes=[],running=true,last=null;
     function frame(now){
       if(last!==null)frameTimes.push(now-last);
       last=now;
@@ -213,20 +233,21 @@ th{font-size:11px;color:#757a89;font-weight:600}
     }
     win.requestAnimationFrame(frame);
 
-    for(var wave=0;wave<12;wave++){
+    for(var wave=0;wave<8;wave++){
       for(var i=0;i<navs.length;i++)navs[i].click();
-      await nextFrame(win,1);
+      await new Promise(function(resolve){setTimeout(resolve,5)});
     }
-
-    await nextFrame(win,3);
+    await new Promise(function(resolve){setTimeout(resolve,100)});
     running=false;
 
-    if(!frameTimes.length)return {max:0,p50:0,longFrames:0,samples:0};
-    frameTimes.sort(function(a,b){return a-b});
-    var max=frameTimes[frameTimes.length-1];
-    var p50=frameTimes[Math.floor(frameTimes.length*0.5)];
-    var longFrames=frameTimes.filter(function(v){return v>50}).length;
-    return {max:max,p50:p50,longFrames:longFrames,samples:frameTimes.length};
+    if(frameTimes.length<2)return {max:0,p50:0,longFrames:0,samples:frameTimes.length};
+    var values=frameTimes.slice(1).sort(function(a,b){return a-b});
+    return {
+      max:values[values.length-1],
+      p50:values[Math.floor(values.length*0.5)],
+      longFrames:values.filter(function(v){return v>50}).length,
+      samples:values.length
+    };
   }
 
   function median(values){
@@ -236,35 +257,21 @@ th{font-size:11px;color:#757a89;font-weight:600}
     return a.length%2?a[mid]:(a[mid-1]+a[mid])/2;
   }
 
-  function warmSourceHTML(html,useCurrent){
-    var source=html;
-    if(useCurrent){
-      source=source.replace('<script>\n(function(){','<script>\nwindow.__PERF_MODE=true;\n(function(){');
-    }else{
-      source=source.replace('</body>','<script>window.__APP_READY=true;</script></body>');
-    }
-    return source;
-  }
-
   async function testVersion(label,html,data,useCurrent){
     var backupHabits=localStorage.getItem('habit-timesheet-habits');
     var backupEntries=localStorage.getItem('habit-timesheet-entries');
     localStorage.setItem('habit-timesheet-habits',json(data.habits));
     localStorage.setItem('habit-timesheet-entries',json(data.entries));
 
+    benchRunId++;
+    var dbSuffix='-run'+benchRunId+'-'+(useCurrent?'current':'baseline');
     try{
-      if(useCurrent)await seedPerfDB(data);
-      var source=warmSourceHTML(html,useCurrent);
-      var loadMs=await waitLoad(source,async function(){
-        var win=runner.contentWindow;
-        var readyWait=useCurrent?await waitForReady(win,5000):0;
-        return readyWait;
-      });
+      var loadMs=await waitLoad(html,useCurrent,dbSuffix);
       var win=runner.contentWindow,doc=runner.contentDocument;
       await nextFrame(win,2);
 
       var open=await measurePaint(win,function(){doc.getElementById('openSheet').click()});
-      var habit=await measurePaint(win,function(){doc.getElementById('habitButton').click()});
+      var menu=await measurePaint(win,function(){doc.getElementById('habitButton').click()});
       var stats=await measurePaint(win,function(){doc.querySelector('[data-view="stats"]').click()});
       var settings=await measurePaint(win,function(){doc.querySelector('[data-view="settings"]').click()});
 
@@ -280,29 +287,18 @@ th{font-size:11px;color:#757a89;font-weight:600}
       var frames=await stressFrames(win);
 
       return {
-        version:label,
-        size:data.entries.length,
-        load:loadMs,
-        menu:habit.paint,
-        menuSync:habit.sync,
-        stats:stats.paint,
-        settings:settings.paint,
-        save:save.paint,
-        maxFrame:frames.max,
-        p50Frame:frames.p50,
-        longFrames:frames.longFrames,
-        frameSamples:frames.samples
+        version:label,size:data.entries.length,load:loadMs,
+        menu:menu.paint,stats:stats.paint,settings:settings.paint,save:save.paint,
+        maxFrame:frames.max,p50Frame:frames.p50,longFrames:frames.longFrames
       };
     }finally{
+      try{runner.src='about:blank';runner.srcdoc='';}catch(e){}
+      await sleep(30);
       localStorage.removeItem('habit-timesheet-habits');
       localStorage.removeItem('habit-timesheet-entries');
       if(backupHabits!==null)localStorage.setItem('habit-timesheet-habits',backupHabits);
       if(backupEntries!==null)localStorage.setItem('habit-timesheet-entries',backupEntries);
       else localStorage.removeItem('habit-timesheet-entries');
-      if(useCurrent)await clearPerfDB();
-      runner.src='about:blank';
-      runner.srcdoc='';
-      await sleep(10);
     }
   }
 
@@ -313,8 +309,7 @@ th{font-size:11px;color:#757a89;font-weight:600}
       runs.push(await testVersion(label,html,data,useCurrent));
     }
     return {
-      version:label,
-      size:data.entries.length,
+      version:label,size:data.entries.length,
       load:median(runs.map(function(x){return x.load})),
       menu:median(runs.map(function(x){return x.menu})),
       stats:median(runs.map(function(x){return x.stats})),
@@ -346,27 +341,31 @@ th{font-size:11px;color:#757a89;font-weight:600}
       {key:'save',weight:0.20},
       {key:'p50Frame',weight:0.10}
     ];
-    var scoreParts=[];
+    var product=1,totalWeight=0;
     metrics.forEach(function(m){
-      var b=avg(rows,m.key,'v0.3.11'),a=avg(rows,m.key,'v0.3.12');
-      if(b>0&&a>0)scoreParts.push(Math.pow(b/a,m.weight));
+      var before=avg(rows,m.key,BASELINE_LABEL);
+      var after=avg(rows,m.key,CURRENT_LABEL);
+      if(before>0&&after>0){
+        product*=Math.pow(before/after,m.weight);
+        totalWeight+=m.weight;
+      }
     });
-    var score=scoreParts.length?scoreParts.reduce(function(x,y){return x*y},1)*100:100;
-    var rounded=Math.round(score*10)/10;
-    return {score:rounded,change:rounded-100};
+    var score=totalWeight?Math.pow(product,1/totalWeight)*100:100;
+    score=Math.round(score*10)/10;
+    return {score:score,change:Math.round((score-100)*10)/10};
   }
 
   function changeText(value){
     if(value===null||!isFinite(value))return '—';
-    var sign=value>0?'+':'';
-    return sign+value.toFixed(1)+'%';
+    return (value>0?'+':'')+value.toFixed(1)+'%';
   }
 
   function renderResults(rows){
     var composite=computeComposite(rows);
-    var html='<div class="card" style="margin-top:16px"><strong>Composite Performance Index</strong><div style="font-size:34px;margin-top:6px;font-weight:700">'+composite.score.toFixed(1)+'</div><div style="margin-top:4px;color:#707585">Baseline v0.3.11 = 100.0 · изменение: '+changeText(composite.change)+'</div></div>';
+    var direction=composite.change>=0?'улучшение':'ухудшение';
+    var html='<div class="card" style="margin-top:16px"><strong>Composite Performance Index</strong><div style="font-size:34px;margin-top:6px;font-weight:700">'+composite.score.toFixed(1)+'</div><div style="margin-top:4px;color:#707585">Baseline '+BASELINE_LABEL+' = 100.0 · '+direction+': '+changeText(Math.abs(composite.change))+'</div></div>';
 
-    html+='<table><thead><tr><th>Набор</th><th>Версия</th><th>Загрузка + ready</th><th>Меню до кадра</th><th>Статистика до кадра</th><th>Настройки до кадра</th><th>Сохранение до кадра</th><th>p50 кадра</th><th>Макс. кадр</th><th>Long frames &gt;50ms</th></tr></thead><tbody>';
+    html+='<table><thead><tr><th>Набор</th><th>Версия</th><th>Start → ready</th><th>Меню → кадр</th><th>Статистика → кадр</th><th>Настройки → кадр</th><th>Сохранение → кадр</th><th>p50 кадра</th><th>Макс. кадр</th><th>Long &gt;50ms</th></tr></thead><tbody>';
     rows.forEach(function(r){
       html+='<tr><td class="metric">'+r.size+'</td><td>'+r.version+'</td>'+
         '<td class="metric">'+r.load.toFixed(2)+' ms</td>'+
@@ -380,18 +379,17 @@ th{font-size:11px;color:#757a89;font-weight:600}
     });
     html+='</tbody></table>';
 
-    html+='<table><thead><tr><th>Метрика</th><th>Среднее v0.3.11</th><th>Среднее v0.3.12</th><th>Изменение времени</th><th>Индекс этой метрики</th></tr></thead><tbody>';
+    html+='<table><thead><tr><th>Метрика</th><th>Среднее '+BASELINE_LABEL+'</th><th>Среднее '+CURRENT_LABEL+'</th><th>Изменение времени</th><th>Индекс</th></tr></thead><tbody>';
     ['load','menu','stats','settings','save','p50Frame'].forEach(function(key){
-      var before=avg(rows,key,'v0.3.11');
-      var after=avg(rows,key,'v0.3.12');
+      var before=avg(rows,key,BASELINE_LABEL),after=avg(rows,key,CURRENT_LABEL);
       var timeChange=before?((after-before)/before)*100:null;
-      var index=relativeScore(before,after);
-      html+='<tr><td>'+key+'</td><td class="metric">'+before.toFixed(2)+' ms</td><td class="metric">'+after.toFixed(2)+' ms</td><td class="metric">'+changeText(timeChange)+'</td><td class="metric">'+index.toFixed(1)+'</td></tr>';
+      html+='<tr><td>'+key+'</td><td class="metric">'+before.toFixed(2)+' ms</td><td class="metric">'+after.toFixed(2)+' ms</td><td class="metric">'+changeText(timeChange)+'</td><td class="metric">'+relativeScore(before,after).toFixed(1)+'</td></tr>';
     });
     html+='</tbody></table>';
 
-    var methodology='<div class="card" style="margin-top:16px"><strong>Что действительно измеряется</strong><div class="note" style="margin-top:8px">Здесь измеряется реальный браузерный wall-clock time через <code>performance.now()</code>, а для рендер-реакции — прохождение через несколько кадров <code>requestAnimationFrame()</code>. Это валидно для сравнительного A/B-теста на одном устройстве. Однако это не «истинный INP»: программный <code>element.click()</code> не является реальным hardware/user input событием, а iframe добавляет собственные особенности планировщика. Поэтому Performance Lab показывает регрессию/улучшение нашей реализации, а Chrome DevTools Performance и реальный INP остаются отдельными источниками истины.</div></div>';
-    resultsEl.innerHTML=html+methodology;
+    html+='<div class="card" style="margin-top:16px"><strong>Методика</strong><div class="note" style="margin-top:8px">Это сравнительный браузерный benchmark на текущем устройстве. Обе версии запускаются в одинаковом iframe и получают одинаковые синтетические данные. HTML baseline и current подгружаются перед серией, поэтому сетевое скачивание не входит в Start → ready. Для текущей версии ожидание включает IndexedDB initialization. «→ кадр» измеряется через performance.now() + несколько requestAnimationFrame. Long &gt;50ms показывает количество кадров с интервалом более 50 мс. Это не реальный пользовательский INP и не заменяет Chrome DevTools Performance.</div></div>';
+
+    resultsEl.innerHTML=html;
   }
 
   async function loadBaselineHTML(){
@@ -400,26 +398,41 @@ th{font-size:11px;color:#757a89;font-weight:600}
     return await response.text();
   }
 
+  async function loadBaselineHTML(){
+    var response=await fetch(BASELINE_URL,{cache:'no-store'});
+    if(!response.ok)throw new Error('Не удалось получить baseline: HTTP '+response.status);
+    return await response.text();
+  }
+
+  function detectVersion(html,fallback){
+    var match=html.match(/class="app-version"[^>]*>(v[0-9.]+)</);
+    return match?match[1]:fallback;
+  }
+
   async function run(){
     runButton.disabled=true;
     clearButton.disabled=true;
     resultsEl.innerHTML='';
     var rows=[];
     try{
-      setStatus('Получаю baseline…');
+      setStatus('Получаю версии для сравнения…');
       var baselineHTML=await loadBaselineHTML();
-      var currentResponse=await fetch('index.html?perf=1',{cache:'no-store'});
+      var currentResponse=await fetch('index.html?perf=1&bench=1',{cache:'no-store'});
       if(!currentResponse.ok)throw new Error('Не удалось получить текущую версию: HTTP '+currentResponse.status);
       var currentHTML=await currentResponse.text();
 
-      for(var s=0;s<DATA_SIZES.length;s++){
-        var size=DATA_SIZES[s];
+      BASELINE_LABEL=detectVersion(baselineHTML,'v0.3.11');
+      CURRENT_LABEL=detectVersion(currentHTML,'v0.3.12');
+
+      for(var i=0;i<DATA_SIZES.length;i++){
+        var size=DATA_SIZES[i];
         var data=makeData(size);
-        rows.push(await testRepeated('v0.3.11',baselineHTML,data,false));
-        rows.push(await testRepeated('v0.3.12',currentHTML,data,true));
+        rows.push(await testRepeated(BASELINE_LABEL,baselineHTML,data,false));
+        rows.push(await testRepeated(CURRENT_LABEL,currentHTML,data,true));
       }
+
       renderResults(rows);
-      setStatus('Готово. Baseline v0.3.11 = 100.0; текущий Composite Performance Index посчитан относительно него.');
+      setStatus('Готово. '+CURRENT_LABEL+' сравнена с baseline '+BASELINE_LABEL+'.');
     }catch(e){
       setStatus('Ошибка: '+(e&&e.message?e.message:String(e)));
     }finally{
