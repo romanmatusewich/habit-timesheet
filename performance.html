@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#eef1ff">
+<title>Habit Timesheet — Performance Lab</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;color:#171925;background:#eef1f7}
+*{box-sizing:border-box}
+body{margin:0;padding:28px 18px 56px}
+main{width:min(980px,100%);margin:0 auto}
+h1{margin:0;font-size:28px;letter-spacing:-.035em}
+.lead{margin:8px 0 22px;color:#707585;line-height:1.5}
+.card{padding:18px;border:1px solid rgba(255,255,255,.9);border-radius:20px;background:rgba(255,255,255,.65);box-shadow:0 12px 35px rgba(37,43,77,.09)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button{border:1px solid rgba(255,255,255,.9);background:#fff;border-radius:11px;padding:10px 14px;font:inherit;font-weight:600;cursor:pointer}
+button:disabled{opacity:.45;cursor:wait}
+#status{margin-top:12px;font-size:12px;color:#6f7483;min-height:18px}
+table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid rgba(30,34,50,.08)}
+th{font-size:11px;color:#757a89;font-weight:600}
+.good{font-weight:600}
+.note{margin-top:12px;font-size:11px;line-height:1.45;color:#797e8c}
+.metric{font-variant-numeric:tabular-nums}
+.hidden-frame{position:fixed;left:-10000px;top:-10000px;width:2px;height:2px;border:0;opacity:0;pointer-events:none}
+@media(max-width:700px){table{font-size:12px}th,td{padding:8px 4px}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Performance Lab</h1>
+  <p class="lead">Сравнение исторической стабильной версии до рефакторинга хранения и текущей версии на одинаковых синтетических наборах данных. Тест выполняется в браузере, поэтому измеряет именно реальное поведение Web App на твоём устройстве.</p>
+
+  <section class="card">
+    <div class="row">
+      <button id="run" type="button">Запустить полный тест</button>
+      <button id="clear" type="button">Очистить результаты</button>
+    </div>
+    <div id="status">Готово. Тест безопасен: исходные localStorage-данные восстанавливаются после завершения.</div>
+    <div id="results"></div>
+    <div class="note">Метрики: загрузка страницы, обновление статистики, открытие меню, обработчик сохранения записи, переключение экранов и максимальная задержка кадра во время стресс-переключений. Небольшое отличие результатов между запусками нормально: браузер, CPU, фоновые процессы и энергорежим влияют на замеры.</div>
+  </section>
+</main>
+<iframe id="runner" class="hidden-frame" title="performance runner"></iframe>
+
+<script>
+(function(){
+  'use strict';
+
+  var BASELINE_COMMIT='f6338efdc1ec686a69f065801f'; // intentionally shortened below and replaced at runtime
+  var BASELINE_FULL='f6338efdc1ec686a69f065801f';
+  var CURRENT_URL='index.html';
+  var BASELINE_URL='https://raw.githubusercontent.com/romanmatusewich/habit-timesheet/f6338efdc1ec686a69f065801f/index.html';
+  var DATA_SIZES=[100,1000,5000,10000];
+  var HABITS=[
+    {id:'accounting',name:'Бухгалтерия',goal:60},
+    {id:'speech',name:'Дикция и речь',goal:30},
+    {id:'reading',name:'Чтение',goal:30},
+    {id:'sport',name:'Спорт',goal:45}
+  ];
+  var TYPES=['active','passive','sport','work','creative','reading','other'];
+  var COLORS=['yellow','blue','green','purple','pink'];
+  var runner=document.getElementById('runner');
+  var statusEl=document.getElementById('status');
+  var resultsEl=document.getElementById('results');
+  var runButton=document.getElementById('run');
+  var clearButton=document.getElementById('clear');
+
+  function sleep(ms){return new Promise(function(resolve){setTimeout(resolve,ms)})}
+
+  function setStatus(text){statusEl.textContent=text}
+
+  function makeData(size){
+    var entries=new Array(size);
+    var start=new Date();
+    start.setDate(start.getDate()-28);
+    for(var i=0;i<size;i++){
+      var d=new Date(start);
+      d.setDate(start.getDate()+(i%28));
+      var iso=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+      entries[i]={
+        id:'perf-'+i,
+        habitId:HABITS[i%HABITS.length].id,
+        date:iso,
+        minutes:10+(i%120),
+        note:i%9===0?'Тестовая запись '+i:'',
+        type:TYPES[i%TYPES.length],
+        color:COLORS[i%COLORS.length]
+      };
+    }
+    return {habits:HABITS.map(function(h){return {id:h.id,name:h.name,goal:h.goal}}),entries:entries}
+  }
+
+  function json(v){return JSON.stringify(v)}
+
+  async function seedPerfDB(data){
+    return new Promise(function(resolve,reject){
+      var open=indexedDB.open('habit-timesheet-db-perf',1);
+      open.onupgradeneeded=function(e){
+        var db=e.target.result;
+        if(!db.objectStoreNames.contains('habits'))db.createObjectStore('habits',{keyPath:'id'});
+        if(!db.objectStoreNames.contains('entries'))db.createObjectStore('entries',{keyPath:'id'});
+        if(!db.objectStoreNames.contains('meta'))db.createObjectStore('meta',{keyPath:'key'});
+      };
+      open.onerror=function(){reject(open.error||new Error('IndexedDB open failed'))};
+      open.onsuccess=function(){
+        var db=open.result;
+        var tx=db.transaction(['habits','entries','meta'],'readwrite');
+        var hs=tx.objectStore('habits'),es=tx.objectStore('entries'),ms=tx.objectStore('meta');
+        hs.clear();es.clear();
+        for(var i=0;i<data.habits.length;i++)hs.put(data.habits[i]);
+        for(var j=0;j<data.entries.length;j++)es.put(data.entries[j]);
+        ms.put({key:'migrated',value:true});
+        tx.oncomplete=function(){db.close();resolve()};
+        tx.onerror=function(){reject(tx.error||new Error('IndexedDB seed failed'))};
+      };
+    })
+  }
+
+  function clearPerfDB(){
+    return new Promise(function(resolve){
+      try{
+        var request=indexedDB.deleteDatabase('habit-timesheet-db-perf');
+        request.onsuccess=request.onerror=request.onblocked=function(){resolve()};
+      }catch(e){resolve()}
+    })
+  }
+
+  function waitLoad(url,srcdoc){
+    return new Promise(function(resolve,reject){
+      var t0=performance.now();
+      var done=false;
+      var timeout=setTimeout(function(){
+        if(done)return;
+        done=true;
+        reject(new Error('iframe timeout'));
+      },12000);
+      runner.onload=function(){
+        if(done)return;
+        done=true;
+        clearTimeout(timeout);
+        resolve(performance.now()-t0);
+      };
+      if(srcdoc!=null){
+        runner.src='';
+        runner.srcdoc=srcdoc;
+      }else{
+        runner.src=location.href.replace(/\/[^/]*$/, '/')+url;
+      }
+    })
+  }
+
+  function clickMeasure(el){
+    var t0=performance.now();
+    el.click();
+    return performance.now()-t0;
+  }
+
+  async function stressFrames(win){
+    var doc=win.document;
+    var navs=[
+      doc.querySelector('[data-view="today"]'),
+      doc.querySelector('[data-view="stats"]'),
+      doc.querySelector('[data-view="settings"]')
+    ].filter(Boolean);
+    var samples=[],last=performance.now(),running=true;
+    function frame(now){
+      samples.push(now-last);
+      last=now;
+      if(running)win.requestAnimationFrame(frame);
+    }
+    win.requestAnimationFrame(frame);
+    for(var i=0;i<36;i++){
+      navs[i%navs.length].click();
+    }
+    await new Promise(function(resolve){win.requestAnimationFrame(function(){running=false;resolve()})});
+    var max=0;
+    for(var j=0;j<samples.length;j++)if(samples[j]>max)max=samples[j];
+    return max;
+  }
+
+  async function testVersion(label,html,data,useCurrent){
+    var backupHabits=localStorage.getItem('habit-timesheet-habits');
+    var backupEntries=localStorage.getItem('habit-timesheet-entries');
+    localStorage.setItem('habit-timesheet-habits',json(data.habits));
+    localStorage.setItem('habit-timesheet-entries',json(data.entries));
+    try{
+      if(useCurrent)await seedPerfDB(data);
+      var loadMs=await waitLoad(useCurrent?'index.html?perf=1':null,useCurrent?null:html);
+      await sleep(20);
+      var win=runner.contentWindow,doc=runner.contentDocument;
+
+      var openSheet=doc.getElementById('openSheet');
+      var openSheetMs=clickMeasure(openSheet);
+      var habitButton=doc.getElementById('habitButton');
+      var menuMs=clickMeasure(habitButton);
+
+      var statsNav=doc.querySelector('[data-view="stats"]');
+      var statsMs=clickMeasure(statsNav);
+
+      var settingsNav=doc.querySelector('[data-view="settings"]');
+      var settingsMs=clickMeasure(settingsNav);
+
+      var stressMaxFrame=await stressFrames(win);
+
+      var close=doc.getElementById('closeSheet');
+      if(close)close.click();
+      openSheet.click();
+      var minutes=doc.getElementById('minutes');
+      if(minutes)minutes.value='17';
+      var note=doc.getElementById('note');
+      if(note)note.value='performance';
+      var save=doc.getElementById('saveEntry');
+      var saveMs=clickMeasure(save);
+
+      await sleep(35);
+
+      return {
+        version:label,
+        size:data.entries.length,
+        load:loadMs,
+        menu:menuMs,
+        stats:statsMs,
+        settings:settingsMs,
+        save:saveMs,
+        maxFrame:stressMaxFrame
+      };
+    }finally{
+      localStorage.removeItem('habit-timesheet-habits');
+      localStorage.removeItem('habit-timesheet-entries');
+      if(backupHabits!==null)localStorage.setItem('habit-timesheet-habits',backupHabits);
+      if(backupEntries!==null)localStorage.setItem('habit-timesheet-entries',backupEntries);
+      else localStorage.removeItem('habit-timesheet-entries');
+      if(useCurrent)await clearPerfDB();
+      runner.src='about:blank';
+      runner.srcdoc='';
+    }
+  }
+
+  function avg(rows,key,version){
+    var a=rows.filter(function(r){return r.version===version}).map(function(r){return r[key]});
+    if(!a.length)return 0;
+    return a.reduce(function(x,y){return x+y},0)/a.length;
+  }
+
+  function pctChange(oldValue,newValue){
+    if(!oldValue)return null;
+    return ((newValue-oldValue)/oldValue)*100;
+  }
+
+  function renderResults(rows){
+    var html='<table><thead><tr><th>Набор</th><th>Версия</th><th>Загрузка</th><th>Меню</th><th>Статистика</th><th>Настройки</th><th>Сохранение</th><th>Макс. кадр</th></tr></thead><tbody>';
+    rows.forEach(function(r){
+      html+='<tr><td class="metric">'+r.size+'</td><td>'+r.version+'</td>'+
+        '<td class="metric">'+r.load.toFixed(2)+' ms</td>'+
+        '<td class="metric">'+r.menu.toFixed(2)+' ms</td>'+
+        '<td class="metric">'+r.stats.toFixed(2)+' ms</td>'+
+        '<td class="metric">'+r.settings.toFixed(2)+' ms</td>'+
+        '<td class="metric">'+r.save.toFixed(2)+' ms</td>'+
+        '<td class="metric">'+r.maxFrame.toFixed(2)+' ms</td></tr>';
+    });
+    html+='</tbody></table>';
+
+    html+='<table><thead><tr><th>Метрика</th><th>Среднее до</th><th>Среднее сейчас</th><th>Изменение</th></tr></thead><tbody>';
+    ['load','menu','stats','settings','save','maxFrame'].forEach(function(key){
+      var before=avg(rows,key,'До IndexedDB');
+      var after=avg(rows,key,'Сейчас');
+      var change=pctChange(before,after);
+      html+='<tr><td>'+key+'</td><td class="metric">'+before.toFixed(2)+' ms</td><td class="metric">'+after.toFixed(2)+' ms</td><td class="metric">'+(change===null?'—':change.toFixed(1)+'%')+'</td></tr>';
+    });
+    html+='</tbody></table>';
+    resultsEl.innerHTML=html;
+  }
+
+  async function loadBaselineHTML(){
+    var response=await fetch(BASELINE_URL,{cache:'no-store'});
+    if(!response.ok)throw new Error('Не удалось получить baseline: HTTP '+response.status);
+    return await response.text();
+  }
+
+  async function run(){
+    runButton.disabled=true;
+    clearButton.disabled=true;
+    resultsEl.innerHTML='';
+    var rows=[];
+    try{
+      setStatus('Получаю baseline…');
+      var baselineHTML=await loadBaselineHTML();
+      for(var s=0;s<DATA_SIZES.length;s++){
+        var size=DATA_SIZES[s];
+        var data=makeData(size);
+        setStatus('Тест до IndexedDB · '+size+' записей…');
+        rows.push(await testVersion('До IndexedDB',baselineHTML,data,false));
+        setStatus('Тест сейчас · '+size+' записей…');
+        rows.push(await testVersion('Сейчас',null,data,true));
+      }
+      renderResults(rows);
+      setStatus('Готово. Теперь это твоя исходная точка для последующих оптимизаций.');
+    }catch(e){
+      setStatus('Ошибка: '+(e&&e.message?e.message:String(e)));
+    }finally{
+      await sleep(100);
+      runButton.disabled=false;
+      clearButton.disabled=false;
+    }
+  }
+
+  runButton.onclick=run;
+  clearButton.onclick=function(){resultsEl.innerHTML='';setStatus('Результаты очищены.')};
+})();
+</script>
+</body>
+</html>
