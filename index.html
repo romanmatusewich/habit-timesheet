@@ -115,7 +115,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
  .record-button:active{transform:scale(.985)}
 
 .hero{margin-top:124px}
-.chart-card{contain:layout paint;
+.chart-card{
   position:relative;
   overflow:hidden;
   border-radius:28px;
@@ -508,7 +508,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.1.0</div>
+<div class="app-version" aria-label="Версия">v0.2.0</div>
 
 <main class="shell">
   <header class="top">
@@ -777,11 +777,26 @@ body.sheet-open{
     return (Math.round((minutes/60)*10)/10)+' ч';
   }
 
-  function invalidateStats(){statsCache=null}
+  var sortedEntriesCache=null;
+
+  function invalidateDataCaches(){
+    statsCache=null;
+    sortedEntriesCache=null;
+  }
+
+  function getSortedEntries(){
+    if(sortedEntriesCache)return sortedEntriesCache;
+    sortedEntriesCache=entries.slice().sort(function(a,b){
+      var dateCompare=String(b.date||'').localeCompare(String(a.date||''));
+      if(dateCompare)return dateCompare;
+      return String(b.id||'').localeCompare(String(a.id||''));
+    });
+    return sortedEntriesCache;
+  }
 
   function getStats(){
     if(statsCache)return statsCache;
-    var byHabit={},byDate={},byDateColor={},countByDate={},byType={},activeByMonth={},total=0,sessionCount=0,longest=0;
+    var byHabit={},byDate={},byDateColor={},habitColorById={},countByDate={},byType={},activeByMonth={},total=0,sessionCount=0,longest=0;
     for(var i=0;i<entries.length;i++){
       var e=entries[i];
       var minutes=Number(e.minutes)||0;
@@ -794,6 +809,7 @@ body.sheet-open{
       var entryColor=e.color||'yellow';
       if(!byDateColor[e.date])byDateColor[e.date]={};
       byDateColor[e.date][entryColor]=(byDateColor[e.date][entryColor]||0)+minutes;
+      if(COLOR_BY_ID[entryColor]&&e.habitId)habitColorById[e.habitId]=entryColor;
       var entryMonth=(e.date||'').slice(0,7);
       if(entryMonth)activeByMonth[entryMonth]=1;
       byType[e.type||'active']=(byType[e.type||'active']||0)+minutes;
@@ -812,6 +828,7 @@ body.sheet-open{
       byHabit:byHabit,
       byDate:byDate,
       byDateColor:byDateColor,
+      habitColorById:habitColorById,
       countByDate:countByDate,
       byType:byType,
       activeByMonth:activeByMonth,
@@ -994,12 +1011,7 @@ body.sheet-open{
     var habitMap={};
     for(var hi=0;hi<habits.length;hi++)habitMap[habits[hi].id]=habits[hi];
 
-    var sorted=entries.slice().sort(function(a,b){
-      var dateCompare=String(b.date||'').localeCompare(String(a.date||''));
-      if(dateCompare)return dateCompare;
-      return String(b.id||'').localeCompare(String(a.id||''));
-    });
-    var visible=sorted.slice(0,entryRenderLimit);
+    var visible=getSortedEntries().slice(0,entryRenderLimit);
     $('recordsSummary').textContent=entries.length+' '+(entries.length===1?'запись':'записей');
     $('entriesRows').innerHTML=visible.map(function(e){
       var habit=habitMap[e.habitId];
@@ -1082,10 +1094,9 @@ body.sheet-open{
 
   function habitColor(habit){
     if(!habit)return COLOR_BY_ID.blue;
-    for(var i=entries.length-1;i>=0;i--){
-      var e=entries[i];
-      if(e.habitId===habit.id&&COLOR_BY_ID[e.color])return COLOR_BY_ID[e.color];
-    }
+    var stats=getStats();
+    var entryColor=stats.habitColorById[habit.id];
+    if(entryColor&&COLOR_BY_ID[entryColor])return COLOR_BY_ID[entryColor];
     var preset=presetForHabit(habit.name);
     return COLOR_BY_ID[preset&&preset.color]||COLOR_BY_ID.blue;
   }
@@ -1264,7 +1275,7 @@ body.sheet-open{
     }
 
     currentDate=targetDate;
-    invalidateStats();
+    invalidateDataCaches();
     closeSheet();
     scheduleActiveRender();
     showToast('Запись сохранена');
@@ -1281,7 +1292,7 @@ body.sheet-open{
       return;
     }
     menusDirty=true;
-    invalidateStats();
+    invalidateDataCaches();
     if(currentView==='settings')renderSettings();
     else if(currentView==='today')renderMainStats();
     else renderStats();
@@ -1404,7 +1415,7 @@ body.sheet-open{
             showToast('Не удалось удалить запись');
             return;
           }
-          invalidateStats();
+          invalidateDataCaches();
           scheduleActiveRender();
           showToast('Запись удалена');
         }
@@ -1429,7 +1440,7 @@ body.sheet-open{
         }
         menusDirty=true;
         entryRenderLimit=Math.min(entryRenderLimit,Math.max(60,entries.length));
-        invalidateStats();
+        invalidateDataCaches();
         scheduleActiveRender();
         showToast('Привычка удалена');
       }
