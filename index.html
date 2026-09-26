@@ -586,7 +586,7 @@ body.sheet-open{
 .record-note{margin-top:4px;font-size:11px;color:#666a77;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .record-delete{padding:8px 9px;white-space:nowrap;font-size:12px}
 .load-more{display:block;margin:9px auto 0}
-.empty{padding:8px 0;font-size:12px;color:var(--muted)}
+.empty{padding:8px 0;font-size:12px;color:var(--muted)}.smart-stats{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.smart-card{padding:14px 15px;border-radius:18px;background:rgba(255,255,255,.48);border:1px solid rgba(255,255,255,.76)}.smart-label{font-size:10px;color:var(--muted)}.smart-value{margin-top:6px;font-size:18px;font-weight:600}.smart-note{margin-top:5px;font-size:10px;color:var(--muted)}.trend-row{display:grid;grid-template-columns:minmax(0,1fr) 72px 62px;gap:8px;align-items:center;padding:10px 0;border-top:1px solid rgba(30,34,50,.07)}.trend-row:first-child{border-top:0;padding-top:0}.trend-name{display:flex;gap:7px;min-width:0;font-size:12px}.trend-name span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.trend-value{font-size:11px;text-align:right}.trend-badge{justify-self:end;padding:5px 7px;border-radius:9px;background:rgba(245,246,250,.76);font-size:10px;font-weight:600}.trend-badge.up{color:#29785a;background:rgba(226,247,237,.82)}.trend-badge.down{color:#a94b5a;background:rgba(255,237,241,.82)}
 .export-scrim{position:fixed;inset:0;display:grid;place-items:center;padding:18px;background:rgba(255,255,255,.90);z-index:430}.export-dialog{width:min(470px,calc(100vw - 28px));max-height:min(760px,calc(100vh - 28px));overflow:auto;padding:23px;border-radius:24px;background:linear-gradient(150deg,rgba(255,255,255,.97),rgba(246,248,253,.92));border:1px solid rgba(255,255,255,.9);box-shadow:0 28px 80px rgba(25,32,66,.20)}.export-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.export-title{margin:0;font-size:24px;line-height:1.08;font-weight:600}.export-close{position:relative;width:34px;height:34px;padding:0;border:0;border-radius:50%;background:rgba(120,125,140,.10);color:#777b87}.export-close::before,.export-close::after{content:"";position:absolute;left:50%;top:50%;width:14px;height:1.6px;background:currentColor;transform:translate(-50%,-50%) rotate(45deg)}.export-close::after{transform:translate(-50%,-50%) rotate(-45deg)}.export-help{margin:10px 0 14px;font-size:10px;line-height:1.45;color:var(--muted)}.data-export-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.export-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
 .history-list{display:grid}.history-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid rgba(30,34,50,.07)}.history-row:first-child{border-top:0;padding-top:0}.history-action{font-size:12px;font-weight:500}.history-meta{margin-top:3px;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.history-time{font-size:10px;color:var(--muted);white-space:nowrap}
 .calendar-filter{max-width:170px;padding:8px 10px;border:1px solid rgba(255,255,255,.76);border-radius:11px;background:rgba(255,255,255,.56);color:var(--ink);font:inherit;font-size:11px}
@@ -701,6 +701,8 @@ body.sheet-open{
         <div class="stat-mini"><div class="stat-mini-label">Самый продуктивный день</div><div class="stat-mini-value" id="bestDayTime">0 мин</div><div class="stat-mini-note" id="bestDayDate">Нет данных</div></div>
         <div class="stat-mini"><div class="stat-mini-label">Среднее занятие · 30 дней</div><div class="stat-mini-value" id="last30Avg">0 мин</div><div class="stat-mini-note" id="last30SessionNote">0 занятий</div></div>
       </div>
+      <div class="smart-stats" id="smartStats"></div>
+      <div class="stat-card wide" style="margin-top:10px"><div class="stat-label">Последние 30 дней vs предыдущие 30</div><div class="stat-value" id="periodCompareValue">—</div><div class="stat-note" id="periodCompareNote">Нет данных для сравнения</div></div>
       <div class="stats-charts">
         <div class="stats-chart-card">
           <div class="stats-chart-title">Динамика по неделям</div>
@@ -715,7 +717,7 @@ body.sheet-open{
           <div class="type-mini-legend" id="statsTypeMiniLegend"></div>
         </div>
       </div>
-      <div class="breakdown stats-habits-card" style="margin-top:12px"><div class="breakdown-head"><strong>Распределение по привычкам</strong><span>доля от общего времени</span></div><div class="habit-stats-table-head"><span>Привычка</span><span>Время</span><span>Доля</span></div><div id="statsBreakdown"></div></div>
+      <div class="breakdown stats-habits-card" style="margin-top:12px"><div class="breakdown-head"><strong>Распределение по привычкам</strong><span>доля от общего времени</span></div><div class="habit-stats-table-head"><span>Привычка</span><span>Время</span><span>Доля</span></div><div id="statsBreakdown"></div></div><div class="breakdown" style="margin-top:12px"><div class="breakdown-head"><strong>Тренды по привычкам</strong><span>30 дней к предыдущим 30</span></div><div id="habitTrends"></div></div>
     </section>
   </section>
 
@@ -1558,6 +1560,18 @@ body.sheet-open{
     return {parts:parts,gradient:stops.length?'conic-gradient('+stops.join(',')+')':'conic-gradient(#d7dbe5 0deg 360deg)'};
   }
 
+  function periodAnalytics(){
+    var today=dateObj(localDate(new Date())),currentStart=new Date(today),previousEnd=new Date(today),previousStart=new Date(today);
+    currentStart.setDate(currentStart.getDate()-29);previousEnd.setDate(previousEnd.getDate()-30);previousStart.setDate(previousStart.getDate()-59);
+    var currentTotal=0,previousTotal=0,currentSessions=0,currentDays={},currentByHabit={},previousByHabit={};
+    for(var i=0;i<entries.length;i++){
+      var e=entries[i],d=dateObj(e.date),m=Number(e.minutes)||0;
+      if(d>=currentStart&&d<=today){currentTotal+=m;currentSessions++;currentDays[e.date]=true;currentByHabit[e.habitId]=(currentByHabit[e.habitId]||0)+m;}
+      else if(d>=previousStart&&d<=previousEnd){previousTotal+=m;previousByHabit[e.habitId]=(previousByHabit[e.habitId]||0)+m;}
+    }
+    return {currentTotal:currentTotal,previousTotal:previousTotal,currentSessions:currentSessions,currentDays:Object.keys(currentDays).length,currentByHabit:currentByHabit,previousByHabit:previousByHabit};
+  }
+
   function renderStats(){
     var stats=getStats(),total=stats.total,active=stats.activeDays;
     $('allTotal').textContent=fmt(total);
@@ -1595,6 +1609,20 @@ body.sheet-open{
     $('statsTypeDonut').style.background=donut.gradient;
     $('statsTypeDonutTotal').textContent=fmt(total);
     $('statsTypeMiniLegend').innerHTML=donut.parts.slice(0,5).map(function(x){
+    var period=periodAnalytics();
+    var delta=period.previousTotal?Math.round((period.currentTotal-period.previousTotal)/period.previousTotal*100):null;
+    $('periodCompareValue').textContent=delta===null?(period.currentTotal?'Новая база':'—'):(delta>0?'+':'')+delta+'%';
+    $('periodCompareNote').textContent=delta===null?(period.currentTotal?fmt(period.currentTotal)+' за последние 30 дней':'Нет данных'):(fmt(period.currentTotal)+' сейчас · '+fmt(period.previousTotal)+' ранее');
+    var ranked=habits.map(function(h){return {habit:h,total:period.currentByHabit[h.id]||0};}).sort(function(a,b){return b.total-a.total}),top=ranked[0]&&ranked[0].total?ranked[0]:null;
+    $('smartStats').innerHTML='<div class="smart-card"><div class="smart-label">Темп · 30 дней</div><div class="smart-value">'+fmt(period.currentTotal)+'</div><div class="smart-note">'+(delta===null?'Нет предыдущей базы':(delta>0?'+':'')+delta+'% к предыдущим 30 дням')+'</div></div>'+
+      '<div class="smart-card"><div class="smart-label">Регулярность</div><div class="smart-value">'+Math.round(period.currentDays/30*100)+'%</div><div class="smart-note">'+period.currentDays+' активных дней из 30</div></div>'+
+      '<div class="smart-card"><div class="smart-label">Среднее занятие · 30 дней</div><div class="smart-value">'+fmt(period.currentSessions?period.currentTotal/period.currentSessions:0)+'</div><div class="smart-note">'+period.currentSessions+' занятий</div></div>'+
+      '<div class="smart-card"><div class="smart-label">Фокус · 30 дней</div><div class="smart-value">'+(top?clean(top.habit.name):'Нет данных')+'</div><div class="smart-note">'+(top?fmt(top.total):'—')+'</div></div>';
+    $('habitTrends').innerHTML=habits.map(function(h){
+      var now=period.currentByHabit[h.id]||0,prev=period.previousByHabit[h.id]||0,p=prev?Math.round((now-prev)/prev*100):null,cls='flat',label='—';
+      if(p!==null&&p>=10){cls='up';label='↗ '+p+'%';}else if(p!==null&&p<=-10){cls='down';label='↘ '+p+'%';}else if(p!==null){label='Стабильно';}else if(now>0){cls='up';label='Новый';}
+      return '<div class="trend-row"><div class="trend-name"><span class="color-dot" style="background:'+habitColor(h)+'"></span><span>'+clean(h.name)+'</span></div><div class="trend-value">'+fmt(now)+'</div><div class="trend-badge '+cls+'">'+label+'</div></div>';
+    }).join('')||'<div class="empty">Нет привычек.</div>';
       return '<div class="type-mini-item"><div class="type-mini-left"><span class="type-mini-dot" style="background:'+x.color+'"></span><span>'+clean(x.label)+'</span></div><b>'+fmt(x.total)+'</b></div>';
     }).join('')||'<div class="empty">Нет данных.</div>';
   }
