@@ -45,6 +45,9 @@ body{min-height:100vh;overflow-x:hidden}
 @media (prefers-reduced-motion:reduce){
   .record-button,.mobile-tab,.bar{transition:none!important}
 }
+@media (prefers-reduced-motion:reduce){
+  .record-button,.mobile-tab,.bar{transition:none!important}
+}
 @media (hover:none){
   .record-button:hover,.bar:hover,.quick:hover,.option:hover,.cal-day:hover{transform:none}
 }
@@ -98,6 +101,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 
   transition:transform .14s ease, color .14s ease
 }
+@media (hover:hover){
 .record-button:hover{
   background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(255,255,255,.58));
   color:#222530;
@@ -270,9 +274,12 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   display:grid;
   place-items:center;
   padding:18px;
-  background:rgba(220,224,235,.30);
-  backdrop-filter:blur(21px) saturate(.92);
-  -webkit-backdrop-filter:blur(21px) saturate(.92);
+  background:
+    radial-gradient(circle at 50% 12%,rgba(255,255,255,.18),transparent 42%),
+    rgba(220,224,235,.34);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  overscroll-behavior:contain;
   z-index:100
 }
 .sheet{
@@ -372,7 +379,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   color:var(--ink);
   font-size:12px;
   font-weight:500;
-  transition:.12s;
+  transition:background-color .12s ease;
 }
 .quick:hover{background:rgba(230,233,244,.98)}
 .option{
@@ -427,7 +434,10 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   box-shadow:0 9px 20px rgba(19,23,54,.16),inset 0 1px 0 rgba(255,255,255,.13)
 }
 .sheet-hint{margin:11px 4px 0;text-align:center;font-size:11px;color:var(--muted)}
-body.sheet-open{overflow:hidden}
+body.sheet-open{
+  overflow:hidden;
+  overscroll-behavior:none
+}
 
 .view{display:none}.view.active{display:block}
 .secondary-action{border:1px solid rgba(255,255,255,.74);background:rgba(255,255,255,.50);border-radius:12px;padding:9px 12px;font-weight:500;color:var(--ink)}
