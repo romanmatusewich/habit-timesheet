@@ -21,6 +21,11 @@ table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}
 th,td{text-align:left;padding:10px 8px;border-bottom:1px solid rgba(30,34,50,.08)}
 th{font-size:11px;color:#757a89;font-weight:600}
 .good{font-weight:600}
+.history-title{margin:24px 0 8px;font-size:17px;font-weight:650}
+.history-sub{font-size:11px;color:#74798a;line-height:1.45}
+.trend-card{margin-top:16px}
+.trend-value{font-size:28px;font-weight:700;letter-spacing:-.03em}
+.history-table{font-variant-numeric:tabular-nums}
 .note{margin-top:12px;font-size:11px;line-height:1.45;color:#797e8c}
 .metric{font-variant-numeric:tabular-nums}
 .hidden-frame{position:fixed;right:10px;bottom:10px;width:260px;height:150px;border:1px solid rgba(30,34,50,.08);opacity:.015;pointer-events:none;background:#fff}
@@ -39,6 +44,7 @@ th{font-size:11px;color:#757a89;font-weight:600}
     </div>
     <div id="status">Готово. Тест безопасен: исходные localStorage-данные восстанавливаются после завершения. Версия приложения и baseline определяются автоматически.</div>
     <div id="results"></div>
+    <div id="history"></div>
     <div class="note"><b>Как читать результаты:</b> «Время до кадра» включает JavaScript и реакцию рендера до следующего кадра; «Макс. кадр» — максимальный интервал между callback requestAnimationFrame во время нагрузки. Composite Performance Index нормирован на baseline = 100: выше 100 — быстрее baseline, ниже 100 — медленнее. «Изменение» — это процент изменения индекса относительно baseline. Это воспроизводимый локальный benchmark, но он не заменяет Chrome DevTools Performance и реальный INP пользователя. <a href="../" target="_blank" rel="noreferrer">Открыть приложение</a></div>
   </section>
 </main>
@@ -48,11 +54,15 @@ th{font-size:11px;color:#757a89;font-weight:600}
 (function(){
   'use strict';
 
+  var PROTOCOL_ID='P1.0';
   var BASELINE_COMMIT='c349120b4a7e2f3d2ee5d3507b077032d1f50b0f';
   var BASELINE_FULL=BASELINE_COMMIT;
   var CURRENT_URL='index.html';
   var BASELINE_URL='https://raw.githubusercontent.com/romanmatusewich/habit-timesheet/c349120b4a7e2f3d2ee5d3507b077032d1f50b0f/index.html';
   var DATA_SIZES=[100,1000,5000,10000];
+  var REPEATS=3;
+  var COMPOSITE_WEIGHTS={load:0.25,menu:0.10,stats:0.20,settings:0.15,save:0.20,p50Frame:0.10};
+  var HISTORY_KEY='habit-timesheet-performance-history-P1';
   var HABITS=[
     {id:'accounting',name:'Бухгалтерия',goal:60},
     {id:'speech',name:'Дикция и речь',goal:30},
@@ -94,9 +104,9 @@ th{font-size:11px;color:#757a89;font-weight:600}
 
   function json(v){return JSON.stringify(v)}
 
-  async function seedPerfDB(data){
+  async function seedPerfDB(data,dbSuffix){
     return new Promise(function(resolve,reject){
-      var open=indexedDB.open('habit-timesheet-db-perf',1);
+      var open=indexedDB.open('habit-timesheet-db'+dbSuffix,1);
       open.onupgradeneeded=function(e){
         var db=e.target.result;
         if(!db.objectStoreNames.contains('habits'))db.createObjectStore('habits',{keyPath:'id'});
@@ -118,10 +128,10 @@ th{font-size:11px;color:#757a89;font-weight:600}
     })
   }
 
-  function clearPerfDB(){
+  function clearPerfDB(dbSuffix){
     return new Promise(function(resolve){
       try{
-        var request=indexedDB.deleteDatabase('habit-timesheet-db-perf');
+        var request=indexedDB.deleteDatabase('habit-timesheet-db'+dbSuffix);
         request.onsuccess=request.onerror=request.onblocked=function(){resolve()};
       }catch(e){resolve()}
     })
@@ -268,6 +278,7 @@ th{font-size:11px;color:#757a89;font-weight:600}
     benchRunId++;
     var dbSuffix='-run'+benchRunId+'-'+(useCurrent?'current':'baseline');
     try{
+      if(useCurrent)await seedPerfDB(data,dbSuffix);
       var loadMs=await waitLoad(html,useCurrent,dbSuffix);
       var win=runner.contentWindow,doc=runner.contentDocument;
       await nextFrame(win,2);
@@ -296,6 +307,7 @@ th{font-size:11px;color:#757a89;font-weight:600}
     }finally{
       try{runner.src='about:blank';runner.srcdoc='';}catch(e){}
       await sleep(30);
+      if(useCurrent)await clearPerfDB(dbSuffix);
       localStorage.removeItem('habit-timesheet-habits');
       localStorage.removeItem('habit-timesheet-entries');
       if(backupHabits!==null)localStorage.setItem('habit-timesheet-habits',backupHabits);
@@ -306,7 +318,7 @@ th{font-size:11px;color:#757a89;font-weight:600}
 
   async function testRepeated(label,html,data,useCurrent){
     var runs=[];
-    for(var i=0;i<3;i++){
+    for(var i=0;i<REPEATS;i++){
       setStatus(label+' · '+data.entries.length+' записей · повтор '+(i+1)+'/3…');
       runs.push(await testVersion(label,html,data,useCurrent));
     }
@@ -335,21 +347,14 @@ th{font-size:11px;color:#757a89;font-weight:600}
   }
 
   function computeComposite(rows){
-    var metrics=[
-      {key:'load',weight:0.25},
-      {key:'menu',weight:0.10},
-      {key:'stats',weight:0.20},
-      {key:'settings',weight:0.15},
-      {key:'save',weight:0.20},
-      {key:'p50Frame',weight:0.10}
-    ];
     var product=1,totalWeight=0;
-    metrics.forEach(function(m){
-      var before=avg(rows,m.key,BASELINE_LABEL);
-      var after=avg(rows,m.key,CURRENT_LABEL);
+    Object.keys(COMPOSITE_WEIGHTS).forEach(function(key){
+      var weight=COMPOSITE_WEIGHTS[key];
+      var before=avg(rows,key,BASELINE_LABEL);
+      var after=avg(rows,key,CURRENT_LABEL);
       if(before>0&&after>0){
-        product*=Math.pow(before/after,m.weight);
-        totalWeight+=m.weight;
+        product*=Math.pow(before/after,weight);
+        totalWeight+=weight;
       }
     });
     var score=totalWeight?Math.pow(product,1/totalWeight)*100:100;
@@ -364,8 +369,8 @@ th{font-size:11px;color:#757a89;font-weight:600}
 
   function renderResults(rows){
     var composite=computeComposite(rows);
-    var direction=composite.change>=0?'улучшение':'ухудшение';
-    var html='<div class="card" style="margin-top:16px"><strong>Composite Performance Index</strong><div style="font-size:34px;margin-top:6px;font-weight:700">'+composite.score.toFixed(1)+'</div><div style="margin-top:4px;color:#707585">Baseline '+BASELINE_LABEL+' = 100.0 · '+direction+': '+changeText(Math.abs(composite.change))+'</div></div>';
+    var direction=composite.change>0?'улучшение':composite.change<0?'ухудшение':'без изменения';
+    var html='<div class="card" style="margin-top:16px"><strong>Composite Performance Index</strong><div style="font-size:34px;margin-top:6px;font-weight:700">'+composite.score.toFixed(1)+'</div><div style="margin-top:4px;color:#707585">Baseline '+BASELINE_LABEL+' = 100.0 · '+direction+': '+changeText(composite.change)+'</div><div class="history-sub" style="margin-top:6px">Протокол '+PROTOCOL_ID+' · веса, наборы и повторы фиксированы</div></div>';
 
     html+='<table><thead><tr><th>Набор</th><th>Версия</th><th>Start → ready</th><th>Меню → кадр</th><th>Статистика → кадр</th><th>Настройки → кадр</th><th>Сохранение → кадр</th><th>p50 кадра</th><th>Макс. кадр</th><th>Long &gt;50ms</th></tr></thead><tbody>';
     rows.forEach(function(r){
@@ -389,15 +394,121 @@ th{font-size:11px;color:#757a89;font-weight:600}
     });
     html+='</tbody></table>';
 
-    html+='<div class="card" style="margin-top:16px"><strong>Методика</strong><div class="note" style="margin-top:8px">Это сравнительный браузерный benchmark на текущем устройстве. Обе версии запускаются в одинаковом iframe и получают одинаковые синтетические данные. HTML baseline и current подгружаются перед серией, поэтому сетевое скачивание не входит в Start → ready. Для текущей версии ожидание включает IndexedDB initialization. «→ кадр» измеряется через performance.now() + несколько requestAnimationFrame. Long &gt;50ms показывает количество кадров с интервалом более 50 мс. Это не реальный пользовательский INP и не заменяет Chrome DevTools Performance.</div></div>';
+    html+='<div class="card" style="margin-top:16px"><strong>Методика</strong><div class="note" style="margin-top:8px">Это сравнительный браузерный benchmark на текущем устройстве. Обе версии запускаются в одинаковом iframe и получают одинаковые синтетические данные. Протокол P1.0 фиксирует 100/1000/5000/10000 записей, 3 повтора, одинаковые метрики и веса; если критерии меняются, это должен быть новый протокол и новый ряд. HTML baseline и current подгружаются перед серией, поэтому сетевое скачивание не входит в Start → ready. Для текущей версии ожидание включает IndexedDB initialization. «→ кадр» измеряется через performance.now() + несколько requestAnimationFrame. Long &gt;50ms показывает количество кадров с интервалом более 50 мс. Это не реальный пользовательский INP и не заменяет Chrome DevTools Performance.</div></div>';
+
 
     resultsEl.innerHTML=html;
+    recordCurrentHistory(composite.score,{
+      load:avg(rows,'load',CURRENT_LABEL),
+      save:avg(rows,'save',CURRENT_LABEL),
+      p50Frame:avg(rows,'p50Frame',CURRENT_LABEL),
+      menu:avg(rows,'menu',CURRENT_LABEL),
+      stats:avg(rows,'stats',CURRENT_LABEL),
+      settings:avg(rows,'settings',CURRENT_LABEL)
+    });
+    renderHistory();
   }
 
-  async function loadBaselineHTML(){
-    var response=await fetch(BASELINE_URL,{cache:'no-store'});
-    if(!response.ok)throw new Error('Не удалось получить baseline: HTTP '+response.status);
-    return await response.text();
+  function loadHistory(){
+    try{
+      var raw=localStorage.getItem(HISTORY_KEY);
+      return raw?JSON.parse(raw):[];
+    }catch(e){return []}
+  }
+
+  function saveHistory(history){
+    try{
+      localStorage.setItem(HISTORY_KEY,JSON.stringify(history));
+    }catch(e){}
+  }
+
+  function median(values){
+    var a=values.slice().sort(function(x,y){return x-y});
+    if(!a.length)return 0;
+    var mid=Math.floor(a.length/2);
+    return a.length%2?a[mid]:(a[mid-1]+a[mid])/2;
+  }
+
+  function versionKey(version){
+    var p=String(version||'v0.0.0').replace(/^v/,'').split('.').map(function(x){return parseInt(x,10)||0});
+    return p[0]*1000000+p[1]*1000+p[2];
+  }
+
+  function validHistoryGroups(){
+    var raw=loadHistory().filter(function(x){
+      return x.protocol===PROTOCOL_ID&&x.version&&isFinite(Number(x.score));
+    });
+    var groups={};
+    raw.forEach(function(x){
+      if(!groups[x.version])groups[x.version]=[];
+      groups[x.version].push(x);
+    });
+    return Object.keys(groups).sort(function(a,b){return versionKey(a)-versionKey(b)}).map(function(version){
+      var items=groups[version];
+      return {
+        version:version,
+        score:median(items.map(function(x){return Number(x.score)})),
+        runs:items.length,
+        last:items[items.length-1]
+      };
+    });
+  }
+
+  function ensureBaselineHistory(){
+    var history=loadHistory();
+    if(history.some(function(x){return x.protocol===PROTOCOL_ID}))return;
+    history.push({
+      protocol:PROTOCOL_ID,
+      version:'v0.3.12',
+      score:100,
+      change:0,
+      recordedAt:'2026-09-26T18:00:00.000Z',
+      source:'fixed-baseline'
+    });
+    saveHistory(history);
+  }
+
+  function recordCurrentHistory(score,metrics){
+    ensureBaselineHistory();
+    var history=loadHistory();
+    history.push({
+      protocol:PROTOCOL_ID,
+      version:CURRENT_LABEL,
+      score:Math.round(score*10)/10,
+      change:Math.round((score-100)*10)/10,
+      recordedAt:new Date().toISOString(),
+      metrics:metrics
+    });
+    saveHistory(history);
+  }
+
+  function renderHistory(){
+    ensureBaselineHistory();
+    var rows=validHistoryGroups();
+    var last=rows.length?rows[rows.length-1]:null;
+    var prev=rows.length>1?rows[rows.length-2]:null;
+    var trend='Недостаточно данных';
+    var step='—';
+    if(last&&prev){
+      var delta=last.score-prev.score;
+      step=(delta>0?'+':'')+delta.toFixed(1)+' пунктов';
+      trend=(delta>0?'+':'')+((last.score-rows[0].score)/(rows.length-1)).toFixed(1)+' пункта/версию';
+    }
+
+    var html='<div class="card trend-card"><strong>Тенденция серии · '+PROTOCOL_ID+'</strong><div class="trend-value">'+trend+'</div><div class="history-sub">Последний шаг: '+step+' · валидных версий: '+rows.length+' · baseline v0.3.12 = 100.0</div></div>';
+    html+='<div class="history-title">История версий</div><div class="history-sub">Результаты не заменяются. Повторные полные тесты одной версии сохраняются, а индекс версии в таблице — их медиана.</div>';
+    html+='<table class="history-table"><thead><tr><th>Версия</th><th>Индекс</th><th>К baseline</th><th>load</th><th>save</th><th>p50 кадра</th><th>Тестов</th><th>Последний запуск</th></tr></thead><tbody>';
+
+    rows.forEach(function(r){
+      var change=r.score-100;
+      var m=r.last&&r.last.metrics||{};
+      var stamp=r.last&&r.last.recordedAt?String(r.last.recordedAt).replace('T',' ').slice(0,16):'—';
+      html+='<tr><td>'+r.version+'</td><td>'+r.score.toFixed(1)+'</td><td>'+(change>0?'+':'')+change.toFixed(1)+'%</td><td>'+((Number(m.load)||0).toFixed(2))+' ms</td><td>'+((Number(m.save)||0).toFixed(2))+' ms</td><td>'+((Number(m.p50Frame)||0).toFixed(2))+' ms</td><td>'+r.runs+'</td><td>'+stamp+'</td></tr>';
+    });
+
+    html+='</tbody></table>';
+    html+='<div class="history-title">Зафиксированные несопоставимые результаты</div><div class="history-sub legacy">Предыдущий результат 88.7 для v0.3.13 показываем отдельно и не включаем в P1.0: тогда benchmark подготавливал данные для IndexedDB в другой базе, поэтому сравнение было методологически некорректным.</div>';
+    historyEl.innerHTML=html;
   }
 
   async function loadBaselineHTML(){
@@ -424,7 +535,7 @@ th{font-size:11px;color:#757a89;font-weight:600}
       var currentHTML=await currentResponse.text();
 
       BASELINE_LABEL=detectVersion(baselineHTML,'v0.3.11');
-      CURRENT_LABEL=detectVersion(currentHTML,'v0.3.12');
+      CURRENT_LABEL=detectVersion(currentHTML,'v0.3.13');
 
       for(var i=0;i<DATA_SIZES.length;i++){
         var size=DATA_SIZES[i];
@@ -444,7 +555,8 @@ th{font-size:11px;color:#757a89;font-weight:600}
   }
 
   runButton.onclick=run;
-  clearButton.onclick=function(){resultsEl.innerHTML='';setStatus('Результаты очищены.')};
+  clearButton.onclick=function(){resultsEl.innerHTML='';renderHistory();setStatus('Текущий результат очищен. История версий сохранена.')};
+  renderHistory();
 })();
 </script>
 </body>
