@@ -973,7 +973,7 @@ body.sheet-open{
       return '<div class="break-row"><div class="break-left"><div class="break-name"><span class="color-dot" style="background:'+color+';margin-right:7px;vertical-align:1px"></span>'+clean(h.name)+'</div><div class="break-sub">Цель: '+fmt(h.goal)+' в день</div></div><button class="secondary-action" data-remove-habit="'+h.id+'">Удалить</button></div>';
     }).join('')||'<div class="empty">Нет привычек.</div>';
 
-    var habitMap={
+    var habitMap={};
     for(var hi=0;hi<habits.length;hi++)habitMap[habits[hi].id]=habits[hi];
 
     var sorted=entries.slice().sort(function(a,b){
