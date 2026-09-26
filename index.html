@@ -1193,7 +1193,8 @@ body.sheet-open{
       }
 
       storageMode='indexeddb';
-      purgeImportedData();
+      var purged=purgeImportedData();
+      if(purged)renderActiveView();
       scheduleLocalBackup();
       window.__STORAGE_READY=true;
     }catch(e){
