@@ -597,7 +597,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.29</div>
+<div class="app-version" aria-label="Версия">v0.3.30</div>
 
 <main class="shell">
   <header class="top">
@@ -1170,15 +1170,12 @@ body.sheet-open{
     return false;
   }
 
-  async function runAugustAllocationMigrationV2(){
-    var markerKey='habit-timesheet-august-allocation-v2';
+  function repairAugustImportedSummary(){
     var accounting=findHabitByIdOrName('accounting','бухгалтерия');
     var reading=findHabitByIdOrName('reading','чтение');
     if(!accounting||!reading)return false;
 
-    var changed=false,newEntries=[];
-    var startDate='2026-08-20',endDate='2026-09-01';
-
+    var startDate='2026-08-20',endDate='2026-09-01',changed=false,newEntries=[];
     for(var i=entries.length-1;i>=0;i--){
       var e=entries[i];
       if(e.habitId!==IMPORT_SUMMARY_HABIT.id||String(e.date)<startDate||String(e.date)>=endDate)continue;
@@ -1213,21 +1210,10 @@ body.sheet-open{
     if(!changed)return false;
     entries=entries.concat(newEntries);
     invalidateDataCaches();
-
-    // Write the complete resulting dataset before recording the migration marker.
-    if(storageMode==='indexeddb'&&db){
-      await idbStoreAll(cloneData(habits),cloneData(entries));
-      await idbRequest(db.transaction(IDB_META,'readwrite').objectStore(IDB_META).put({key:markerKey,value:true}));
-      backupToLocalStorage();
-    }else{
-      if(!backupToLocalStorage())throw new Error('Local storage write failed');
-      localStorage.setItem(markerKey,'1');
-    }
-
-    showToast('20–31 августа распределено: 75% Бухгалтерия · 25% Чтение');
+    persistAll();
+    showToast('Август: 75% Бухгалтерия · 25% Чтение');
     return true;
   }
-
 
 
   function deleteEntryFromStorage(id){
@@ -1293,6 +1279,7 @@ body.sheet-open{
     await runTrainingAllocationMigration();
     await runAugustAllocationMigration();
     await runAugustAllocationMigrationV2();
+    repairAugustImportedSummary();
     invalidateDataCaches();
     menusDirty=true;
     entryRenderLimit=Math.min(entryRenderLimit,Math.max(60,entries.length));
@@ -1333,7 +1320,9 @@ body.sheet-open{
       await runTrainingAllocationMigration();
       await runAugustAllocationMigration();
       await runAugustAllocationMigrationV2();
+      repairAugustImportedSummary();
       scheduleLocalBackup();
+      setTimeout(function(){repairAugustImportedSummary();},900);
       window.__STORAGE_READY=true;
     }catch(e){
       storageMode='local';
