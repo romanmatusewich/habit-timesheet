@@ -316,7 +316,9 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .sheet>*{position:relative;z-index:1}
 .sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
 .sheet-title{margin:0;font-size:29px;line-height:1;font-weight:600;letter-spacing:-.04em}
-.sheet-close{width:35px;height:35px;padding:0;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:rgba(120,125,140,.10);color:#777b87;font:400 24px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif}
+.sheet-close{position:relative;width:35px;height:35px;padding:0;display:block;border:0;border-radius:50%;background:rgba(120,125,140,.10);color:#777b87}
+.sheet-close::before,.sheet-close::after{content:"";position:absolute;left:50%;top:50%;width:15px;height:1.6px;border-radius:2px;background:currentColor;transform-origin:center;transform:translate(-50%,-50%) rotate(45deg)}
+.sheet-close::after{transform:translate(-50%,-50%) rotate(-45deg)}
 .sheet,.menu-popover{
   scrollbar-width:none;
   -ms-overflow-style:none;
@@ -381,13 +383,15 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .color-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
 
 .menu-layer{position:fixed;inset:0;z-index:300;pointer-events:none}
-.menu-layer.active{pointer-events:auto}
 .menu-popover{
   position:fixed;
+  pointer-events:none;
   max-height:300px;
   overflow:auto;
   contain:layout paint;
-  background:linear-gradient(150deg,#fbfcff 0%,#f2f4fa 100%);
+  background:linear-gradient(150deg,rgba(251,252,255,.72) 0%,rgba(242,244,250,.62) 100%);
+  -webkit-backdrop-filter:blur(12px) saturate(115%);
+  backdrop-filter:blur(12px) saturate(115%);
   border:1px solid rgba(255,255,255,.90);
   border-radius:17px;
   box-shadow:0 18px 42px rgba(29,34,60,.14),inset 0 1px 0 rgba(255,255,255,.98);
@@ -397,7 +401,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   visibility:hidden;
   transition:opacity .12s ease,transform .12s ease,visibility 0s linear .12s
 }
-.menu-popover.active{opacity:1;visibility:visible;transform:translateY(0) scale(1);transition:opacity .12s ease,transform .12s ease}
+.menu-popover.active{opacity:1;visibility:visible;pointer-events:auto;transform:translateY(0) scale(1);transition:opacity .12s ease,transform .12s ease}
  .menu-section{padding:10px 12px 7px;font-size:10px;color:var(--muted);font-weight:500}
 .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:7px 10px 10px}
 .quick{border:1px solid rgba(255,255,255,.72);background:rgba(239,241,247,.90);border-radius:11px;padding:9px 10px;text-align:left;color:var(--ink);font-size:12px;font-weight:500;transition:background-color .12s ease}
@@ -510,7 +514,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.18</div>
+<div class="app-version" aria-label="Версия">v0.3.19</div>
 
 <main class="shell">
   <header class="top">
@@ -1249,7 +1253,7 @@ body.sheet-open{
   function renderSettings(){
     $('settingsRows').innerHTML=habits.map(function(h){
       var color=habitColor(h);
-      return '<div class="break-row"><div class="break-left"><div class="break-name"><span class="color-dot" style="background:'+color+';margin-right:7px;vertical-align:1px"></span>'+clean(h.name)+'</div><div class="break-sub">Цель: '+fmt(h.goal)+' в день</div></div><button class="secondary-action" data-remove-habit="'+h.id+'">Удалить</button></div>';
+      return '<div class="break-row"><div class="break-left"><div class="break-name"><span class="color-dot" style="background:'+color+';margin-right:7px;vertical-align:1px"></span>'+clean(h.name)+'</div></div><button class="secondary-action" data-remove-habit="'+h.id+'">Удалить</button></div>';
     }).join('')||'<div class="empty">Нет привычек.</div>';
 
     var habitMap={};
@@ -1628,12 +1632,13 @@ body.sheet-open{
   window.addEventListener('scroll',repositionOpenMenu,{passive:true});
 
   document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&activeMenuKind){closeMenus();return}
     if(e.key==='Escape'&&!$('sheet').hidden)closeSheet();
     if((e.ctrlKey||e.metaKey)&&e.key==='Enter'&&!$('sheet').hidden)saveEntry();
   });
 
   document.addEventListener('click',function(e){
-    if(!e.target.closest('.field')&&!e.target.closest('.sheet')&&!e.target.closest('#menuLayer'))closeMenus();
+    if(activeMenuKind&&!e.target.closest('#menuPopover')&&!e.target.closest('.custom-select'))closeMenus();
 
     var more=e.target.closest('#showMoreEntries');
     if(more){
