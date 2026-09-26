@@ -316,7 +316,12 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .sheet>*{position:relative;z-index:1}
 .sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
 .sheet-title{margin:0;font-size:29px;line-height:1;font-weight:600;letter-spacing:-.04em}
-.sheet-close{width:35px;height:35px;border:0;border-radius:50%;background:rgba(120,125,140,.10);color:#777b87;font-size:24px;line-height:1}
+.sheet-close{width:35px;height:35px;padding:0;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:rgba(120,125,140,.10);color:#777b87;font:400 24px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif}
+.sheet,.menu-popover{scrollbar-width:thin;scrollbar-color:rgba(74,81,110,.28) transparent}
+.sheet::-webkit-scrollbar,.menu-popover::-webkit-scrollbar{width:6px;height:6px}
+.sheet::-webkit-scrollbar-track,.menu-popover::-webkit-scrollbar-track{background:transparent}
+.sheet::-webkit-scrollbar-thumb,.menu-popover::-webkit-scrollbar-thumb{background:rgba(74,81,110,.26);border-radius:999px}
+.sheet::-webkit-scrollbar-thumb:hover,.menu-popover::-webkit-scrollbar-thumb:hover{background:rgba(74,81,110,.38)}
 .form{display:grid;gap:16px}
 .field{display:grid;gap:6px;position:relative}
 .field-label{font-size:12px;color:var(--muted);font-weight:400}
@@ -353,6 +358,23 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 }
 .field-control:focus{border-bottom-color:#111}
 .text-input::placeholder{color:var(--muted);opacity:1}
+.quick-categories{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:2px}
+.quick-category{
+  min-height:42px;
+  padding:9px 11px;
+  border:1px solid rgba(255,255,255,.78);
+  border-radius:13px;
+  background:linear-gradient(150deg,rgba(255,255,255,.66),rgba(239,241,247,.82));
+  color:var(--ink);
+  font-size:12px;
+  font-weight:500;
+  text-align:left;
+  transition:transform .12s ease,background-color .12s ease
+}
+.quick-category:active{transform:scale(.985)}
+@media (hover:hover){
+  .quick-category:hover{background:linear-gradient(150deg,rgba(255,255,255,.80),rgba(239,241,247,.90))}
+}
 .row-two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .color-row{display:flex;align-items:center;gap:8px}
 .color-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
@@ -364,7 +386,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   max-height:300px;
   overflow:auto;
   contain:layout paint;
-  background:rgba(248,249,252,.985);
+  background:linear-gradient(150deg,#fbfcff 0%,#f2f4fa 100%);
   border:1px solid rgba(255,255,255,.90);
   border-radius:17px;
   box-shadow:0 18px 42px rgba(29,34,60,.14),inset 0 1px 0 rgba(255,255,255,.98);
@@ -375,7 +397,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   transition:opacity .12s ease,transform .12s ease,visibility 0s linear .12s
 }
 .menu-popover.active{opacity:1;visibility:visible;transform:translateY(0) scale(1);transition:opacity .12s ease,transform .12s ease}
-.menu-section{padding:9px 10px 5px;font-size:10px;color:var(--muted);font-weight:500}
+ .menu-section{padding:10px 12px 7px;font-size:10px;color:var(--muted);font-weight:500}
 .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:7px 10px 10px}
 .quick{border:1px solid rgba(255,255,255,.72);background:rgba(239,241,247,.90);border-radius:11px;padding:9px 10px;text-align:left;color:var(--ink);font-size:12px;font-weight:500;transition:background-color .12s ease}
 .option{width:100%;display:block;border:0;background:transparent;text-align:left;padding:12px 14px;font-size:15px;line-height:1.2;color:var(--ink);border-top:1px solid rgba(30,34,50,.05)}
@@ -487,7 +509,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.16</div>
+<div class="app-version" aria-label="Версия">v0.3.17</div>
 
 <main class="shell">
   <header class="top">
@@ -571,6 +593,13 @@ body.sheet-open{
     </div>
 
     <div class="form">
+      <div class="quick-categories" aria-label="Популярные категории">
+        <button class="quick-category" type="button" data-visible-category="sport">Спорт</button>
+        <button class="quick-category" type="button" data-visible-category="accounting">Бухгалтерия</button>
+        <button class="quick-category" type="button" data-visible-category="reading">Чтение</button>
+        <button class="quick-category" type="button" data-visible-category="speech">Дикция и речь</button>
+      </div>
+
       <div class="field">
         <span class="field-label">Привычка</span>
         <button class="custom-select" id="habitButton"><span id="habitButtonText">Бухгалтерия</span><span class="chevron">⌄</span></button>
@@ -1286,30 +1315,11 @@ body.sheet-open{
     if(menuHTMLCache[kind]!==null)return;
 
     if(kind==='habit'){
-      var popularHabits=[
-        {label:'Спорт',match:'спорт'},
-        {label:'Бухгалтерия',match:'бухгалтер'},
-        {label:'Чтение',match:'чтени'},
-        {label:'Дикция и речь',match:'дикци'}
-      ];
-      var qh=popularHabits.map(function(q){
-        var h=habits.find(function(x){return x.name.toLowerCase().indexOf(q.match)>=0});
-        return h?'<button class="quick" data-quick-habit="'+h.id+'">'+q.label+'</button>':'';
-      }).join('');
-      menuHTMLCache.habit='<div class="menu-section">Популярные категории</div><div class="quick-grid">'+qh+'</div><div class="menu-section">Все привычки</div>'+
+      menuHTMLCache.habit='<div class="menu-section">Все привычки</div>'+
         habits.map(function(h){return '<button class="option" data-habit-option="'+h.id+'">'+clean(h.name)+'</button>';}).join('');
     }else if(kind==='type'){
-      var popularTypes=[
-        {label:'Спорт',type:'sport',color:'green'},
-        {label:'Активное обучение',type:'active',color:'blue'},
-        {label:'Пассивное обучение',type:'passive',color:'yellow'},
-        {label:'Работа',type:'work',color:'purple'}
-      ];
-      var qt=popularTypes.map(function(q){
-        return '<button class="quick" data-quick-type="'+q.type+'" data-quick-color="'+q.color+'">'+q.label+'</button>';
-      }).join('');
-      menuHTMLCache.type='<div class="menu-section">Популярные категории</div><div class="quick-grid">'+qt+'</div><div class="menu-section">Все типы</div>'+
-        TYPE_OPTIONS.map(function(t){return '<button class="option" data-type-option="'+t.id+'">'+t.label+'</button>';}).join('');
+      menuHTMLCache.type='<div class="menu-section">Все типы</div>'+
+        TYPE_OPTIONS.map(function(t){return '<button class="option" data-type-option="'+t.id+'">'+t.label+'</button>').join('');
     }else{
       menuHTMLCache.color=COLOR_OPTIONS.map(function(c){
         return '<button class="option" data-color-option="'+c.id+'"><span class="color-row"><span class="color-dot" style="background:'+c.color+'"></span><span>'+c.label+'</span></span></button>';
@@ -1530,41 +1540,43 @@ body.sheet-open{
   document.getElementById('typeButton').onclick=function(){showMenu('type','typeButton')};
   document.getElementById('colorButton').onclick=function(){showMenu('color','colorButton')};
 
+  document.querySelectorAll('[data-visible-category]').forEach(function(button){
+    button.onclick=function(){
+      var key=button.getAttribute('data-visible-category');
+      var query=key==='sport'?'спорт':key==='accounting'?'бухгалтер':key==='reading'?'чтени':key==='speech'?'дикци':'';
+      var habit=habits.find(function(h){return (h.name||'').toLowerCase().indexOf(query)>=0});
+      var preset=presetForHabit(habit?habit.name:'')||{};
+      var fallbackType=key==='sport'?'sport':key==='reading'?'reading':'active';
+      var fallbackColor=key==='sport'?'green':key==='reading'?'yellow':key==='speech'?'purple':'blue';
+      applySelection(habit?habit.id:chosenHabit,preset.type||fallbackType,preset.color||fallbackColor);
+      closeMenus();
+    };
+  });
+
   document.getElementById('menuPopover').onclick=function(e){
-    var quickHabit=e.target.closest('[data-quick-habit]');
     var habitOption=e.target.closest('[data-habit-option]');
-    if(quickHabit||habitOption){
-      var node=quickHabit||habitOption;
-      var id=node.getAttribute(quickHabit?'data-quick-habit':'data-habit-option');
+    if(habitOption){
+      var id=habitOption.getAttribute('data-habit-option');
       var h=habits.find(function(x){return x.id===id});
       var preset=presetForHabit(h?h.name:'')||{};
       applySelection(id,preset.type||chosenType,preset.color||chosenColor);
       closeMenus();
       return;
     }
-    var quickType=e.target.closest('[data-quick-type]');
+
     var typeOption=e.target.closest('[data-type-option]');
-    if(quickType||typeOption){
-      if(quickType){
-        var t=quickType.getAttribute('data-quick-type');
-        var c=quickType.getAttribute('data-quick-color');
-        var linkedHabit=habits.find(function(h){
-          var n=(h.name||'').toLowerCase();
-          return t==='sport'?n.indexOf('спорт')>=0:t==='reading'?n.indexOf('чтени')>=0:false;
-        });
-        applySelection(linkedHabit?linkedHabit.id:chosenHabit,t,c);
-      }else{
-        var typeId=typeOption.getAttribute('data-type-option');
-        var type=TYPE_OPTIONS.find(function(x){return x.id===typeId});
-        var linked=habits.find(function(h){
-          var n=(h.name||'').toLowerCase();
-          return typeId==='sport'?n.indexOf('спорт')>=0:typeId==='reading'?n.indexOf('чтени')>=0:false;
-        });
-        applySelection(linked?linked.id:chosenHabit,typeId,type?type.defaultColor:chosenColor);
-      }
+    if(typeOption){
+      var typeId=typeOption.getAttribute('data-type-option');
+      var type=TYPE_OPTIONS.find(function(x){return x.id===typeId});
+      var linked=habits.find(function(h){
+        var n=(h.name||'').toLowerCase();
+        return typeId==='sport'?n.indexOf('спорт')>=0:typeId==='reading'?n.indexOf('чтени')>=0:false;
+      });
+      applySelection(linked?linked.id:chosenHabit,typeId,type?type.defaultColor:chosenColor);
       closeMenus();
       return;
     }
+
     var colorOption=e.target.closest('[data-color-option]');
     if(colorOption){
       var colorId=colorOption.getAttribute('data-color-option');
