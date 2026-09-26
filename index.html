@@ -587,6 +587,7 @@ body.sheet-open{
 .record-delete{padding:8px 9px;white-space:nowrap;font-size:12px}
 .load-more{display:block;margin:9px auto 0}
 .empty{padding:8px 0;font-size:12px;color:var(--muted)}
+.export-scrim{position:fixed;inset:0;display:grid;place-items:center;padding:18px;background:rgba(255,255,255,.90);z-index:430}.export-dialog{width:min(470px,calc(100vw - 28px));max-height:min(760px,calc(100vh - 28px));overflow:auto;padding:23px;border-radius:24px;background:linear-gradient(150deg,rgba(255,255,255,.97),rgba(246,248,253,.92));border:1px solid rgba(255,255,255,.9);box-shadow:0 28px 80px rgba(25,32,66,.20)}.export-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.export-title{margin:0;font-size:24px;line-height:1.08;font-weight:600}.export-close{position:relative;width:34px;height:34px;padding:0;border:0;border-radius:50%;background:rgba(120,125,140,.10);color:#777b87}.export-close::before,.export-close::after{content:"";position:absolute;left:50%;top:50%;width:14px;height:1.6px;background:currentColor;transform:translate(-50%,-50%) rotate(45deg)}.export-close::after{transform:translate(-50%,-50%) rotate(-45deg)}.export-help{margin:10px 0 14px;font-size:10px;line-height:1.45;color:var(--muted)}.data-export-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.export-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
 .history-list{display:grid}.history-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid rgba(30,34,50,.07)}.history-row:first-child{border-top:0;padding-top:0}.history-action{font-size:12px;font-weight:500}.history-meta{margin-top:3px;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.history-time{font-size:10px;color:var(--muted);white-space:nowrap}
 .calendar-filter{max-width:170px;padding:8px 10px;border:1px solid rgba(255,255,255,.76);border-radius:11px;background:rgba(255,255,255,.56);color:var(--ink);font:inherit;font-size:11px}
 @media(max-width:520px){.calendar-filter{max-width:none;flex:1}.calendar-view-nav{width:100%}}
@@ -854,6 +855,15 @@ body.sheet-open{
 <div class="editor-grid"><label class="field"><span class="field-label">Цвет по умолчанию</span><select class="editor-select" id="habitEditorColor"></select></label><label class="field"><span class="field-label">Длительность по умолчанию, мин</span><input class="editor-input" id="habitEditorMinutes" type="number" min="1" max="600" value="30"></label></div>
 <div class="editor-help">Переименование сохраняет ID привычки, поэтому существующие записи остаются привязанными к ней.</div>
 <div class="editor-actions"><button class="secondary-action" id="habitEditorCancel">Отмена</button><button class="secondary-action" id="habitEditorSave">Сохранить</button></div></div></section></div>
+<div class="export-scrim" id="exportDialog" hidden>
+  <section class="export-dialog" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+    <div class="export-head"><h2 class="export-title" id="exportTitle">Экспорт данных</h2><button class="export-close" id="exportClose" aria-label="Закрыть">×</button></div>
+    <div class="export-help">Выбери диапазон дат и, при необходимости, одну привычку. Можно выгрузить JSON или CSV.</div>
+    <div class="data-export-grid"><label class="field"><span class="field-label">С</span><input class="editor-input" id="exportFrom" type="date"></label><label class="field"><span class="field-label">По</span><input class="editor-input" id="exportTo" type="date"></label></div>
+    <label class="field" style="margin-top:12px"><span class="field-label">Привычка</span><select class="editor-select" id="exportHabit"></select></label>
+    <div class="export-actions"><button class="secondary-action" id="exportCancel">Отмена</button><button class="secondary-action" id="exportJson">JSON</button><button class="secondary-action" id="exportCsv">CSV</button></div>
+  </section>
+</div>
 <script>
 (function(){
   'use strict';
@@ -2054,162 +2064,39 @@ body.sheet-open{
     showToast('Запись сохранена');
   }
 
-  function exportData(){
-    var payload={
-      app:'Habit Timesheet',
-      version:(document.querySelector('.app-version')||{}).textContent||'',
-      exportedAt:new Date().toISOString(),
-      habits:habits.map(function(h){return {id:h.id,name:h.name}}),
-      entries:entries.map(function(e){return {id:e.id,habitId:e.habitId,date:e.date,minutes:e.minutes,note:e.note,type:e.type,color:e.color}})
-    };
-    var blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});
-    var url=URL.createObjectURL(blob),link=document.createElement('a');
-    link.href=url;link.download='habit-timesheet-'+localDate()+'.json';
-    document.body.appendChild(link);link.click();link.remove();
-    setTimeout(function(){URL.revokeObjectURL(url)},0);
-    showToast('Данные экспортированы');
+  function openExportDialog(){
+    var dates=entries.map(function(e){return e.date}).sort();
+    $('exportFrom').value=dates[0]||currentDate;$('exportTo').value=dates[dates.length-1]||currentDate;
+    $('exportHabit').innerHTML='<option value="*">Все привычки</option>'+habits.map(function(h){return '<option value="'+clean(h.id)+'">'+clean(h.name)+'</option>';}).join('');
+    $('exportHabit').value='*';$('exportDialog').hidden=false;
   }
-
-  function openImportDialog(){
-    var select=$('importHabit');
-    if(!habits.length){showToast('Сначала добавь привычку');return}
-    select.innerHTML=habits.map(function(h){
-      return '<option value="'+clean(h.id)+'">'+clean(h.name)+'</option>';
-    }).join('');
-    select.value=habits.some(function(h){return h.id===chosenHabit})?chosenHabit:habits[0].id;
-    $('importMonth').value=currentDate.slice(0,7);
-    $('importText').value='';
-    $('dataTransfer').hidden=false;
-    setTimeout(function(){$('importText').focus()},0);
+  function closeExportDialog(){$('exportDialog').hidden=true;}
+  function csvEscape(value){var s=String(value==null?'':value);return '"'+s.replace(/"/g,'""')+'"';}
+  function downloadBlob(content,filename,type){var blob=new Blob([content],{type:type}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();setTimeout(function(){URL.revokeObjectURL(url)},0);}
+  function exportFiltered(format){
+    var from=$('exportFrom').value||'0000-01-01',to=$('exportTo').value||'9999-12-31',habitId=$('exportHabit').value||'*';
+    if(from>to){showToast('Проверь диапазон дат');return}
+    var filtered=entries.filter(function(e){return String(e.date)>=from&&String(e.date)<=to&&(habitId==='*'||e.habitId===habitId)}),habitMap={};
+    for(var i=0;i<habits.length;i++)habitMap[habits[i].id]=habits[i];
+    if(format==='json'){
+      var payload={app:'Habit Timesheet',version:(document.querySelector('.app-version')||{}).textContent||'',exportedAt:new Date().toISOString(),range:{from:from,to:to},habitId:habitId,habits:habits.map(function(h){return {id:h.id,name:h.name,icon:h.icon,defaultType:h.defaultType,defaultColor:h.defaultColor,defaultMinutes:h.defaultMinutes};}),entries:filtered};
+      downloadBlob(JSON.stringify(payload,null,2),'habit-timesheet-'+from+'-'+to+'.json','application/json;charset=utf-8');
+    }else{
+      var rows=['Дата,Привычка,Минуты,Тип,Цвет,Описание'];
+      for(var j=0;j<filtered.length;j++){var e=filtered[j],h=habitMap[e.habitId];rows.push([e.date,h?h.name:'Удаленная привычка',e.minutes,(TYPE_OPTIONS.find(function(t){return t.id===e.type})||{}).label||e.type,e.color,e.note].map(csvEscape).join(','));}
+      downloadBlob('\ufeff'+rows.join('\n'),'habit-timesheet-'+from+'-'+to+'.csv','text/csv;charset=utf-8');
+    }
+    addHistory('Экспорт данных',from+' — '+to+(habitId==='*'?'':' · '+(habitMap[habitId]?habitMap[habitId].name:'')));
+    closeExportDialog();showToast(format==='json'?'JSON экспортирован':'CSV экспортирован');
   }
-  function closeImportDialog(){
-    $('dataTransfer').hidden=true;
-  }
-
-  function parseImportDate(value,baseMonth){
-    var v=String(value||'').trim(),m,base=String(baseMonth||currentDate).match(/^(\d{4})-(\d{1,2})$/),baseYear=base?+base[1]:dateObj(currentDate).getFullYear(),baseMonthIndex=base?+base[2]-1:dateObj(currentDate).getMonth();
-    if(!v)return null;
-
-    // Google Sheets may copy a date as a serial number.
-    if(/^\d{4,6}$/.test(v)){
-      var serial=Number(v);
-      if(serial>20000&&serial<100000){
-        var serialDate=new Date(Date.UTC(1899,11,30)+serial*86400000);
-        return localDate(new Date(serialDate.getUTCFullYear(),serialDate.getUTCMonth(),serialDate.getUTCDate()));
-      }
-    }
-
-    m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-    if(m){
-      var y=+m[1],mo=+m[2],d=+m[3],date=new Date(y,mo-1,d);
-      return date.getFullYear()===y&&date.getMonth()===mo-1&&date.getDate()===d?localDate(date):null;
-    }
-    m=v.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/);
-    if(m){
-      var first=+m[1],second=+m[2],year=+m[3];if(year<100)year+=2000;
-      var separator=v.indexOf('/')>=0?'slash':(v.indexOf('.')>=0?'dot':'dash');
-      var day=first,month=second;
-      if((separator==='slash'||separator==='dash')&&second>12&&first<=12){month=first;day=second}
-      var date2=new Date(year,month-1,day);
-      return date2.getFullYear()===year&&date2.getMonth()===month-1&&date2.getDate()===day?localDate(date2):null;
-    }
-
-    // Date without a year, e.g. 26.09 or 9/26.
-    m=v.match(/^(\d{1,2})[.\/-](\d{1,2})$/);
-    if(m){
-      var a=+m[1],b=+m[2],dayNo=a,monthNo=b;
-      if(b>12&&a<=12){monthNo=a;dayNo=b}
-      if(dayNo>31||monthNo<1||monthNo>12)return null;
-      var partialDate=new Date(baseYear,monthNo-1,dayNo);
-      return partialDate.getFullYear()===baseYear&&partialDate.getMonth()===monthNo-1&&partialDate.getDate()===dayNo?localDate(partialDate):null;
-    }
-
-    // Bare day number: use the selected import month/year.
-    m=v.match(/^(\d{1,2})$/);
-    if(m){
-      var onlyDay=+m[1];
-      if(onlyDay<1||onlyDay>31)return null;
-      var dayDate=new Date(baseYear,baseMonthIndex,onlyDay);
-      return dayDate.getFullYear()===baseYear&&dayDate.getMonth()===baseMonthIndex&&dayDate.getDate()===onlyDay?localDate(dayDate):null;
-    }
-
-    var parsed=new Date(v);
-    return isNaN(parsed.getTime())?null:localDate(new Date(parsed.getFullYear(),parsed.getMonth(),parsed.getDate()));
-  }
-
-  function parseSheetImport(textValue,baseMonth){
-    var lines=String(textValue||'').replace(/\r/g,'').split('\n'),errors=0,merged={};
-    for(var i=0;i<lines.length;i++){
-      var line=lines[i].trim();if(!line)continue;
-      var parts=line.split('\t');
-      if(parts.length<2)parts=line.split(';');
-      if(parts.length<2)parts=line.split(/\s{2,}/);
-      if(parts.length<2)continue;
-      var first=parts[0].trim(),second=parts.slice(1).join(' ').trim();
-      var date=parseImportDate(first,baseMonth);
-      if(!date&&/день|дата|date/i.test(first))continue;
-      var numericText=second.replace(/\s/g,'').replace(/[^\d,.-]/g,'').replace(',','.');
-      var minutes=Number(numericText);
-      if(!date||!isFinite(minutes)||minutes<0){errors++;continue}
-      var rounded=Math.round(minutes);
-      merged[date]=(merged[date]||0)+rounded;
-    }
-    var dates=Object.keys(merged).sort(),rows=[];
-    for(var j=0;j<dates.length;j++)rows.push({date:dates[j],minutes:merged[dates[j]]});
-    return {rows:rows,errors:errors};
-  }
-
-  function persistEntriesBatch(newEntries){
-    if(!newEntries.length)return true;
-    localMutationEpoch++;
-    if(storageMode==='indexeddb'){
-      var batch=cloneData(newEntries);
-      queueIDBWrite(function(){
-        return new Promise(function(resolve,reject){
-          var tx=db.transaction(IDB_ENTRIES,'readwrite'),store=tx.objectStore(IDB_ENTRIES);
-          for(var i=0;i<batch.length;i++)store.put(batch[i]);
-          tx.oncomplete=function(){resolve()};
-          tx.onerror=function(){reject(tx.error||new Error('IndexedDB batch write failed'))};
-          tx.onabort=function(){reject(tx.error||new Error('IndexedDB batch write aborted'))};
-        });
-      });
-      scheduleLocalBackup();
-      return true;
-    }
-    return backupToLocalStorage();
-  }
-
-  function importFromSheet(){
-    var parsed=parseSheetImport($('importText').value,$('importMonth').value);
-    if(!parsed.rows.length){showToast('Не нашёл корректных строк для импорта');return}
-
-    var selectedId=$('importHabit').value;
-    var habit=habits.find(function(h){return h.id===selectedId});
-    if(!habit){showToast('Выбери привычку');return}
-    if(!confirm('Импортировать '+parsed.rows.length+' '+(parsed.rows.length===1?'строку':'строк')+' в «'+habit.name+'»?'))return;
-
-    var preset=presetForHabit(habit.name)||{};
-    var newEntries=parsed.rows.map(function(row){
-      return {id:uid(),habitId:habit.id,date:row.date,minutes:row.minutes,note:'Импорт из Google Таблиц',type:preset.type||'active',color:preset.color||'blue'};
-    });
-
-    entries=entries.concat(newEntries);
-    if(!persistEntriesBatch(newEntries)){
-      entries.splice(entries.length-newEntries.length,newEntries.length);
-      showToast('Не удалось сохранить импорт');return;
-    }
-    invalidateDataCaches();
-    closeImportDialog();
-    renderActiveView();
-    showToast('Импортировано '+newEntries.length+' '+(newEntries.length===1?'запись':'записей')+(parsed.errors?'. Пропущено строк: '+parsed.errors:''));
-  }
-  function openHabitEditor(id){habitEditorId=id||'';var habit=id?habits.find(function(h){return h.id===id}):null;$('habitEditorTitle').textContent=habit?'Настроить привычку':'Новая привычка';$('habitEditorName').value=habit?habit.name:'';$('habitEditorIcon').innerHTML=ICON_OPTIONS.map(function(x){return '<option value="'+x.id+'">'+x.label+' '+x.symbol+'</option>';}).join('');$('habitEditorType').innerHTML=TYPE_OPTIONS.map(function(x){return '<option value="'+x.id+'">'+clean(x.label)+'</option>';}).join('');$('habitEditorColor').innerHTML=COLOR_OPTIONS.map(function(x){return '<option value="'+x.id+'">'+clean(x.label)+'</option>';}).join('');var d=habit?habitDefaultSettings(habit):{type:'active',color:'blue',minutes:30};$('habitEditorIcon').value=habit&&habit.icon?habit.icon:ICON_OPTIONS[Math.min(habits.length,ICON_OPTIONS.length-1)].id;$('habitEditorType').value=d.type;$('habitEditorColor').value=d.color;$('habitEditorMinutes').value=d.minutes;$('habitEditor').hidden=false;setTimeout(function(){$('habitEditorName').focus()},0);}
-  function closeHabitEditor(){$('habitEditor').hidden=true;habitEditorId='';}
-  function saveHabitEditor(){var name=$('habitEditorName').value.trim();if(!name){showToast('Укажи название привычки');return}var mins=Math.max(1,Math.min(600,parseInt($('habitEditorMinutes').value||'30',10)||30)),icon=$('habitEditorIcon').value,type=$('habitEditorType').value,color=$('habitEditorColor').value,existing=habitEditorId?habits.find(function(h){return h.id===habitEditorId}):null;if(existing){var oldName=existing.name;existing.name=name;existing.icon=icon;existing.defaultType=type;existing.defaultColor=color;existing.defaultMinutes=mins;persistHabits();menusDirty=true;invalidateDataCaches();addHistory('Изменена привычка',oldName+' → '+name);closeHabitEditor();renderSettings();renderActiveView();showToast(oldName!==name?'Привычка переименована':'Настройки привычки сохранены');return}var habit={id:uid(),name:name,goal:30,order:habits.length,icon:icon,defaultType:type,defaultColor:color,defaultMinutes:mins};habits.push(habit);persistHabits();menusDirty=true;invalidateDataCaches();addHistory('Создана привычка',name);closeHabitEditor();renderSettings();renderActiveView();showToast('Привычка добавлена');}
   function addHabit(){openHabitEditor('');}
 
   document.getElementById('openSheet').onclick=openSheet;
-  document.getElementById('exportData').onclick=exportData;
+  document.getElementById('exportData').onclick=openExportDialog;
+  document.getElementById('exportClose').onclick=closeExportDialog;
+  document.getElementById('exportCancel').onclick=closeExportDialog;
+  document.getElementById('exportJson').onclick=function(){exportFiltered('json');};
+  document.getElementById('exportCsv').onclick=function(){exportFiltered('csv');};
   document.getElementById('importData').onclick=openImportDialog;
   document.getElementById('dataDialogClose').onclick=closeImportDialog;
   document.getElementById('dataDialogCancel').onclick=closeImportDialog;
@@ -2349,6 +2236,7 @@ body.sheet-open{
   },{passive:true});
 
   document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&!$('exportDialog').hidden){closeExportDialog();return}
     if(e.key==='Escape'&&!$('dataTransfer').hidden){closeImportDialog();return}
     if(e.key==='Escape'&&activeMenuKind){closeMenus();return}
     if(e.key==='Escape'&&!$('sheet').hidden)closeSheet();
