@@ -532,15 +532,21 @@ body.sheet-open{
 .import-area:focus{border-color:rgba(95,99,255,.45);box-shadow:0 0 0 3px rgba(95,99,255,.08)}
 .data-dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
 .records-section{contain:layout paint;content-visibility:auto;contain-intrinsic-size:520px}
+.records-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:2px;margin-bottom:8px}
+.records-select-actions{display:flex;gap:6px;flex-wrap:wrap}
+.records-action{border:1px solid rgba(120,125,140,.16);background:rgba(246,247,251,.78);border-radius:10px;padding:7px 9px;font-size:11px;color:var(--ink)}
+.records-action.danger{color:#b43c52;background:rgba(255,240,243,.78);border-color:rgba(200,90,112,.18)}
+.records-selection-count{font-size:10px;color:var(--muted)}
 .record-row{
   display:grid;
-  grid-template-columns:auto 1fr auto;
-  gap:10px;
+  grid-template-columns:auto auto 1fr auto;
+  gap:9px;
   align-items:center;
   padding:11px 0;
   border-top:1px solid rgba(30,34,50,.07)
 }
 .record-row:first-child{border-top:0;padding-top:0}
+.record-check{width:16px;height:16px;accent-color:var(--blue);margin:0}
 .record-dot{width:8px;height:8px;border-radius:50%;display:block;box-shadow:0 2px 5px rgba(35,42,77,.14)}
 .record-info{min-width:0}
 .record-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -597,7 +603,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.30</div>
+<div class="app-version" aria-label="Версия">v0.3.31</div>
 
 <main class="shell">
   <header class="top">
@@ -700,6 +706,14 @@ body.sheet-open{
       <div class="breakdown" style="margin-top:12px"><div id="settingsRows"></div></div>
       <div class="breakdown records-section" style="margin-top:12px">
         <div class="breakdown-head"><strong>Записи</strong><span id="recordsSummary">0 записей</span></div>
+        <div class="records-toolbar">
+          <div class="records-select-actions">
+            <button class="records-action" id="selectAllEntries" type="button">Выбрать все</button>
+            <button class="records-action" id="clearEntrySelection" type="button">Снять выбор</button>
+            <button class="records-action danger" id="deleteSelectedEntries" type="button" hidden>Удалить выбранные</button>
+          </div>
+          <span class="records-selection-count" id="recordsSelectionCount"></span>
+        </div>
         <div id="entriesRows"></div>
         <button class="secondary-action load-more" id="showMoreEntries" hidden>Показать ещё</button>
       </div>
@@ -871,6 +885,7 @@ body.sheet-open{
   var calendarNodes=null;
   var chartNodes=null;
   var entryRenderLimit=60;
+  var selectedEntryIds={};
   var renderFrame=0;
   var nodeCache={};
   var renderCache={habitBreakdownHTML:null,statsBreakdownHTML:null,habitBreakdownMax:0};
@@ -1215,6 +1230,26 @@ body.sheet-open{
     return true;
   }
 
+
+  function deleteEntriesFromStorage(ids){
+    if(!ids.length)return true;
+    localMutationEpoch++;
+    if(storageMode==='indexeddb'){
+      var batch=ids.slice();
+      queueIDBWrite(function(){
+        return new Promise(function(resolve,reject){
+          var tx=db.transaction(IDB_ENTRIES,'readwrite'),store=tx.objectStore(IDB_ENTRIES);
+          for(var i=0;i<batch.length;i++)store.delete(batch[i]);
+          tx.oncomplete=function(){resolve()};
+          tx.onerror=function(){reject(tx.error||new Error('IndexedDB batch delete failed'))};
+          tx.onabort=function(){reject(tx.error||new Error('IndexedDB batch delete aborted'))};
+        });
+      });
+      scheduleLocalBackup();
+      return true;
+    }
+    return backupToLocalStorage();
+  }
 
   function deleteEntryFromStorage(id){
     localMutationEpoch++;
@@ -1697,8 +1732,15 @@ body.sheet-open{
     $('entriesRows').innerHTML=visible.map(function(e){
       var habit=habitMap[e.habitId];
       var color=COLOR_BY_ID[e.color]||'#6e73ff';
-      return '<div class="record-row"><span class="record-dot" style="background:'+color+'"></span><div class="record-info"><div class="record-name">'+clean(habit?habit.name:'Удаленная привычка')+'</div><div class="record-meta">'+formatFullDate(e.date||currentDate)+' · '+fmt(e.minutes)+'</div>'+(e.note?'<div class="record-note">'+clean(e.note)+'</div>':'')+'</div><button class="secondary-action record-delete" data-remove-entry="'+clean(e.id)+'">Удалить</button></div>';
+      var checked=selectedEntryIds[e.id]?' checked':'';
+      return '<div class="record-row"><input class="record-check" type="checkbox" data-entry-check="'+clean(e.id)+'"'+checked+' aria-label="Выбрать запись"><span class="record-dot" style="background:'+color+'"></span><div class="record-info"><div class="record-name">'+clean(habit?habit.name:'Удаленная привычка')+'</div><div class="record-meta">'+formatFullDate(e.date||currentDate)+' · '+fmt(e.minutes)+'</div>'+(e.note?'<div class="record-note">'+clean(e.note)+'</div>':'')+'</div><button class="secondary-action record-delete" data-remove-entry="'+clean(e.id)+'">Удалить</button></div>';
     }).join('')||'<div class="empty">Нет записей.</div>';
+
+    var selectedCount=Object.keys(selectedEntryIds).filter(function(id){return selectedEntryIds[id]&&entries.some(function(e){return e.id===id})}).length;
+    $('recordsSelectionCount').textContent=selectedCount?selectedCount+' выбрано':'';
+    $('deleteSelectedEntries').hidden=!selectedCount;
+    $('clearEntrySelection').hidden=!selectedCount;
+    $('selectAllEntries').disabled=!entries.length||selectedCount===entries.length;
 
     var more=entries.length>entryRenderLimit;
     $('showMoreEntries').hidden=!more;
@@ -2353,6 +2395,45 @@ body.sheet-open{
     if((e.ctrlKey||e.metaKey)&&e.key==='Enter'&&!$('sheet').hidden)saveEntry();
   });
 
+  document.addEventListener('change',function(e){
+    var check=e.target.closest('[data-entry-check]');
+    if(!check)return;
+    var id=check.getAttribute('data-entry-check');
+    if(check.checked)selectedEntryIds[id]=true;
+    else delete selectedEntryIds[id];
+    renderSettings();
+  });
+
+  document.getElementById('selectAllEntries').onclick=function(){
+    selectedEntryIds={};
+    for(var i=0;i<entries.length;i++)selectedEntryIds[entries[i].id]=true;
+    renderSettings();
+  };
+  document.getElementById('clearEntrySelection').onclick=function(){
+    selectedEntryIds={};
+    renderSettings();
+  };
+  document.getElementById('deleteSelectedEntries').onclick=function(){
+    var ids=Object.keys(selectedEntryIds).filter(function(id){return selectedEntryIds[id]&&entries.some(function(e){return e.id===id})});
+    if(!ids.length)return;
+    if(!confirm('Удалить выбранные записи ('+ids.length+')?'))return;
+    var removed=[];
+    entries=entries.filter(function(e){
+      if(ids.indexOf(e.id)>=0){removed.push(e);return false}
+      return true;
+    });
+    if(!deleteEntriesFromStorage(ids)){
+      entries=entries.concat(removed);
+      showToast('Не удалось удалить выбранные записи');
+      return;
+    }
+    selectedEntryIds={};
+    invalidateDataCaches();
+    renderSettings();
+    scheduleActiveRender();
+    showToast('Удалено записей: '+ids.length);
+  };
+
   document.addEventListener('click',function(e){
     var calendarCell=e.target.closest('[data-calendar-date]');
     if(calendarCell&&currentView==='calendar'){
@@ -2389,7 +2470,9 @@ body.sheet-open{
             showToast('Не удалось удалить запись');
             return;
           }
+          delete selectedEntryIds[removedEntry.id];
           invalidateDataCaches();
+          renderSettings();
           scheduleActiveRender();
           showToast('Запись удалена');
         }
@@ -2406,6 +2489,7 @@ body.sheet-open{
         var oldEntries=entries;
         habits=habits.filter(function(h){return h.id!==id});
         entries=entries.filter(function(x){return x.habitId!==id});
+        for(var sid in selectedEntryIds)if(!entries.some(function(x){return x.id===sid}))delete selectedEntryIds[sid];
         if(!deleteHabitFromStorage(id)){
           habits=oldHabits;
           entries=oldEntries;
