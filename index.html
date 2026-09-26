@@ -409,17 +409,17 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 
 .calendar{
   contain:layout paint;
-  position:absolute;
-  left:0;right:0;
-  top:calc(100% + 8px);
+  position:fixed;
+  width:min(360px,calc(100vw - 28px));
+  max-height:min(390px,calc(100vh - 28px));
+  overflow:auto;
   margin:0;
-  background:rgba(248,249,252,.97);
-  border:1px solid rgba(255,255,255,.85);
+  background:rgba(248,249,252,.98);
+  border:1px solid rgba(255,255,255,.90);
   border-radius:17px;
   box-shadow:0 18px 42px rgba(29,34,60,.14),inset 0 1px 0 rgba(255,255,255,.98);
-
   padding:13px;
-  z-index:150
+  z-index:350
 }
 .calendar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .calendar-month{font-size:14px;font-weight:600}
@@ -449,6 +449,26 @@ body.sheet-open{
 }
 
 .view{display:none}.view.active{display:block}
+.calendar-section{margin-top:44px}
+.calendar-view-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.calendar-view-sub{margin-top:4px;font-size:11px;color:var(--muted)}
+.calendar-view-nav{display:flex;gap:6px}
+.calendar-nav-btn{width:34px;height:34px;padding:0;border:1px solid rgba(255,255,255,.78);border-radius:11px;background:rgba(255,255,255,.52);color:var(--ink);font-size:24px;line-height:1}
+.month-calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.calendar-weekday{font-size:10px;color:var(--muted);text-align:center;padding:2px 0 4px}
+.calendar-cell{position:relative;min-width:0;min-height:78px;padding:8px 7px 7px;border:1px solid rgba(255,255,255,.78);border-radius:14px;background:rgba(255,255,255,.46);box-shadow:inset 0 1px 0 rgba(255,255,255,.64);transition:transform .12s ease,background-color .12s ease;cursor:pointer}
+.calendar-cell.muted{opacity:.38}
+.calendar-cell.today{box-shadow:inset 0 0 0 1px rgba(95,99,255,.45),inset 0 1px 0 rgba(255,255,255,.64)}
+.calendar-cell.has-data{background:rgba(255,255,255,.66)}
+.calendar-day-number{font-size:12px;font-weight:600}
+.calendar-day-total{margin-top:5px;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}
+.calendar-color-stack{display:flex;gap:3px;align-items:center;margin-top:9px;min-height:5px}
+.calendar-color-segment{height:5px;border-radius:999px;min-width:4px;flex:1}
+.calendar-legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:12px;font-size:10px;color:var(--muted)}
+.calendar-legend-item{display:flex;align-items:center;gap:5px}
+.calendar-legend-dot{width:7px;height:7px;border-radius:50%}
+@media (hover:hover){.calendar-cell:hover{transform:translateY(-1px);background:rgba(255,255,255,.78)}}
+@media(max-width:560px){.calendar-cell{min-height:66px;padding:7px 5px}.calendar-color-stack{margin-top:7px}.calendar-view-sub{font-size:10px}}
 .secondary-action{border:1px solid rgba(255,255,255,.74);background:rgba(255,255,255,.50);border-radius:12px;padding:9px 12px;font-weight:500;color:var(--ink)}
 .records-section{contain:layout paint;content-visibility:auto;contain-intrinsic-size:520px}
 .record-row{
@@ -513,7 +533,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.22</div>
+<div class="app-version" aria-label="Версия">v0.3.23</div>
 
 <main class="shell">
   <header class="top">
@@ -565,6 +585,23 @@ body.sheet-open{
     </section>
   </section>
 
+  <section id="calendarView" class="view">
+    <section class="stats-section calendar-section">
+      <div class="calendar-view-head">
+        <div>
+          <h2 class="stats-title">Календарь</h2>
+          <div class="calendar-view-sub" id="calendarRangeLabel"></div>
+        </div>
+        <div class="calendar-view-nav">
+          <button class="calendar-nav-btn" id="calendarPrevMonth" type="button" aria-label="Предыдущий месяц">‹</button>
+          <button class="calendar-nav-btn" id="calendarNextMonth" type="button" aria-label="Следующий месяц">›</button>
+        </div>
+      </div>
+      <div class="month-calendar" id="monthCalendar"></div>
+      <div class="calendar-legend" id="calendarLegend"></div>
+    </section>
+  </section>
+
   <section id="settingsView" class="view">
     <section class="stats-section" style="margin-top:44px">
       <div class="breakdown-head">
@@ -583,6 +620,7 @@ body.sheet-open{
 
 <nav class="mobile-nav" aria-label="Навигация">
   <button class="mobile-tab active" data-view="today">Сегодня</button>
+  <button class="mobile-tab" data-view="calendar">Календарь</button>
   <button class="mobile-tab" data-view="stats">Статистика</button>
   <button class="mobile-tab" data-view="settings">Настройки</button>
 </nav>
@@ -728,6 +766,7 @@ body.sheet-open{
   var renderFrame=0;
   var nodeCache={};
   var renderCache={habitBreakdownHTML:null,statsBreakdownHTML:null,habitBreakdownMax:0};
+  var calendarViewDate=currentDate;
   var domCache={
     views:document.querySelectorAll('.view'),
     navs:document.querySelectorAll('[data-view]')
@@ -1282,6 +1321,58 @@ body.sheet-open{
     }
   }
 
+  function monthLabel(date){
+    var d=dateObj(date),names=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    return names[d.getMonth()]+' '+d.getFullYear();
+  }
+
+  function calendarTooltip(date,stats){
+    var habitMap={};
+    for(var i=0;i<habits.length;i++)habitMap[habits[i].id]=habits[i];
+    var dayEntries=entries.filter(function(e){return e.date===date});
+    dayEntries.sort(function(a,b){return (Number(b.minutes)||0)-(Number(a.minutes)||0)});
+    var lines=[date+' · '+fmt(stats.byDate[date]||0)],seen={};
+    for(var j=0;j<dayEntries.length;j++){
+      var e=dayEntries[j],name=habitMap[e.habitId]?habitMap[e.habitId].name:'Удаленная привычка';
+      if(seen[name])continue;
+      seen[name]=1;
+      var mins=0,count=0;
+      for(var k=0;k<dayEntries.length;k++)if(dayEntries[k].habitId===e.habitId){mins+=Number(dayEntries[k].minutes)||0;count++}
+      lines.push(name+': '+fmt(mins)+(count>1?' · '+count+' записи':''));
+      if(lines.length>=6)break;
+    }
+    return lines.join('\n');
+  }
+
+  function renderCalendarView(){
+    var d=dateObj(calendarViewDate),year=d.getFullYear(),month=d.getMonth();
+    var first=new Date(year,month,1),firstDay=(first.getDay()+6)%7,daysInMonth=new Date(year,month+1,0).getDate(),prevDays=new Date(year,month,0).getDate();
+    var stats=getStats(),names=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'],html='';
+    $('calendarRangeLabel').textContent=monthLabel(calendarViewDate);
+    for(var w=0;w<7;w++)html+='<div class="calendar-weekday">'+names[w]+'</div>';
+
+    var today=localDate(new Date());
+    for(var i=0;i<42;i++){
+      var day,muted,date;
+      if(i<firstDay){day=prevDays-firstDay+i+1;muted=true;date=localDate(new Date(year,month-1,day))}
+      else if(i<firstDay+daysInMonth){day=i-firstDay+1;muted=false;date=localDate(new Date(year,month,day))}
+      else{day=i-firstDay-daysInMonth+1;muted=true;date=localDate(new Date(year,month+1,day))}
+      var total=stats.byDate[date]||0,colorTotals=stats.byDateColor[date]||{};
+      var colors=Object.keys(colorTotals).filter(function(id){return colorTotals[id]>0&&COLOR_BY_ID[id]}).sort(function(a,b){return colorTotals[b]-colorTotals[a]});
+      var stack='';
+      for(var c=0;c<colors.length&&c<5;c++){
+        var colorId=colors[c],ratio=colorTotals[colorId]/Math.max(total,1);
+        stack+='<span class="calendar-color-segment" style="background:'+COLOR_BY_ID[colorId]+';flex:'+Math.max(.15,ratio)+'"></span>';
+      }
+      var cls='calendar-cell'+(muted?' muted':'')+(total?' has-data':'')+(date===today?' today':'');
+      html+='<div class="'+cls+'" data-calendar-date="'+date+'" title="'+clean(calendarTooltip(date,stats))+'"><div class="calendar-day-number">'+day+'</div><div class="calendar-day-total">'+(total?fmt(total):'')+'</div><div class="calendar-color-stack">'+stack+'</div></div>';
+    }
+    $('monthCalendar').innerHTML=html;
+    $('calendarLegend').innerHTML=COLOR_OPTIONS.map(function(c){
+      return '<span class="calendar-legend-item"><span class="calendar-legend-dot" style="background:'+c.color+'"></span>'+c.label+'</span>';
+    }).join('');
+  }
+
   function renderToday(){
     updateHeader();
     renderChart();
@@ -1291,6 +1382,7 @@ body.sheet-open{
   function renderActiveView(){
     updateViewVisibility();
     if(currentView==='today')renderToday();
+    else if(currentView==='calendar')renderCalendarView();
     else if(currentView==='stats')renderStats();
     else renderSettings();
   }
@@ -1510,6 +1602,7 @@ body.sheet-open{
     }
 
     currentDate=targetDate;
+    calendarViewDate=currentDate;
     invalidateDataCaches();
     closeSheet();
     scheduleActiveRender();
@@ -1592,11 +1685,29 @@ body.sheet-open{
     }
   };
 
+  function positionCalendar(){
+    var calendar=$('calendar'),button=$('dateButton');
+    if(calendar.hidden)return;
+    var rect=button.getBoundingClientRect(),edge=14,gap=8,width=Math.min(360,window.innerWidth-edge*2);
+    var below=window.innerHeight-rect.bottom-gap-edge,above=rect.top-gap-edge;
+    var openBelow=below>=230||below>=above;
+    var maxHeight=Math.min(390,Math.max(230,openBelow?below:above));
+    var top=openBelow?rect.bottom+gap:Math.max(edge,rect.top-gap-maxHeight);
+    var left=Math.min(Math.max(edge,rect.left),window.innerWidth-edge-width);
+    calendar.style.left=Math.round(left)+'px';
+    calendar.style.top=Math.round(top)+'px';
+    calendar.style.width=Math.round(width)+'px';
+    calendar.style.maxHeight=Math.round(maxHeight)+'px';
+  }
+
   document.getElementById('dateButton').onclick=function(){
     var willOpen=$('calendar').hidden;
     closeMenus();
-    $('calendar').hidden=!willOpen;
-    if(willOpen)renderCalendar();
+    if(willOpen){
+      $('calendar').hidden=false;
+      renderCalendar();
+      positionCalendar();
+    }else $('calendar').hidden=true;
   };
 
   document.getElementById('calendar').onclick=function(e){
@@ -1616,6 +1727,13 @@ body.sheet-open{
     }
   };
 
+  document.getElementById('calendarPrevMonth').onclick=function(){
+    var d=dateObj(calendarViewDate);d.setDate(1);d.setMonth(d.getMonth()-1);calendarViewDate=localDate(d);renderCalendarView();
+  };
+  document.getElementById('calendarNextMonth').onclick=function(){
+    var d=dateObj(calendarViewDate);d.setDate(1);d.setMonth(d.getMonth()+1);calendarViewDate=localDate(d);renderCalendarView();
+  };
+
   document.getElementById('sheet').addEventListener('click',function(e){
     if(e.target===this)closeSheet();
   });
@@ -1627,8 +1745,14 @@ body.sheet-open{
     if(button)positionMenu(button);
   }
 
-  window.addEventListener('resize',repositionOpenMenu,{passive:true});
-  window.addEventListener('scroll',repositionOpenMenu,{passive:true});
+  window.addEventListener('resize',function(){
+    repositionOpenMenu();
+    positionCalendar();
+  },{passive:true});
+  window.addEventListener('scroll',function(){
+    repositionOpenMenu();
+    positionCalendar();
+  },{passive:true});
 
   document.addEventListener('keydown',function(e){
     if(e.key==='Escape'&&activeMenuKind){closeMenus();return}
@@ -1637,7 +1761,16 @@ body.sheet-open{
   });
 
   document.addEventListener('click',function(e){
+    var calendarCell=e.target.closest('[data-calendar-date]');
+    if(calendarCell&&currentView==='calendar'){
+      currentDate=calendarCell.getAttribute('data-calendar-date');
+      calendarViewDate=currentDate;
+      currentView='today';
+      renderActiveView();
+      return;
+    }
     if(activeMenuKind&&!e.target.closest('#menuPopover')&&!e.target.closest('.custom-select'))closeMenus();
+    if(!$('calendar').hidden&&!e.target.closest('#calendar')&&!e.target.closest('#dateButton'))$('calendar').hidden=true;
 
     var more=e.target.closest('#showMoreEntries');
     if(more){
