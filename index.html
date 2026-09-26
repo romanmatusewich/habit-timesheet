@@ -42,6 +42,9 @@ html,body{
 }
 body{min-height:100vh;overflow-x:hidden}
 .chart-card,.stats-section{contain:layout paint}
+@media (prefers-reduced-motion:reduce){
+  .record-button,.mobile-tab,.bar{transition:none!important}
+}
 @media (hover:none){
   .record-button:hover,.bar:hover,.quick:hover,.option:hover,.cal-day:hover{transform:none}
 }
@@ -103,7 +106,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .record-button:active{transform:scale(.985)}
 
 .hero{margin-top:124px}
-.chart-card{
+.chart-card{contain:layout paint;
   position:relative;
   overflow:hidden;
   border-radius:28px;
@@ -179,7 +182,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .stats-section{margin-top:28px}
 .stats-title{margin:0 2px 11px;font-size:20px;line-height:1.15;font-weight:600;letter-spacing:-.025em}
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.stat-card{
+.stat-card{contain:layout paint;
   min-height:94px;
   padding:16px 17px;
   border-radius:20px;
@@ -192,7 +195,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .stat-label{font-size:12px;color:var(--muted);font-weight:400}
 .stat-value{margin-top:8px;font-size:25px;line-height:1.04;font-weight:600;letter-spacing:-.035em}
 .stat-note{margin-top:4px;font-size:12px;color:var(--muted)}
-.breakdown{
+.breakdown{contain:layout paint;
   margin-top:12px;
   padding:17px;
   border-radius:20px;
@@ -252,7 +255,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   font-weight:400;
   padding:7px 11px;
   border-radius:11px;
-  transition:transform .12s ease,opacity .12s ease,background-color .12s ease
+  transition:background-color .12s ease,opacity .12s ease
 }
 .mobile-tab.active{
   color:var(--ink);
@@ -635,7 +638,11 @@ body.sheet-open{overflow:hidden}
   var chosenType='active';
   var chosenColor='yellow';
   var statsCache=null;
-  var domCache={};
+  var domCache={
+    views:document.querySelectorAll('.view'),
+    navs:document.querySelectorAll('[data-view]')
+  };
+  var chartNodes=null;
 
   function $(id){return document.getElementById(id)}
   function uid(){return 'id-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,9)}
@@ -745,24 +752,41 @@ body.sheet-open{overflow:hidden}
     $('dateWeekday').textContent=d.weekday;
   }
 
+  function ensureChartNodes(){
+    if(chartNodes)return;
+    chartNodes={bars:[],labels:[]};
+    var chart=$('weekChart'),labels=$('chartLabels');
+    chart.textContent='';
+    labels.textContent='';
+    for(var i=0;i<7;i++){
+      var day=document.createElement('div');
+      day.className='day';
+      var bar=document.createElement('div');
+      day.appendChild(bar);
+      chart.appendChild(day);
+      chartNodes.bars.push(bar);
+
+      var label=document.createElement('div');
+      label.className='chart-label';
+      labels.appendChild(label);
+      chartNodes.labels.push(label);
+    }
+  }
+
   function renderChart(){
+    ensureChartNodes();
     var dates=weekDates(currentDate),totals=dates.map(dayTotal),weekTotal=totals.reduce(function(a,b){return a+b},0);
     $('weekSummary').textContent=(Math.round(weekTotal/60*10)/10)+' часов за эту неделю';
 
     var max=Math.max(60,Math.max.apply(Math,totals));
-    var chart=$('weekChart');
-    chart.innerHTML='';
-    dates.forEach(function(date,index){
-      var day=document.createElement('div');
-      day.className='day';
-      var bar=document.createElement('div');
-      bar.className='bar'+(date===currentDate?' today':' muted');
-      bar.style.height=Math.max(7,Math.round(totals[index]/max*100))+'%';
-      bar.title=fmt(totals[index]);
-      day.appendChild(bar);
-      chart.appendChild(day);
-    });
-    $('chartLabels').innerHTML=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(function(d){return '<div class="chart-label">'+d+'</div>'}).join('');
+    var names=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+    for(var i=0;i<7;i++){
+      var bar=chartNodes.bars[i];
+      bar.className='bar'+(dates[i]===currentDate?' today':' muted');
+      bar.style.height=Math.max(7,Math.round(totals[i]/max*100))+'%';
+      bar.title=fmt(totals[i]);
+      chartNodes.labels[i].textContent=names[i];
+    }
     $('chartMark').textContent=Math.round(max*.55);
   }
 
@@ -821,10 +845,32 @@ body.sheet-open{overflow:hidden}
     }).join('')||'<div class="empty">Нет привычек.</div>';
   }
 
+  function updateViewVisibility(){
+    for(var i=0;i<domCache.views.length;i++){
+      var v=domCache.views[i];
+      v.classList.toggle('active',v.id===currentView+'View');
+    }
+    for(var j=0;j<domCache.navs.length;j++){
+      var b=domCache.navs[j];
+      b.classList.toggle('active',b.getAttribute('data-view')===currentView);
+    }
+  }
+
+  function renderToday(){
+    updateHeader();
+    renderChart();
+    renderMainStats();
+  }
+
+  function renderActiveView(){
+    updateViewVisibility();
+    if(currentView==='today')renderToday();
+    else if(currentView==='stats')renderStats();
+    else renderSettings();
+  }
+
   function render(){
-    updateHeader();renderChart();renderMainStats();renderStats();renderSettings();
-    document.querySelectorAll('.view').forEach(function(v){v.classList.toggle('active',v.id===currentView+'View')});
-    document.querySelectorAll('[data-view]').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-view')===currentView)});
+    renderActiveView();
   }
 
   function closeMenus(){
@@ -984,14 +1030,21 @@ body.sheet-open{overflow:hidden}
     currentDate=calendarDate||currentDate;
     if(!persist()){entries.pop();showToast('Не удалось сохранить данные');return}
     invalidateStats();
-    closeSheet();render();showToast('Запись сохранена');
+    closeSheet();
+    if(currentView==='today')renderToday();
+    else if(currentView==='stats')renderStats();
+    showToast('Запись сохранена');
   }
 
   function addHabit(){
     var name=prompt('Название привычки');
     if(!name||!name.trim())return;
     habits.push({id:uid(),name:name.trim(),goal:30});
-    persist();invalidateStats();render();showToast('Привычка добавлена');
+    persist();invalidateStats();
+    if(currentView==='settings')renderSettings();
+    else if(currentView==='today')renderMainStats();
+    else renderStats();
+    showToast('Привычка добавлена');
   }
 
   document.getElementById('openSheet').onclick=openSheet;
@@ -1091,13 +1144,22 @@ body.sheet-open{overflow:hidden}
       if(habit&&confirm('Удалить «'+habit.name+'» и все записи этой привычки?')){
         habits=habits.filter(function(h){return h.id!==id});
         entries=entries.filter(function(x){return x.habitId!==id});
-        persist();invalidateStats();render();showToast('Привычка удалена');
+        persist();invalidateStats();
+        if(currentView==='settings')renderSettings();
+        else if(currentView==='today'){renderChart();renderMainStats();}
+        else renderStats();
+        showToast('Привычка удалена');
       }
     }
   });
 
-  document.querySelectorAll('[data-view]').forEach(function(button){
-    button.onclick=function(){currentView=button.getAttribute('data-view');render()};
+  domCache.navs.forEach(function(button){
+    button.onclick=function(){
+      var nextView=button.getAttribute('data-view');
+      if(nextView===currentView)return;
+      currentView=nextView;
+      renderActiveView();
+    };
   });
 
   render();
