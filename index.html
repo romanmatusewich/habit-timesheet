@@ -235,6 +235,18 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .breakdown-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:9px}
 .breakdown-head strong{font-size:14px;font-weight:600}
 .breakdown-head span{font-size:11px;color:var(--muted)}
+.habit-stats-table-head{display:grid;grid-template-columns:minmax(0,1fr) 72px 45px;gap:10px;padding:0 0 7px;border-bottom:1px solid rgba(30,34,50,.07);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.habit-stats-table-head span:nth-child(2),.habit-stats-table-head span:nth-child(3){text-align:right}
+.habit-stats-row{display:grid;grid-template-columns:minmax(0,1fr) 72px 45px;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(30,34,50,.06)}
+.habit-stats-row:last-child{border-bottom:0}
+.habit-stats-main{min-width:0}
+.habit-stats-name{display:flex;align-items:center;gap:7px;min-width:0;font-size:12px;font-weight:500}
+.habit-stats-name>span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.habit-stats-name .color-dot{margin:0}
+.habit-stats-bar{height:5px;margin-top:7px;border-radius:999px;background:rgba(33,38,56,.08);overflow:hidden}
+.habit-stats-bar i{display:block;height:100%;min-width:0;border-radius:inherit;background:linear-gradient(90deg,var(--row-color,#5d65ff),var(--row-color-end,#49cfff))}
+.habit-stats-time,.habit-stats-share{font-size:12px;font-weight:500;text-align:right;white-space:nowrap}
+.habit-stats-share{color:var(--muted);font-weight:450}
 .break-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid rgba(30,34,50,.07)}
 .break-row:first-child{border-top:0;padding-top:0}
 .break-left{min-width:0}
@@ -554,7 +566,10 @@ body.sheet-open{
   .sheet-title{font-size:27px}
   .row-two{gap:14px}
   .cal-day{height:30px}
+  .habit-stats-table-head{grid-template-columns:minmax(0,1fr) 64px 40px;gap:7px}
+  .habit-stats-row{grid-template-columns:minmax(0,1fr) 64px 40px;gap:7px}
 }
+
 @media (hover:hover){
   .record-button:hover{
     background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(255,255,255,.58));
@@ -580,7 +595,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.25</div>
+<div class="app-version" aria-label="Версия">v0.3.26</div>
 
 <main class="shell">
   <header class="top">
@@ -649,8 +664,7 @@ body.sheet-open{
           <div class="type-mini-legend" id="statsTypeMiniLegend"></div>
         </div>
       </div>
-      <div class="breakdown" style="margin-top:12px"><div class="breakdown-head"><strong>По привычкам</strong><span>за весь период</span></div><div id="statsBreakdown"></div></div>
-      <div class="breakdown" style="margin-top:12px"><div class="breakdown-head"><strong>По типам</strong><span>за весь период</span></div><div id="statsTypeBreakdown" class="type-list"></div></div>
+      <div class="breakdown stats-habits-card" style="margin-top:12px"><div class="breakdown-head"><strong>Распределение по привычкам</strong><span>доля от общего времени</span></div><div class="habit-stats-table-head"><span>Привычка</span><span>Время</span><span>Доля</span></div><div id="statsBreakdown"></div></div>
     </section>
   </section>
 
@@ -764,8 +778,9 @@ body.sheet-open{
       <h2 class="data-dialog-title" id="dataDialogTitle">Импорт из Google Таблиц</h2>
       <button class="data-dialog-close" id="dataDialogClose" aria-label="Закрыть">×</button>
     </div>
-    <div class="data-help">Вставь сюда два столбика из Google Таблиц: <b>день</b> и <b>количество минут</b>. Табуляция определяется автоматически. Строку с заголовком можно оставить.<br><br>Пример:<br><code>26.09.2026&nbsp;&nbsp;&nbsp;&nbsp;45</code><br><code>27.09.2026&nbsp;&nbsp;&nbsp;&nbsp;60</code></div>
+    <div class="data-help">Вставь сюда два столбика из Google Таблиц: <b>день</b> и <b>количество минут</b>. Поддерживаются полные даты, даты без года и числовые даты Google Таблиц. Если в первом столбце указан только номер дня, ниже выбери нужный месяц.<br><br>Пример:<br><code>26.09.2026&nbsp;&nbsp;&nbsp;&nbsp;45</code><br><code>27.09.2026&nbsp;&nbsp;&nbsp;&nbsp;60</code></div>
     <label class="field"><span class="field-label">Привязать импорт к привычке</span><select class="data-select" id="importHabit"></select></label>
+    <label class="field" style="margin-top:12px"><span class="field-label">Месяц для строк только с номером дня</span><input class="data-select" id="importMonth" type="month"></label>
     <label class="field" style="margin-top:12px"><span class="field-label">Данные из таблицы</span><textarea class="import-area" id="importText" placeholder="26.09.2026&#9;45&#10;27.09.2026&#9;60"></textarea></label>
     <div class="data-dialog-actions">
       <button class="secondary-action" id="dataDialogCancel">Отмена</button>
@@ -1354,12 +1369,13 @@ body.sheet-open{
 
   function getStatsBreakdownHTML(totals){
     if(renderCache.statsBreakdownHTML!==null)return renderCache.statsBreakdownHTML;
-    var max=60;
-    for(var i=0;i<totals.length;i++)if(totals[i].total>max)max=totals[i].total;
+    var grand=totals.reduce(function(sum,x){return sum+x.total},0);
 
     renderCache.statsBreakdownHTML=totals.map(function(x){
       var color=habitColor(x.habit),end=habitColorEnd(color);
-      return '<div class="break-row"><div class="break-left"><div class="break-name"><span class="color-dot" style="background:'+color+';margin-right:7px;vertical-align:1px"></span>'+clean(x.habit.name)+'</div><div class="break-sub">'+(x.total?fmt(x.total):'нет записей')+'</div><div class="mini-progress"><i style="--row-color:'+color+';--row-color-end:'+end+';width:'+Math.round(x.total/max*100)+'%"></i></div></div><div class="break-value">'+fmt(x.total)+'</div></div>';
+      var pct=grand?Math.round(x.total/grand*100):0;
+      var bar=x.total?Math.max(4,pct):0;
+      return '<div class="habit-stats-row"><div class="habit-stats-main"><div class="habit-stats-name"><span class="color-dot" style="background:'+color+'"></span><span>'+clean(x.habit.name)+'</span></div><div class="habit-stats-bar"><i style="--row-color:'+color+';--row-color-end:'+end+';width:'+bar+'%"></i></div></div><div class="habit-stats-time">'+fmt(x.total)+'</div><div class="habit-stats-share">'+pct+'%</div></div>';
     }).join('')||'<div class="empty">Нет данных.</div>';
 
     return renderCache.statsBreakdownHTML;
@@ -1392,16 +1408,6 @@ body.sheet-open{
       insights.push('Самое длинное занятие — <b>'+fmt(longest)+'</b>.');
     }
     $('insights').innerHTML=insights.map(function(t){return '<div class="insight"><span class="insight-mark"></span><div class="insight-text">'+t+'</div></div>'}).join('');
-  }
-
-  function getTypeBreakdownHTML(byType){
-    var items=TYPE_OPTIONS.map(function(t){return {label:t.label,total:byType[t.id]||0,color:COLOR_BY_ID[t.defaultColor]||'#6e73ff'};}).filter(function(x){return x.total>0});
-    if(!items.length)return '<div class="empty">Нет данных.</div>';
-    var max=Math.max(60,Math.max.apply(Math,items.map(function(x){return x.total})));
-    return items.map(function(x){
-      var pct=Math.round(x.total/max*100);
-      return '<div class="break-row"><div class="break-left"><div class="break-name"><span class="color-dot" style="background:'+x.color+';margin-right:7px;vertical-align:1px"></span>'+x.label+'</div><div class="mini-progress"><i style="--row-color:'+x.color+';width:'+pct+'%"></i></div></div><div class="break-value">'+fmt(x.total)+'</div></div>';
-    }).join('');
   }
 
   function weeklyStatsTotals(){
@@ -1447,7 +1453,6 @@ body.sheet-open{
     $('bestDayDate').textContent=stats.bestDayDate?formatFullDate(stats.bestDayDate):'Нет данных';
 
     $('statsBreakdown').innerHTML=getStatsBreakdownHTML(allTotals());
-    $('statsTypeBreakdown').innerHTML=getTypeBreakdownHTML(stats.byType);
 
     var weeks=weeklyStatsTotals(),maxWeek=Math.max(60,Math.max.apply(Math,weeks.map(function(x){return x.total})));
     $('weeklyStatsChart').innerHTML=weeks.map(function(x){
@@ -1845,6 +1850,7 @@ body.sheet-open{
     select.innerHTML='<optgroup label="Специальные категории"><option value="'+IMPORT_SUMMARY_HABIT.id+'">'+IMPORT_SUMMARY_HABIT.name+'</option></optgroup>'+
       (habits.length?'<optgroup label="Привычки">'+habits.map(function(h){return '<option value="'+clean(h.id)+'">'+clean(h.name)+'</option>';}).join('')+'</optgroup>':'');
     select.value=IMPORT_SUMMARY_HABIT.id;
+    $('importMonth').value=currentDate.slice(0,7);
     $('importText').value='';
     $('dataTransfer').hidden=false;
     setTimeout(function(){$('importText').focus()},0);
@@ -1854,9 +1860,19 @@ body.sheet-open{
     $('dataTransfer').hidden=true;
   }
 
-  function parseImportDate(value){
-    var v=String(value||'').trim(),m;
+  function parseImportDate(value,baseMonth){
+    var v=String(value||'').trim(),m,base=String(baseMonth||currentDate).match(/^(\d{4})-(\d{1,2})$/),baseYear=base?+base[1]:dateObj(currentDate).getFullYear(),baseMonthIndex=base?+base[2]-1:dateObj(currentDate).getMonth();
     if(!v)return null;
+
+    // Google Sheets may copy a date as a serial number.
+    if(/^\d{4,6}$/.test(v)){
+      var serial=Number(v);
+      if(serial>20000&&serial<100000){
+        var serialDate=new Date(Date.UTC(1899,11,30)+serial*86400000);
+        return localDate(new Date(serialDate.getUTCFullYear(),serialDate.getUTCMonth(),serialDate.getUTCDate()));
+      }
+    }
+
     m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
     if(m){
       var y=+m[1],mo=+m[2],d=+m[3],date=new Date(y,mo-1,d);
@@ -1864,29 +1880,56 @@ body.sheet-open{
     }
     m=v.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/);
     if(m){
-      var day=+m[1],month=+m[2],year=+m[3];if(year<100)year+=2000;
+      var first=+m[1],second=+m[2],year=+m[3];if(year<100)year+=2000;
+      var separator=v.indexOf('/')>=0?'slash':(v.indexOf('.')>=0?'dot':'dash');
+      var day=first,month=second;
+      if((separator==='slash'||separator==='dash')&&second>12&&first<=12){month=first;day=second}
       var date2=new Date(year,month-1,day);
       return date2.getFullYear()===year&&date2.getMonth()===month-1&&date2.getDate()===day?localDate(date2):null;
     }
+
+    // Date without a year, e.g. 26.09 or 9/26.
+    m=v.match(/^(\d{1,2})[.\/-](\d{1,2})$/);
+    if(m){
+      var a=+m[1],b=+m[2],dayNo=a,monthNo=b;
+      if(b>12&&a<=12){monthNo=a;dayNo=b}
+      if(dayNo>31||monthNo<1||monthNo>12)return null;
+      var partialDate=new Date(baseYear,monthNo-1,dayNo);
+      return partialDate.getFullYear()===baseYear&&partialDate.getMonth()===monthNo-1&&partialDate.getDate()===dayNo?localDate(partialDate):null;
+    }
+
+    // Bare day number: use the selected import month/year.
+    m=v.match(/^(\d{1,2})$/);
+    if(m){
+      var onlyDay=+m[1];
+      if(onlyDay<1||onlyDay>31)return null;
+      var dayDate=new Date(baseYear,baseMonthIndex,onlyDay);
+      return dayDate.getFullYear()===baseYear&&dayDate.getMonth()===baseMonthIndex&&dayDate.getDate()===onlyDay?localDate(dayDate):null;
+    }
+
     var parsed=new Date(v);
     return isNaN(parsed.getTime())?null:localDate(new Date(parsed.getFullYear(),parsed.getMonth(),parsed.getDate()));
   }
 
-  function parseSheetImport(textValue){
-    var lines=String(textValue||'').replace(/\r/g,'').split('\n'),rows=[],errors=0;
+  function parseSheetImport(textValue,baseMonth){
+    var lines=String(textValue||'').replace(/\r/g,'').split('\n'),errors=0,merged={};
     for(var i=0;i<lines.length;i++){
       var line=lines[i].trim();if(!line)continue;
       var parts=line.split('\t');
       if(parts.length<2)parts=line.split(';');
       if(parts.length<2)parts=line.split(/\s{2,}/);
       if(parts.length<2)continue;
-      var first=parts[0].trim(),second=parts.slice(1).join('').trim();
-      if(i===0&&(/день|дата|date/i.test(first)||/минут|minutes|min/i.test(second)))continue;
-      var date=parseImportDate(first);
-      var minutes=Number(second.replace(',','.').replace(/[^\d.-]/g,''));
-      if(!date||!isFinite(minutes)||minutes<=0){errors++;continue}
-      rows.push({date:date,minutes:Math.round(minutes)});
+      var first=parts[0].trim(),second=parts.slice(1).join(' ').trim();
+      var date=parseImportDate(first,baseMonth);
+      if(!date&&/день|дата|date/i.test(first))continue;
+      var numericText=second.replace(/\s/g,'').replace(/[^\d,.-]/g,'').replace(',','.');
+      var minutes=Number(numericText);
+      if(!date||!isFinite(minutes)||minutes<0){errors++;continue}
+      var rounded=Math.round(minutes);
+      merged[date]=(merged[date]||0)+rounded;
     }
+    var dates=Object.keys(merged).sort(),rows=[];
+    for(var j=0;j<dates.length;j++)rows.push({date:dates[j],minutes:merged[dates[j]]});
     return {rows:rows,errors:errors};
   }
 
@@ -1911,7 +1954,7 @@ body.sheet-open{
   }
 
   function importFromSheet(){
-    var parsed=parseSheetImport($('importText').value);
+    var parsed=parseSheetImport($('importText').value,$('importMonth').value);
     if(!parsed.rows.length){showToast('Не нашёл корректных строк для импорта');return}
 
     var selectedId=$('importHabit').value;
