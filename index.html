@@ -597,7 +597,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.27</div>
+<div class="app-version" aria-label="Версия">v0.3.28</div>
 
 <main class="shell">
   <header class="top">
@@ -1096,6 +1096,80 @@ body.sheet-open{
   }
 
 
+  async function runAugustAllocationMigration(){
+    var markerKey='habit-timesheet-august-allocation-v1';
+    var done=false;
+    try{
+      if(storageMode==='indexeddb'&&db){
+        var meta=await idbGetMeta(markerKey);
+        done=!!(meta&&meta.value===true);
+      }else done=localStorage.getItem(markerKey)==='1';
+    }catch(e){done=false}
+    if(done)return false;
+
+    var accounting=findHabitByIdOrName('accounting','бухгалтерия');
+    var reading=findHabitByIdOrName('reading','чтение');
+    if(!accounting||!reading){
+      try{
+        if(storageMode==='indexeddb'&&db){
+          await idbRequest(db.transaction(IDB_META,'readwrite').objectStore(IDB_META).put({key:markerKey,value:true}));
+        }else localStorage.setItem(markerKey,'1');
+      }catch(e){}
+      return false;
+    }
+
+    var changed=false,newEntries=[];
+    var startDate='2026-08-20',endDate='2026-09-01';
+
+    for(var i=entries.length-1;i>=0;i--){
+      var e=entries[i];
+      if(e.habitId!==IMPORT_SUMMARY_HABIT.id||String(e.date)<startDate||String(e.date)>=endDate)continue;
+      var total=Math.max(0,Math.round(Number(e.minutes)||0));
+      var accountingMinutes=Math.round(total*.75);
+      var readingMinutes=total-accountingMinutes;
+
+      entries.splice(i,1);
+      changed=true;
+
+      if(accountingMinutes>0)newEntries.push({
+        id:uid(),
+        habitId:accounting.id,
+        date:e.date,
+        minutes:accountingMinutes,
+        note:'Распределено из импорта Google Таблиц',
+        type:'active',
+        color:'blue'
+      });
+      if(readingMinutes>0)newEntries.push({
+        id:uid(),
+        habitId:reading.id,
+        date:e.date,
+        minutes:readingMinutes,
+        note:'Распределено из импорта Google Таблиц',
+        type:'reading',
+        color:'yellow'
+      });
+    }
+
+    if(newEntries.length)entries=entries.concat(newEntries);
+    if(changed){
+      invalidateDataCaches();
+      persistAll();
+    }
+
+    try{
+      if(storageMode==='indexeddb'&&db){
+        await idbRequest(db.transaction(IDB_META,'readwrite').objectStore(IDB_META).put({key:markerKey,value:true}));
+      }else localStorage.setItem(markerKey,'1');
+    }catch(e){}
+
+    if(changed){
+      showToast('20–31 августа распределено: 75% Бухгалтерия · 25% Чтение');
+      return true;
+    }
+    return false;
+  }
+
   function deleteEntryFromStorage(id){
     localMutationEpoch++;
     if(storageMode==='indexeddb'){
@@ -1157,6 +1231,7 @@ body.sheet-open{
     entries=normalizeStoredEntries(idbEntries);
     storageMode='indexeddb';
     await runTrainingAllocationMigration();
+    await runAugustAllocationMigration();
     invalidateDataCaches();
     menusDirty=true;
     entryRenderLimit=Math.min(entryRenderLimit,Math.max(60,entries.length));
@@ -1195,6 +1270,7 @@ body.sheet-open{
       storageMode='indexeddb';
 
       await runTrainingAllocationMigration();
+      await runAugustAllocationMigration();
       scheduleLocalBackup();
       window.__STORAGE_READY=true;
     }catch(e){
