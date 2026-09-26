@@ -508,7 +508,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.13</div>
+<div class="app-version" aria-label="Версия">v0.3.14</div>
 
 <main class="shell">
   <header class="top">
@@ -714,6 +714,7 @@ body.sheet-open{
   var entryRenderLimit=60;
   var renderFrame=0;
   var nodeCache={};
+  var renderCache={habitBreakdownHTML:null,statsBreakdownHTML:null,habitBreakdownMax:0};
   var domCache={
     views:document.querySelectorAll('.view'),
     navs:document.querySelectorAll('[data-view]')
@@ -990,6 +991,9 @@ body.sheet-open{
   function invalidateDataCaches(){
     statsCache=null;
     sortedEntriesCache=null;
+    renderCache.habitBreakdownHTML=null;
+    renderCache.statsBreakdownHTML=null;
+    renderCache.habitBreakdownMax=0;
   }
 
   function getSortedEntries(){
@@ -1018,8 +1022,6 @@ body.sheet-open{
       if(!byDateColor[e.date])byDateColor[e.date]={};
       byDateColor[e.date][entryColor]=(byDateColor[e.date][entryColor]||0)+minutes;
       if(COLOR_BY_ID[entryColor]&&e.habitId)habitColorById[e.habitId]=entryColor;
-      var entryMonth=(e.date||'').slice(0,7);
-      if(entryMonth)activeByMonth[entryMonth]=1;
       byType[e.type||'active']=(byType[e.type||'active']||0)+minutes;
     }
     var activeDays=Object.keys(byDate).length;
@@ -1159,6 +1161,35 @@ body.sheet-open{
     $('chartMark').textContent=Math.round(max*.55);
   }
 
+  function getHabitBreakdownHTML(totals){
+    if(renderCache.habitBreakdownHTML!==null)return renderCache.habitBreakdownHTML;
+
+    var max=60;
+    for(var i=0;i<totals.length;i++)if(totals[i].total>max)max=totals[i].total;
+    renderCache.habitBreakdownMax=max;
+
+    renderCache.habitBreakdownHTML=totals.map(function(x){
+      var pct=Math.round(x.total/max*100);
+      var color=habitColor(x.habit),end=habitColorEnd(color);
+      return '<div class="break-row"><div class="break-left"><div class="break-name"><span class="color-dot" style="background:'+color+';margin-right:7px;vertical-align:1px"></span>'+clean(x.habit.name)+'</div><div class="mini-progress"><i style="--row-color:'+color+';--row-color-end:'+end+';width:'+pct+'%"></i></div></div><div class="break-value">'+fmt(x.total)+'</div></div>';
+    }).join('')||'<div class="break-row"><div class="break-name">Нет привычек</div><div class="break-value">—</div></div>';
+
+    return renderCache.habitBreakdownHTML;
+  }
+
+  function getStatsBreakdownHTML(totals){
+    if(renderCache.statsBreakdownHTML!==null)return renderCache.statsBreakdownHTML;
+    var max=60;
+    for(var i=0;i<totals.length;i++)if(totals[i].total>max)max=totals[i].total;
+
+    renderCache.statsBreakdownHTML=totals.map(function(x){
+      var color=habitColor(x.habit),end=habitColorEnd(color);
+      return '<div class="break-row"><div class="break-left"><div class="break-name"><span class="color-dot" style="background:'+color+';margin-right:7px;vertical-align:1px"></span>'+clean(x.habit.name)+'</div><div class="break-sub">'+(x.total?fmt(x.total):'нет записей')+'</div><div class="mini-progress"><i style="--row-color:'+color+';--row-color-end:'+end+';width:'+Math.round(x.total/max*100)+'%"></i></div></div><div class="break-value">'+fmt(x.total)+'</div></div>';
+    }).join('')||'<div class="empty">Нет данных.</div>';
+
+    return renderCache.statsBreakdownHTML;
+  }
+
   function renderMainStats(){
     var stats=getStats();
     var today=stats.byDate[currentDate]||0;
@@ -1173,13 +1204,7 @@ body.sheet-open{
     $('topHabit').textContent=top&&top.total?top.habit.name:'Пока нет данных';
     $('topHabitTime').textContent=top&&top.total?fmt(top.total)+' за весь период':'Добавь первое занятие';
 
-    var max=60;
-    for(var mi=0;mi<totals.length;mi++)if(totals[mi].total>max)max=totals[mi].total;
-    $('breakdownRows').innerHTML=totals.map(function(x){
-      var pct=Math.round(x.total/max*100);
-      var color=habitColor(x.habit),end=habitColorEnd(color);
-      return '<div class="break-row"><div class="break-left"><div class="break-name"><span class="color-dot" style="background:'+color+';margin-right:7px;vertical-align:1px"></span>'+clean(x.habit.name)+'</div><div class="mini-progress"><i style="--row-color:'+color+';--row-color-end:'+end+';width:'+pct+'%"></i></div></div><div class="break-value">'+fmt(x.total)+'</div></div>';
-    }).join('')||'<div class="break-row"><div class="break-name">Нет привычек</div><div class="break-value">—</div></div>';
+    $('breakdownRows').innerHTML=getHabitBreakdownHTML(totals);
 
     var monthPrefix=currentDate.slice(0,7);
     var monthActive=stats.activeByMonth[monthPrefix]||0;
@@ -1203,11 +1228,7 @@ body.sheet-open{
     $('avgDay').textContent=fmt(active?total/active:0);
 
     var totals=allTotals();
-    var max=Math.max(60,Math.max.apply(Math,[0].concat(totals.map(function(x){return x.total}))));
-    $('statsBreakdown').innerHTML=totals.map(function(x){
-      var color=habitColor(x.habit),end=habitColorEnd(color);
-      return '<div class="break-row"><div class="break-left"><div class="break-name"><span class="color-dot" style="background:'+color+';margin-right:7px;vertical-align:1px"></span>'+clean(x.habit.name)+'</div><div class="break-sub">'+(x.total?fmt(x.total):'нет записей')+'</div><div class="mini-progress"><i style="--row-color:'+color+';--row-color-end:'+end+';width:'+Math.round(x.total/max*100)+'%"></i></div></div><div class="break-value">'+fmt(x.total)+'</div></div>';
-    }).join('')||'<div class="empty">Нет данных.</div>';
+    $('statsBreakdown').innerHTML=getStatsBreakdownHTML(totals);
   }
 
   function renderSettings(){
