@@ -8,22 +8,25 @@
 <title>Habit Timesheet</title>
 <style>
 :root{
-  --bg:#fff;
+  --bg:#ffffff;
   --card:#efefef;
-  --card-strong:#e8e8e8;
-  --text:#111;
-  --muted:#8b8b8f;
-  --line:#d9d9dc;
-  --accent:#5f6fff;
-  --accent-soft:#eef0ff;
-  --green:#55b86a;
-  --orange:#d99a45;
-  --yellow:#e4c34d;
-  --red:#d86666;
-  --purple:#9b7ad8;
+  --card-2:#f5f5f5;
+  --text:#111111;
+  --muted:#8f8f94;
+  --line:#dedee2;
+  --accent:#5f63ff;
+  --accent-soft:#dcdfff;
 }
 *{box-sizing:border-box}
-html,body{margin:0;min-width:320px;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+html,body{
+  margin:0;
+  min-width:320px;
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Segoe UI",system-ui,sans-serif;
+  font-weight:400;
+  -webkit-font-smoothing:antialiased;
+}
 body{min-height:100vh}
 button,input,select{font:inherit}
 button{cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -36,158 +39,379 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   margin:0 auto;
   padding:0 0 54px;
 }
-.header{padding:46px 28px 0}
-.date-title{font-size:19px;line-height:1.16;font-weight:500;letter-spacing:-.02em}
+.header{
+  padding:46px 28px 0;
+}
+.date-title{
+  font-size:19px;
+  line-height:1.16;
+  font-weight:500;
+  letter-spacing:-.02em
+}
 .date-weekday{margin-top:2px}
 
 .record-link{
   display:block;
   margin:118px auto 0;
-  border:0;
   padding:0;
+  border:0;
   background:transparent;
-  color:#a0a0a4;
+  color:var(--muted);
   font-size:24px;
   line-height:1.15;
-  font-weight:500;
+  font-weight:400;
   text-decoration:underline;
+  text-decoration-thickness:1px;
   text-underline-offset:3px
 }
-.record-link:hover{color:#77777b}
+.record-link:hover{color:#111}
 
 .hero{margin-top:194px}
 .chart-card{
-  background:#ededed;
+  background:var(--card);
   border-radius:26px;
   padding:21px 18px 18px;
 }
-.chart-title{font-size:18px;line-height:1.2;font-weight:500;margin:0 8px 20px}
+.chart-title{
+  margin:0 8px 20px;
+  font-size:18px;
+  line-height:1.2;
+  font-weight:500;
+  letter-spacing:-.02em
+}
+.chart-wrap{
+  position:relative;
+  height:152px;
+  padding:0 8px;
+}
 .chart{
-  height:144px;
+  height:121px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:8px;
+  padding:0 2px 0 0;
+  position:absolute;
+  left:0;right:0;top:0;
+}
+.chart-guide{
+  position:absolute;
+  left:0;right:0;
+  bottom:36px;
+  height:2px;
+  background:#a9a9ad;
+  opacity:.75;
+}
+.day{
+  height:100%;
+  flex:1;
+  min-width:0;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  position:relative;
+  z-index:1
+}
+.bar{
+  width:22px;
+  max-width:100%;
+  min-height:6px;
+  border-radius:9px 9px 3px 3px;
+  background:var(--accent);
+  transform-origin:bottom;
+}
+.bar.muted{opacity:.9}
+.chart-labels{
+  position:absolute;
+  left:0;right:0;bottom:0;
   display:grid;
   grid-template-columns:repeat(7,1fr);
-  align-items:end;
-  gap:7px;
-  position:relative;
-  padding:0 5px
+  gap:8px;
+  padding:0 2px
 }
-.chart::after{
-  content:"";
+.chart-label{
+  text-align:center;
+  font-size:10px;
+  line-height:1;
+  color:var(--muted);
+  font-weight:400
+}
+.chart-mark{
   position:absolute;
-  left:1px;right:1px;
-  bottom:38px;
-  height:2px;
-  background:#aaa;
+  left:0;
+  bottom:37px;
+  transform:translateY(50%);
+  padding-right:4px;
+  font-size:10px;
+  line-height:1;
+  color:var(--muted);
+  background:var(--card);
+  font-weight:400;
 }
-.day{height:100%;position:relative;z-index:1;display:flex;align-items:flex-end;justify-content:center}
-.bar{width:22px;min-height:5px;border-radius:7px 7px 2px 2px;background:var(--accent)}
-.bar.muted{opacity:.78}
-.chart-labels{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;padding:8px 5px 0}
-.chart-label{font-size:11px;text-align:center;color:#999;font-weight:500}
 
-.stats-section{margin-top:26px}
-.stats-title{font-size:20px;font-weight:650;letter-spacing:-.025em;margin:0 2px 10px}
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stats-section{margin-top:28px}
+.stats-title{
+  margin:0 2px 11px;
+  font-size:20px;
+  line-height:1.15;
+  letter-spacing:-.02em;
+  font-weight:600
+}
+.stats-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px
+}
 .stat-card{
-  background:#f2f2f2;
-  border-radius:18px;
+  min-height:91px;
   padding:16px 17px;
-  min-height:90px
+  border-radius:18px;
+  background:var(--card);
 }
 .stat-card.wide{grid-column:1/-1}
-.stat-label{font-size:12px;color:var(--muted);font-weight:600}
-.stat-value{font-size:24px;line-height:1.08;font-weight:700;letter-spacing:-.03em;margin-top:7px}
-.stat-note{font-size:12px;color:#777;margin-top:3px}
+.stat-label{
+  font-size:12px;
+  line-height:1.2;
+  color:var(--muted);
+  font-weight:400
+}
+.stat-value{
+  margin-top:8px;
+  font-size:25px;
+  line-height:1.05;
+  letter-spacing:-.03em;
+  font-weight:600
+}
+.stat-note{
+  margin-top:4px;
+  font-size:12px;
+  line-height:1.2;
+  color:var(--muted);
+  font-weight:400
+}
 
-.breakdown{margin-top:12px;background:#f2f2f2;border-radius:18px;padding:17px}
-.breakdown-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:13px}
-.breakdown-head strong{font-size:15px}
-.breakdown-head span{font-size:12px;color:var(--muted)}
-.break-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:9px 0;border-top:1px solid rgba(0,0,0,.07)}
+.breakdown{
+  margin-top:12px;
+  padding:17px;
+  border-radius:18px;
+  background:var(--card)
+}
+.breakdown-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin-bottom:10px
+}
+.breakdown-head strong{
+  font-size:14px;
+  font-weight:600
+}
+.breakdown-head span{
+  font-size:11px;
+  color:var(--muted);
+  font-weight:400
+}
+.break-row{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:12px;
+  align-items:center;
+  padding:10px 0;
+  border-top:1px solid rgba(0,0,0,.06)
+}
 .break-row:first-child{border-top:0;padding-top:0}
 .break-left{min-width:0}
-.break-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.break-sub{font-size:11px;color:var(--muted);margin-top:2px}
-.break-value{font-size:14px;font-weight:650}
-.mini-progress{height:5px;background:#ddd;border-radius:99px;overflow:hidden;margin-top:7px}
-.mini-progress i{display:block;height:100%;border-radius:inherit;background:#9097ff}
-
-.insights{margin-top:12px;display:grid;gap:10px}
-.insight{
-  background:#f7f7f7;border:1px solid #ededee;border-radius:16px;
-  padding:14px 16px;display:flex;gap:12px;align-items:flex-start
+.break-name{
+  font-size:13px;
+  line-height:1.2;
+  font-weight:500;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis
 }
-.insight-mark{width:7px;height:7px;border-radius:50%;background:#a0a0a4;margin-top:6px;flex:none}
-.insight-text{font-size:13px;line-height:1.45;color:#454548}
-.insight-text b{font-weight:700;color:#111}
+.break-sub{
+  margin-top:3px;
+  font-size:11px;
+  color:var(--muted);
+  font-weight:400
+}
+.break-value{
+  font-size:13px;
+  line-height:1;
+  font-weight:500
+}
+.mini-progress{
+  height:4px;
+  margin-top:7px;
+  border-radius:999px;
+  overflow:hidden;
+  background:#dcdcdf
+}
+.mini-progress i{
+  display:block;
+  height:100%;
+  border-radius:inherit;
+  background:var(--accent)
+}
 
-.footer-note{margin-top:18px;text-align:center;color:#aaa;font-size:11px;line-height:1.5;padding:0 22px}
+.insights{margin-top:12px;display:grid;gap:8px}
+.insight{
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  padding:13px 15px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:var(--card-2)
+}
+.insight-mark{
+  width:6px;height:6px;
+  flex:none;
+  margin-top:6px;
+  border-radius:50%;
+  background:var(--accent)
+}
+.insight-text{
+  font-size:12px;
+  line-height:1.45;
+  color:var(--text);
+  font-weight:400
+}
+.insight-text b{font-weight:600}
 
-/* Entry sheet */
+.footer-note{
+  margin-top:18px;
+  padding:0 22px;
+  text-align:center;
+  font-size:11px;
+  line-height:1.5;
+  color:var(--muted);
+  font-weight:400
+}
+
+/* entry sheet */
 .scrim{
-  position:fixed;inset:0;
-  background:rgba(220,220,225,.52);
-  backdrop-filter:blur(17px) saturate(.92);
-  -webkit-backdrop-filter:blur(17px) saturate(.92);
-  display:grid;place-items:center;
+  position:fixed;
+  inset:0;
+  display:grid;
+  place-items:center;
   padding:18px;
-  z-index:100;
+  background:rgba(225,225,229,.52);
+  backdrop-filter:blur(18px) saturate(.88);
+  -webkit-backdrop-filter:blur(18px) saturate(.88);
+  z-index:100
 }
 .sheet{
   width:min(430px,calc(100vw - 28px));
   max-height:min(720px,calc(100vh - 28px));
   overflow:auto;
-  background:rgba(246,246,247,.97);
-  border-radius:27px;
-  box-shadow:0 28px 90px rgba(0,0,0,.16);
   padding:24px 24px 20px;
-  border:1px solid rgba(255,255,255,.78)
+  border:1px solid rgba(255,255,255,.78);
+  border-radius:27px;
+  background:rgba(247,247,248,.98);
+  box-shadow:0 28px 90px rgba(0,0,0,.16)
 }
-.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
-.sheet-title{font-size:30px;line-height:1;font-weight:700;letter-spacing:-.04em}
+.sheet-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:22px
+}
+.sheet-title{
+  margin:0;
+  font-size:29px;
+  line-height:1;
+  font-weight:600;
+  letter-spacing:-.04em
+}
 .sheet-close{
-  width:35px;height:35px;border:0;background:rgba(120,120,128,.11);
-  border-radius:50%;color:#7b7b80;font-size:24px;line-height:1
+  width:35px;height:35px;
+  border:0;
+  border-radius:50%;
+  background:rgba(120,120,128,.11);
+  color:var(--muted);
+  font-size:24px;
+  font-weight:400;
+  line-height:1
 }
 .form{display:grid;gap:17px}
-.field{
-  display:grid;
-  gap:6px
+.field{display:grid;gap:6px}
+.field-label{
+  font-size:12px;
+  line-height:1.2;
+  color:var(--muted);
+  font-weight:400
 }
-.field-label{font-size:13px;color:#777;font-weight:500}
 .field-control{
   width:100%;
-  border:0;
-  border-bottom:1px solid #a5a5a8;
-  background:transparent;
-  border-radius:0;
   padding:1px 0 8px;
-  color:#111;
-  font-size:20px;
-  font-weight:500;
+  border:0;
+  border-bottom:1px solid #a3a3a6;
+  border-radius:0;
   outline:0;
+  background:transparent;
+  color:var(--text);
+  font-size:19px;
+  line-height:1.2;
+  font-weight:400;
   appearance:none
 }
 .field-control:focus{border-bottom-color:#111}
-.text-input::placeholder{color:#9b9b9f;opacity:1}
-.row-two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.color-control{display:flex;align-items:center;gap:8px}
+.text-input::placeholder{
+  color:var(--muted);
+  opacity:1
+}
+.row-two{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px
+}
+.color-control{
+  display:flex;
+  align-items:center;
+  gap:8px
+}
 .color-select{flex:1}
-.color-dot{width:10px;height:10px;border-radius:50%;background:var(--yellow);display:inline-block;flex:none}
-.sheet-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:7px}
-.sheet-btn{border:0;border-radius:13px;padding:13px 14px;font-size:15px;font-weight:700}
+.color-dot{
+  width:9px;height:9px;
+  display:inline-block;
+  flex:none;
+  border-radius:50%;
+  background:#e4c34d
+}
+.sheet-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:7px
+}
+.sheet-btn{
+  border:0;
+  border-radius:13px;
+  padding:13px 14px;
+  font-size:15px;
+  line-height:1;
+  font-weight:600
+}
 .sheet-cancel{background:#e9e9ed;color:#3a3a3c}
 .sheet-save{background:#111;color:#fff}
-.sheet-hint{text-align:center;margin:12px 4px 0;font-size:11px;color:#9a9a9e}
-
+.sheet-hint{
+  margin:12px 4px 0;
+  text-align:center;
+  font-size:11px;
+  line-height:1.4;
+  color:var(--muted);
+  font-weight:400
+}
 body.sheet-open{overflow:hidden}
 
-/* Other views */
+/* other views */
 .view{display:none}
 .view.active{display:block}
-.top-nav{position:fixed;top:12px;left:50%;transform:translateX(-50%);display:none}
-.mobile-nav{display:none}
-
+.mobile-nav{
+  display:none;
+}
 @media(max-width:520px){
   .shell{width:min(440px,calc(100vw - 24px))}
   .header{padding:38px 21px 0}
@@ -196,11 +420,13 @@ body.sheet-open{overflow:hidden}
   .hero{margin-top:155px}
   .chart-card{border-radius:24px;padding:19px 15px 16px}
   .chart-title{font-size:17px;margin:0 7px 18px}
-  .chart{height:131px;gap:5px;padding:0 2px}
-  .chart::after{bottom:35px}
-  .chart-labels{gap:5px;padding:7px 2px 0}
+  .chart-wrap{height:141px}
+  .chart{height:111px;gap:6px}
+  .chart-guide{bottom:33px}
+  .chart-mark{bottom:34px}
+  .chart-labels{gap:6px}
   .bar{width:18px}
-  .stats-section{margin-top:21px}
+  .stats-section{margin-top:22px}
   .stats-title{font-size:19px}
   .sheet{border-radius:24px;padding:21px 20px 18px}
   .sheet-title{font-size:27px}
@@ -225,8 +451,12 @@ body.sheet-open{overflow:hidden}
       <div class="hero">
         <div class="chart-card">
           <h2 class="chart-title" id="weekSummary">0 часов за эту неделю</h2>
-          <div class="chart" id="weekChart"></div>
-          <div class="chart-labels" id="chartLabels"></div>
+          <div class="chart-wrap">
+            <div class="chart" id="weekChart"></div>
+            <div class="chart-guide"></div>
+            <div class="chart-mark" id="chartMark">0</div>
+            <div class="chart-labels" id="chartLabels"></div>
+          </div>
         </div>
       </div>
 
@@ -274,7 +504,7 @@ body.sheet-open{overflow:hidden}
 
     <section id="settingsView" class="view">
       <section class="stats-section" style="margin-top:44px">
-        <div class="breakdown-head"><h2 class="stats-title" style="margin:0">Привычки</h2><button class="secondary-action" id="addHabitFromSettings" style="border:1px solid var(--line);background:#f2f2f2;border-radius:12px;padding:9px 12px;font-weight:700">+ Добавить</button></div>
+        <div class="breakdown-head"><h2 class="stats-title" style="margin:0">Привычки</h2><button class="secondary-action" id="addHabitFromSettings" style="border:1px solid var(--line);background:var(--card);border-radius:12px;padding:9px 12px;font-weight:600;color:var(--text)">+ Добавить</button></div>
         <div class="breakdown" style="margin-top:12px"><div id="settingsRows"></div></div>
       </section>
     </section>
@@ -465,9 +695,11 @@ body.sheet-open{overflow:hidden}
     var max=Math.max.apply(Math,[60].concat(totals));
     var weekTotal=totals.reduce(function(a,b){return a+b},0);
     $('weekSummary').textContent=shortHours(weekTotal)+' за эту неделю';
+    var guide=Math.max(1,Math.round(max*0.55));
+    $('chartMark').textContent=guide;
 
     $('weekChart').innerHTML=dates.map(function(date,i){
-      var height=Math.max(4,Math.round(totals[i]/max*100));
+      var height=Math.max(5,Math.round(totals[i]/max*100));
       return '<div class="day"><div class="bar '+(date===currentDate?'':'muted')+'" style="height:'+height+'%"></div></div>';
     }).join('');
 
@@ -525,7 +757,7 @@ body.sheet-open{overflow:hidden}
 
   function renderSettings(){
     $('settingsRows').innerHTML=habits.map(function(h){
-      return '<div class="break-row"><div class="break-left"><div class="break-name">'+clean(h.icon+' '+h.name)+'</div><div class="break-sub">Цель: '+fmt(h.goal)+' в день</div></div><button data-remove-habit="'+h.id+'" class="secondary-action" style="border:1px solid #ddd;background:#fff;border-radius:10px;padding:8px 10px;font-size:12px">Удалить</button></div>';
+      return '<div class="break-row"><div class="break-left"><div class="break-name">'+clean(h.icon+' '+h.name)+'</div><div class="break-sub">Цель: '+fmt(h.goal)+' в день</div></div><button data-remove-habit="'+h.id+'" class="secondary-action" style="border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;font-size:12px;font-weight:400;color:var(--text)">Удалить</button></div>';
     }).join('') || '<div class="empty">Нет привычек.</div>';
   }
 
