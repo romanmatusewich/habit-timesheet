@@ -917,6 +917,11 @@ body.sheet-open{
 
   var currentDate=localDate();
   var currentView='today';
+  var habitEditorId='';
+  var habitDragId='';
+  var sheetDirty=false;
+  var draftSaveTimer=0;
+  var history=read('habit-timesheet-history',[]).slice(0,50);
   var calendarDateSelectionActive=false;
   var calendarDate=currentDate;
   var chosenHabit=habits[0]?habits[0].id:'';
@@ -1362,6 +1367,8 @@ body.sheet-open{
   function iconSymbol(habit){var item=ICON_OPTIONS.find(function(x){return x.id===habit.icon})||ICON_OPTIONS[0];return item.symbol;}
   function habitDefaultSettings(habit){var preset=presetForHabit(habit?habit.name:'')||{};return {type:habit&&habit.defaultType||preset.type||'active',color:habit&&habit.defaultColor||preset.color||'blue',minutes:habit&&habit.defaultMinutes||30};}
   function reindexHabits(){for(var i=0;i<habits.length;i++)habits[i].order=i;}
+  function saveHistory(){try{localStorage.setItem('habit-timesheet-history',JSON.stringify(history.slice(0,50)));}catch(e){}}
+  function addHistory(action,details){history.unshift({id:uid(),time:new Date().toISOString(),action:action,details:details||''});history=history.slice(0,50);saveHistory();}
   function saveHistory(){try{localStorage.setItem('habit-timesheet-history',JSON.stringify(history.slice(0,50)));}catch(e){}}
   function addHistory(action,details){history.unshift({id:uid(),time:new Date().toISOString(),action:action,details:details||''});history=history.slice(0,50);saveHistory();}
   function showToast(text){
@@ -1850,16 +1857,15 @@ body.sheet-open{
     if(habitId)chosenHabit=habitId;
     if(typeId)chosenType=typeId;
     if(colorId)chosenColor=colorId;
-
     var habit=habits.find(function(h){return h.id===chosenHabit});
     var type=TYPE_OPTIONS.find(function(t){return t.id===chosenType})||TYPE_OPTIONS[0];
     var color=COLOR_OPTIONS.find(function(c){return c.id===chosenColor})||COLOR_OPTIONS[0];
-
     $('habitButtonText').textContent=habit?habit.name:'';
     $('typeButtonText').textContent=type.label;
     $('colorButtonText').textContent=color.label;
     $('colorDot').style.background=color.color;
     syncMenuSelection();
+    if(!$('sheet').hidden){sheetDirty=true;scheduleDraftSave();}
   }
 
   function renderVisibleCategories(){
@@ -1874,28 +1880,60 @@ body.sheet-open{
     if(wrap)wrap.hidden=!visible;
   }
 
+  function draftData(){return {habitId:chosenHabit,type:chosenType,color:chosenColor,minutes:$('minutes').value,note:$('note').value,date:calendarDate||currentDate};}
+  function meaningfulDraft(){return !!String($('note').value||'').trim()||Number($('minutes').value||0)>0;}
+  function saveDraft(){if(!sheetDirty)return;try{localStorage.setItem('habit-timesheet-draft',JSON.stringify(draftData()));}catch(e){}}
+  function clearDraft(){try{localStorage.removeItem('habit-timesheet-draft');}catch(e){}}
+  function scheduleDraftSave(){clearTimeout(draftSaveTimer);if(!$('sheet').hidden&&sheetDirty)draftSaveTimer=setTimeout(saveDraft,250);}
+  function restoreDraft(){
+    var draft=read('habit-timesheet-draft',null);
+    if(!draft||!draft.habitId||!habits.some(function(h){return h.id===draft.habitId}))return false;
+    chosenHabit=draft.habitId;
+    var habit=habits.find(function(h){return h.id===chosenHabit});
+    var defaults=habitDefaultSettings(habit);
+    chosenType=TYPE_OPTIONS.some(function(t){return t.id===draft.type})?draft.type:defaults.type;
+    chosenColor=COLOR_OPTIONS.some(function(x){return x.id===draft.color})?draft.color:defaults.color;
+    calendarDate=/^\d{4}-\d{2}-\d{2}$/.test(draft.date||'')?draft.date:currentDate;
+    $('minutes').value=draft.minutes||'';
+    $('note').value=draft.note||'';
+    applySelection(chosenHabit,chosenType,chosenColor);
+    $('dateButtonText').textContent=formatFullDate(calendarDate);
+    sheetDirty=true;
+    return true;
+  }
   function openSheet(){
     if(!habits.length){showToast('Сначала добавь привычку');return}
-
     renderVisibleCategories();
-    chosenHabit=habits[0].id;
-    chosenType='active';
-    chosenColor='blue';
-    $('minutes').value='30';
-    $('note').value='';
-    calendarDate=currentDate;
-    applySelection(chosenHabit,chosenType,chosenColor);
-    $('dateButtonText').textContent=formatFullDate(currentDate);
+    sheetDirty=false;
+    if(!restoreDraft()){
+      chosenHabit=habits[0].id;
+      var defaults=habitDefaultSettings(habits[0]);
+      chosenType=defaults.type;
+      chosenColor=defaults.color;
+      $('minutes').value=String(defaults.minutes);
+      $('note').value='';
+      calendarDate=currentDate;
+      applySelection(chosenHabit,chosenType,chosenColor);
+      $('dateButtonText').textContent=formatFullDate(currentDate);
+      sheetDirty=false;
+    }else{
+      showToast('Черновик восстановлен');
+    }
     closeMenus();
     $('sheet').hidden=false;
     document.body.classList.add('sheet-open');
     requestAnimationFrame(function(){if(!$('sheet').hidden)$('minutes').focus()});
   }
 
-  function closeSheet(){
+  function closeSheet(force){
+    if(!$('sheet').hidden&&sheetDirty&&!force&&meaningfulDraft()){
+      var keep=confirm('Есть введённые данные. Сохранить их как черновик и закрыть форму?');
+      if(keep)saveDraft();else clearDraft();
+    }
     $('sheet').hidden=true;
     document.body.classList.remove('sheet-open');
     closeMenus();
+    sheetDirty=false;
   }
 
   function formatFullDate(value){
@@ -1978,7 +2016,10 @@ body.sheet-open{
     calendarViewDate=currentDate;
     calendarDateSelectionActive=false;
     invalidateDataCaches();
-    closeSheet();
+    clearDraft();
+    var savedHabit=habits.find(function(h){return h.id===chosenHabit});
+    addHistory('Добавлена запись',(savedHabit?savedHabit.name:'Привычка')+' · '+fmt(minutes)+' · '+formatFullDate(targetDate));
+    closeSheet(true);
     scheduleActiveRender();
     showToast('Запись сохранена');
   }
@@ -2165,10 +2206,8 @@ body.sheet-open{
       var key=button.getAttribute('data-visible-category');
       var query=key==='sport'?'спорт':key==='accounting'?'бухгалтер':key==='reading'?'чтени':key==='speech'?'дикци':'';
       var habit=habits.find(function(h){return (h.name||'').toLowerCase().indexOf(query)>=0});
-      var preset=presetForHabit(habit?habit.name:'')||{};
-      var fallbackType=key==='sport'?'sport':key==='reading'?'reading':'active';
-      var fallbackColor=key==='sport'?'green':key==='reading'?'yellow':key==='speech'?'purple':'blue';
-      applySelection(habit?habit.id:chosenHabit,preset.type||fallbackType,preset.color||fallbackColor);
+      var defaults=habit?habitDefaultSettings(habit):{type:key==='sport'?'sport':key==='reading'?'reading':'active',color:key==='sport'?'green':key==='reading'?'yellow':key==='speech'?'purple':'blue'};
+      applySelection(habit?habit.id:chosenHabit,defaults.type,defaults.color);
       closeMenus();
     };
   });
@@ -2178,8 +2217,8 @@ body.sheet-open{
     if(habitOption){
       var id=habitOption.getAttribute('data-habit-option');
       var h=habits.find(function(x){return x.id===id});
-      var preset=presetForHabit(h?h.name:'')||{};
-      applySelection(id,preset.type||chosenType,preset.color||chosenColor);
+      var defaults=habitDefaultSettings(h);
+      applySelection(id,defaults.type,defaults.color);
       closeMenus();
       return;
     }
@@ -2247,6 +2286,7 @@ body.sheet-open{
       calendarDate=date.getAttribute('data-cal-date');
       $('dateButtonText').textContent=formatFullDate(calendarDate);
       $('calendar').hidden=true;
+      if(!$('sheet').hidden){sheetDirty=true;scheduleDraftSave();}
     }
   };
 
