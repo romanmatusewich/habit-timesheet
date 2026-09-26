@@ -508,7 +508,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.12</div>
+<div class="app-version" aria-label="Версия">v0.3.13</div>
 
 <main class="shell">
   <header class="top">
@@ -895,37 +895,69 @@ body.sheet-open{
     return backupToLocalStorage();
   }
 
+  function normalizeStoredHabits(list){
+    return list.map(function(h){
+      return {id:h.id,name:String(h.name||'Привычка'),goal:Number(h.goal)||30,color:COLOR_BY_ID[h.color]?h.color:null};
+    });
+  }
+
+  function normalizeStoredEntries(list){
+    return list.map(function(e){
+      return {id:e.id||uid(),habitId:e.habitId,date:e.date,minutes:Math.max(0,Number(e.minutes)||0),note:e.note||'',type:e.type||'active',color:e.color||'yellow'};
+    });
+  }
+
+  async function reconcileFromIndexedDB(){
+    var epoch=localMutationEpoch;
+    var idbHabits=await idbGetAll(IDB_HABITS);
+    var idbEntries=await idbGetAll(IDB_ENTRIES);
+    if(localMutationEpoch!==epoch){
+      await idbStoreAll(cloneData(habits),cloneData(entries));
+      return;
+    }
+    habits=normalizeStoredHabits(idbHabits);
+    entries=normalizeStoredEntries(idbEntries);
+    invalidateDataCaches();
+    menusDirty=true;
+    entryRenderLimit=Math.min(entryRenderLimit,Math.max(60,entries.length));
+    renderActiveView();
+  }
+
+  function scheduleIndexedDBReconcile(){
+    var run=function(){reconcileFromIndexedDB().catch(function(){});};
+    if(typeof requestIdleCallback==='function'){
+      requestIdleCallback(run,{timeout:1200});
+    }else{
+      setTimeout(run,400);
+    }
+  }
+
   async function initIndexedDB(){
-    if(window.location.protocol==='file:'&&!PERF_MODE)return;
-    var startedEpoch=localMutationEpoch;
+    if(window.location.protocol==='file:'&&!PERF_MODE){
+      window.__STORAGE_READY=true;
+      return;
+    }
     try{
       db=await openIndexedDB();
       var marker=await idbGetMeta('migrated');
+
       if(!marker||marker.value!==true){
+        var epoch=localMutationEpoch;
         await idbStoreAll(cloneData(habits),cloneData(entries));
-      }else{
-        var idbHabits=await idbGetAll(IDB_HABITS);
-        var idbEntries=await idbGetAll(IDB_ENTRIES);
-        if(localMutationEpoch===startedEpoch){
-          habits=idbHabits.map(function(h){
-            return {id:h.id,name:String(h.name||'Привычка'),goal:Number(h.goal)||30,color:COLOR_BY_ID[h.color]?h.color:null};
-          });
-          entries=idbEntries.map(function(e){
-            return {id:e.id||uid(),habitId:e.habitId,date:e.date,minutes:Math.max(0,Number(e.minutes)||0),note:e.note||'',type:e.type||'active',color:e.color||'yellow'};
-          });
-        }else{
+        if(localMutationEpoch!==epoch){
           await idbStoreAll(cloneData(habits),cloneData(entries));
         }
+      }else{
+        scheduleIndexedDBReconcile();
       }
+
       storageMode='indexeddb';
-      invalidateDataCaches();
-      menusDirty=true;
-      entryRenderLimit=Math.min(entryRenderLimit,Math.max(60,entries.length));
-      renderActiveView();
       scheduleLocalBackup();
+      window.__STORAGE_READY=true;
     }catch(e){
       storageMode='local';
       db=null;
+      window.__STORAGE_READY=true;
     }
   }
 
@@ -1632,11 +1664,10 @@ body.sheet-open{
     };
   });
 
-  window.__APP_READY=false;
   render();
-  initIndexedDB().then(function(){
-    window.__APP_READY=true;
-  });
+  window.__APP_READY=true;
+  window.__STORAGE_READY=false;
+  initIndexedDB();
 })();
 </script>
 </body>
