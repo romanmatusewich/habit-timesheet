@@ -156,7 +156,11 @@ th{font-size:11px;color:#757a89;font-weight:600}
         if(done)return;
         done=true;
         clearTimeout(timeout);
-        afterLoad().then(function(extra){resolve(performance.now()-t0+extra)});
+        Promise.resolve(afterLoad()).then(function(){
+          resolve(performance.now()-t0);
+        }).catch(function(error){
+          reject(error);
+        });
       }
       runner.onload=finish;
       runner.onerror=function(){
