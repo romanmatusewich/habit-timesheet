@@ -2358,7 +2358,9 @@ body.sheet-open{
   document.getElementById('selectAllEntries').onclick=function(){
     if(!entrySelectionMode)return;
     selectedEntryIds={};
-    for(var i=0;i<entries.length;i++)selectedEntryIds[entries[i].id]=true;
+    for(var i=0;i<entries.length;i++){
+      if(recordsFilterHabitId==='*'||entries[i].habitId===recordsFilterHabitId)selectedEntryIds[entries[i].id]=true;
+    }
     renderSettings();
   };
   document.getElementById('clearEntrySelection').onclick=function(){
