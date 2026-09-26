@@ -245,6 +245,10 @@ label input:focus,label select:focus{
       <input type="date" id="date" style="display:none">
     <div class="wrap">
       <div class="top">
+        <div class="date-head">
+          <div id="dateDay">26 сентября</div>
+          <div class="weekday" id="dateWeekday">Суббота</div>
+        </div>
         <div class="actions">
           <button class="primary" id="openAdd">Записать данные</button>
         </div>
@@ -329,6 +333,12 @@ label input:focus,label select:focus{
   function persist(){localStorage.setItem(HKEY,JSON.stringify(habits));localStorage.setItem(EKEY,JSON.stringify(entries))}
   function localDate(d){var x=d||new Date();return new Date(x.getTime()-x.getTimezoneOffset()*60000).toISOString().slice(0,10)}
   function today(){return localDate(new Date())}
+  function ruDateLabel(d){
+    var x=new Date(d+'T12:00:00');
+    var months=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+    var weekdays=['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+    return {day:x.getDate()+' '+months[x.getMonth()],weekday:weekdays[x.getDay()]};
+  }
   function fmt(n){n=Math.round(n||0);var h=Math.floor(n/60),m=n%60;return h?(h+' ч'+(m?' '+m+' мин':'')):m+' мин'}
   function totalForDay(d){return entries.filter(function(e){return e.date===d}).reduce(function(s,e){return s+e.minutes},0)}
   function clean(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]})}
@@ -359,6 +369,9 @@ label input:focus,label select:focus{
 
   function renderToday(){
     dateEl.value=dateEl.value||today();
+    var dl=ruDateLabel(dateEl.value);
+    $('dateDay').textContent=dl.day;
+    $('dateWeekday').textContent=dl.weekday;
     var d=dateEl.value, t=totalForDay(d), wd=weekDates(d), w=wd.reduce(function(s,x){return s+totalForDay(x)},0);
     var mp=d.slice(0,7), mt=entries.filter(function(e){return e.date.slice(0,7)===mp}).reduce(function(s,e){return s+e.minutes},0);
     var active=new Set(entries.filter(function(e){return e.date.slice(0,7)===mp}).map(function(e){return e.date})).size;
