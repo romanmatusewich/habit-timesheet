@@ -651,6 +651,7 @@ body.sheet-open{
   var chosenHabit=habits[0]?habits[0].id:'';
   var chosenType='active';
   var chosenColor='yellow';
+  var menusDirty=true;
   var statsCache=null;
   var domCache={
     views:document.querySelectorAll('.view'),
@@ -722,6 +723,12 @@ body.sheet-open{
       byType[e.type||'active']=(byType[e.type||'active']||0)+minutes;
     }
     var activeDays=Object.keys(byDate).length;
+    var dateKeys=Object.keys(byDate);
+    activeByMonth={};
+    for(var di=0;di<dateKeys.length;di++){
+      var monthKey=dateKeys[di].slice(0,7);
+      activeByMonth[monthKey]=(activeByMonth[monthKey]||0)+1;
+    }
     var habitTotals=habits.map(function(h){
       return {habit:h,total:byHabit[h.id]||0};
     }).sort(function(a,b){return b.total-a.total});
@@ -841,12 +848,7 @@ body.sheet-open{
     }).join('')||'<div class="break-row"><div class="break-name">Нет привычек</div><div class="break-value">—</div></div>';
 
     var monthPrefix=currentDate.slice(0,7);
-    var monthActive=stats.activeByMonth[monthPrefix]?1:0;
-    if(stats.activeByMonth[monthPrefix]){
-      monthActive=0;
-      var monthKeys=Object.keys(stats.byDate);
-      for(var mk=0;mk<monthKeys.length;mk++)if(monthKeys[mk].slice(0,7)===monthPrefix)monthActive++;
-    }
+    var monthActive=stats.activeByMonth[monthPrefix]||0;
     var weekTotal=weekDates(currentDate).reduce(function(s,d){return s+dayTotal(d)},0);
     var insights=[];
     if(weekTotal)insights.push('За эту неделю накоплено <b>'+fmt(weekTotal)+'</b>.');
@@ -917,13 +919,22 @@ body.sheet-open{
     $('colorButton').classList.remove('open');
   }
 
+  function syncMenuSelection(){
+    var habitOptions=document.querySelectorAll('[data-habit-option]');
+    var typeOptions=document.querySelectorAll('[data-type-option]');
+    var colorOptions=document.querySelectorAll('[data-color-option]');
+    for(var i=0;i<habitOptions.length;i++)habitOptions[i].classList.toggle('selected',habitOptions[i].getAttribute('data-habit-option')===chosenHabit);
+    for(var j=0;j<typeOptions.length;j++)typeOptions[j].classList.toggle('selected',typeOptions[j].getAttribute('data-type-option')===chosenType);
+    for(var k=0;k<colorOptions.length;k++)colorOptions[k].classList.toggle('selected',colorOptions[k].getAttribute('data-color-option')===chosenColor);
+  }
+
   function showMenu(id,buttonId){
     var menu=$(id);
     var willOpen=menu.hidden;
     closeMenus();
     if(willOpen){
-      // Rebuild only when the menu actually opens.
-      populateMenus();
+      if(menusDirty){populateMenus();menusDirty=false}
+      syncMenuSelection();
       menu.hidden=false;
       if(buttonId)$(buttonId).classList.add('open');
     }
@@ -951,6 +962,7 @@ body.sheet-open{
     $('typeButtonText').textContent=type.label;
     $('colorButtonText').textContent=color.label;
     $('colorDot').style.background=color.color;
+    syncMenuSelection();
   }
 
   function populateMenus(){
@@ -1074,6 +1086,7 @@ body.sheet-open{
     var name=prompt('Название привычки');
     if(!name||!name.trim())return;
     habits.push({id:uid(),name:name.trim(),goal:30});
+    menusDirty=true;
     persist();invalidateStats();
     if(currentView==='settings')renderSettings();
     else if(currentView==='today')renderMainStats();
@@ -1178,6 +1191,7 @@ body.sheet-open{
       if(habit&&confirm('Удалить «'+habit.name+'» и все записи этой привычки?')){
         habits=habits.filter(function(h){return h.id!==id});
         entries=entries.filter(function(x){return x.habitId!==id});
+        menusDirty=true;
         persist();invalidateStats();
         if(currentView==='settings')renderSettings();
         else if(currentView==='today'){renderChart();renderMainStats();}
