@@ -282,8 +282,10 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   place-items:center;
   padding:18px;
   background:
-    radial-gradient(circle at 50% 12%,rgba(255,255,255,.18),transparent 42%),
-    rgba(220,224,235,.34);
+    radial-gradient(circle at 50% 12%,rgba(255,255,255,.20),transparent 42%),
+    rgba(220,224,235,.42);
+  -webkit-backdrop-filter:blur(28px) saturate(120%);
+  backdrop-filter:blur(28px) saturate(120%);
   overscroll-behavior:contain;
   z-index:100
 }
@@ -294,7 +296,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   overflow:auto;
   padding:23px 23px 19px;
   border-radius:29px;
-  background:linear-gradient(150deg,rgba(255,255,255,.76),rgba(246,248,253,.58));
+  background:linear-gradient(150deg,rgba(255,255,255,.90),rgba(246,248,253,.82));
   border:1px solid rgba(255,255,255,.88);
   box-shadow:
     0 35px 100px rgba(25,32,66,.22),
@@ -515,7 +517,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.20</div>
+<div class="app-version" aria-label="Версия">v0.3.21</div>
 
 <main class="shell">
   <header class="top">
