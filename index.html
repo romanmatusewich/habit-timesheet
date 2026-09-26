@@ -646,7 +646,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.36</div>
+<div class="app-version" aria-label="Версия">v0.3.37</div>
 
 <main class="shell">
   <header class="top">
@@ -1590,13 +1590,12 @@ body.sheet-open{
 
     $('bestDayTime').textContent=fmt(stats.bestDayTotal||0);
     $('bestDayDate').textContent=stats.bestDayDate?formatFullDate(stats.bestDayDate):'Нет данных';
-
     $('statsBreakdown').innerHTML=getStatsBreakdownHTML(allTotals());
 
     var weeks=weeklyStatsTotals(),maxWeek=Math.max(60,Math.max.apply(Math,weeks.map(function(x){return x.total})));
     $('weeklyStatsChart').innerHTML=weeks.map(function(x){
-      var pct=Math.max(4,Math.round(x.total/maxWeek*100));
-      return '<div class="weekly-bar-wrap"><div class="weekly-bar" style="height:'+pct+'%" title="'+fmt(x.total)+'"></div></div>';
+      var pct=x.total?Math.max(4,Math.round(x.total/maxWeek*100)):0;
+      return '<div class="weekly-bar-wrap"><div class="weekly-bar" style="height:'+pct+'%;display:'+(x.total?'block':'none')+'" title="'+fmt(x.total)+'"></div></div>';
     }).join('');
     $('weeklyStatsLabels').innerHTML=weeks.map(function(x){
       var a=dateObj(x.start),b=dateObj(x.end);
@@ -1609,22 +1608,31 @@ body.sheet-open{
     $('statsTypeDonut').style.background=donut.gradient;
     $('statsTypeDonutTotal').textContent=fmt(total);
     $('statsTypeMiniLegend').innerHTML=donut.parts.slice(0,5).map(function(x){
+      return '<div class="type-mini-item"><div class="type-mini-left"><span class="type-mini-dot" style="background:'+x.color+'"></span><span>'+clean(x.label)+'</span></div><b>'+fmt(x.total)+'</b></div>';
+    }).join('')||'<div class="empty">Нет данных.</div>';
+
     var period=periodAnalytics();
     var delta=period.previousTotal?Math.round((period.currentTotal-period.previousTotal)/period.previousTotal*100):null;
     $('periodCompareValue').textContent=delta===null?(period.currentTotal?'Новая база':'—'):(delta>0?'+':'')+delta+'%';
     $('periodCompareNote').textContent=delta===null?(period.currentTotal?fmt(period.currentTotal)+' за последние 30 дней':'Нет данных'):(fmt(period.currentTotal)+' сейчас · '+fmt(period.previousTotal)+' ранее');
-    var ranked=habits.map(function(h){return {habit:h,total:period.currentByHabit[h.id]||0};}).sort(function(a,b){return b.total-a.total}),top=ranked[0]&&ranked[0].total?ranked[0]:null;
-    $('smartStats').innerHTML='<div class="smart-card"><div class="smart-label">Темп · 30 дней</div><div class="smart-value">'+fmt(period.currentTotal)+'</div><div class="smart-note">'+(delta===null?'Нет предыдущей базы':(delta>0?'+':'')+delta+'% к предыдущим 30 дням')+'</div></div>'+
+
+    var ranked=habits.map(function(h){return {habit:h,total:period.currentByHabit[h.id]||0};}).sort(function(a,b){return b.total-a.total});
+    var top=ranked[0]&&ranked[0].total?ranked[0]:null;
+    $('smartStats').innerHTML=
+      '<div class="smart-card"><div class="smart-label">Темп · 30 дней</div><div class="smart-value">'+fmt(period.currentTotal)+'</div><div class="smart-note">'+(delta===null?'Нет предыдущей базы':(delta>0?'+':'')+delta+'% к предыдущим 30 дням')+'</div></div>'+
       '<div class="smart-card"><div class="smart-label">Регулярность</div><div class="smart-value">'+Math.round(period.currentDays/30*100)+'%</div><div class="smart-note">'+period.currentDays+' активных дней из 30</div></div>'+
       '<div class="smart-card"><div class="smart-label">Среднее занятие · 30 дней</div><div class="smart-value">'+fmt(period.currentSessions?period.currentTotal/period.currentSessions:0)+'</div><div class="smart-note">'+period.currentSessions+' занятий</div></div>'+
       '<div class="smart-card"><div class="smart-label">Фокус · 30 дней</div><div class="smart-value">'+(top?clean(top.habit.name):'Нет данных')+'</div><div class="smart-note">'+(top?fmt(top.total):'—')+'</div></div>';
+
     $('habitTrends').innerHTML=habits.map(function(h){
-      var now=period.currentByHabit[h.id]||0,prev=period.previousByHabit[h.id]||0,p=prev?Math.round((now-prev)/prev*100):null,cls='flat',label='—';
-      if(p!==null&&p>=10){cls='up';label='↗ '+p+'%';}else if(p!==null&&p<=-10){cls='down';label='↘ '+p+'%';}else if(p!==null){label='Стабильно';}else if(now>0){cls='up';label='Новый';}
+      var now=period.currentByHabit[h.id]||0,prev=period.previousByHabit[h.id]||0;
+      var p=prev?Math.round((now-prev)/prev*100):null,cls='flat',label='—';
+      if(p!==null&&p>=10){cls='up';label='↗ '+p+'%';}
+      else if(p!==null&&p<=-10){cls='down';label='↘ '+p+'%';}
+      else if(p!==null){label='Стабильно';}
+      else if(now>0){cls='up';label='Новый';}
       return '<div class="trend-row"><div class="trend-name"><span class="color-dot" style="background:'+habitColor(h)+'"></span><span>'+clean(h.name)+'</span></div><div class="trend-value">'+fmt(now)+'</div><div class="trend-badge '+cls+'">'+label+'</div></div>';
     }).join('')||'<div class="empty">Нет привычек.</div>';
-      return '<div class="type-mini-item"><div class="type-mini-left"><span class="type-mini-dot" style="background:'+x.color+'"></span><span>'+clean(x.label)+'</span></div><b>'+fmt(x.total)+'</b></div>';
-    }).join('')||'<div class="empty">Нет данных.</div>';
   }
 
   function renderHistory(){
@@ -1712,7 +1720,8 @@ body.sheet-open{
   function calendarDateData(date,stats){
     if(calendarFilterHabitId==='*')return {total:stats.byDate[date]||0,colorTotals:stats.byDateColor[date]||{},habitTotals:stats.byDateHabit[date]||{}};
     var total=(stats.byDateHabit[date]&&stats.byDateHabit[date][calendarFilterHabitId])||0;
-    return {total:total,colorTotals:stats.byDateColor[date]||{},habitTotals:{}};
+    var habit=habits.find(function(h){return h.id===calendarFilterHabitId}),colorId=habit&&habit.defaultColor?habit.defaultColor:'blue';
+    return {total:total,colorTotals:total?{[colorId]:total}:{},habitTotals:{}};
   }
 
   function calendarTooltipFiltered(date,stats){
@@ -2117,6 +2126,50 @@ body.sheet-open{
     addHistory('Экспорт данных',from+' — '+to+(habitId==='*'?'':' · '+(habitMap[habitId]?habitMap[habitId].name:'')));
     closeExportDialog();showToast(format==='json'?'JSON экспортирован':'CSV экспортирован');
   }
+  function openHabitEditor(id){
+    habitEditorId=id||'';
+    var habit=habitEditorId?habits.find(function(h){return h.id===habitEditorId}):null;
+    $('habitEditorTitle').textContent=habit?'Настроить привычку':'Новая привычка';
+    $('habitEditorName').value=habit?habit.name:'';
+    $('habitEditorIcon').innerHTML=ICON_OPTIONS.map(function(x){return '<option value="'+x.id+'">'+x.label+' '+x.symbol+'</option>';}).join('');
+    $('habitEditorType').innerHTML=TYPE_OPTIONS.map(function(x){return '<option value="'+x.id+'">'+clean(x.label)+'</option>';}).join('');
+    $('habitEditorColor').innerHTML=COLOR_OPTIONS.map(function(x){return '<option value="'+x.id+'">'+clean(x.label)+'</option>';}).join('');
+    var defaults=habitDefaultSettings(habit);
+    $('habitEditorIcon').value=habit&&habit.icon?habit.icon:ICON_OPTIONS[Math.min(habits.length,ICON_OPTIONS.length-1)].id;
+    $('habitEditorType').value=defaults.type;
+    $('habitEditorColor').value=defaults.color;
+    $('habitEditorMinutes').value=defaults.minutes;
+    $('habitEditor').hidden=false;
+    setTimeout(function(){$('habitEditorName').focus()},0);
+  }
+
+  function closeHabitEditor(){
+    $('habitEditor').hidden=true;
+    habitEditorId='';
+  }
+
+  function saveHabitEditor(){
+    var name=$('habitEditorName').value.trim();
+    if(!name){showToast('Укажи название привычки');return}
+    var minutes=Math.max(1,Math.min(600,parseInt($('habitEditorMinutes').value||'30',10)||30));
+    var icon=$('habitEditorIcon').value||'circle';
+    var type=$('habitEditorType').value||'active';
+    var color=$('habitEditorColor').value||'blue';
+    var habit=habitEditorId?habits.find(function(h){return h.id===habitEditorId}):null;
+    if(habit){
+      var oldName=habit.name;
+      habit.name=name;habit.icon=icon;habit.defaultType=type;habit.defaultColor=color;habit.defaultMinutes=minutes;
+      persistHabits();menusDirty=true;invalidateDataCaches();
+      addHistory('Изменена привычка',oldName===name?name:oldName+' → '+name);
+      closeHabitEditor();renderSettings();renderActiveView();showToast(oldName===name?'Настройки привычки сохранены':'Привычка переименована');
+      return;
+    }
+    var newHabit={id:uid(),name:name,goal:30,order:habits.length,icon:icon,defaultType:type,defaultColor:color,defaultMinutes:minutes};
+    habits.push(newHabit);persistHabits();menusDirty=true;invalidateDataCaches();
+    addHistory('Создана привычка',name);
+    closeHabitEditor();renderSettings();renderActiveView();showToast('Привычка добавлена');
+  }
+
   function addHabit(){openHabitEditor('');}
 
   document.getElementById('openSheet').onclick=openSheet;
@@ -2140,7 +2193,7 @@ body.sheet-open{
   $('settingsRows').addEventListener('dragstart',function(e){var row=e.target.closest('[data-habit-drag]');if(!row)return;habitDragId=row.getAttribute('data-habit-drag');row.classList.add('dragging');if(e.dataTransfer)e.dataTransfer.effectAllowed='move';});
   $('settingsRows').addEventListener('dragover',function(e){var row=e.target.closest('[data-habit-drag]');if(!row)return;e.preventDefault();var rows=$('settingsRows').querySelectorAll('[data-habit-drag]');for(var i=0;i<rows.length;i++)rows[i].classList.remove('drop-target');if(row.getAttribute('data-habit-drag')!==habitDragId)row.classList.add('drop-target');});
   $('settingsRows').addEventListener('dragend',function(){var rows=$('settingsRows').querySelectorAll('[data-habit-drag]');for(var i=0;i<rows.length;i++)rows[i].classList.remove('dragging','drop-target');habitDragId='';});
-  $('settingsRows').addEventListener('drop',function(e){var row=e.target.closest('[data-habit-drag]');if(!row||!habitDragId)return;e.preventDefault();var targetId=row.getAttribute('data-habit-drag');if(targetId===habitDragId){addHistory('Изменён порядок привычек',moved.name);habitDragId='';return}var from=habits.findIndex(function(h){return h.id===habitDragId}),to=habits.findIndex(function(h){return h.id===targetId});if(from<0||to<0){habitDragId='';return}var moved=habits.splice(from,1)[0];habits.splice(to,0,moved);reindexHabits();persistHabits();menusDirty=true;invalidateDataCaches();habitDragId='';renderSettings();renderActiveView();});
+  $('settingsRows').addEventListener('drop',function(e){var row=e.target.closest('[data-habit-drag]');if(!row||!habitDragId)return;e.preventDefault();var targetId=row.getAttribute('data-habit-drag');if(targetId===habitDragId){habitDragId='';return}var from=habits.findIndex(function(h){return h.id===habitDragId}),to=habits.findIndex(function(h){return h.id===targetId});if(from<0||to<0){habitDragId='';return}var moved=habits.splice(from,1)[0];habits.splice(to,0,moved);reindexHabits();persistHabits();menusDirty=true;invalidateDataCaches();habitDragId='';renderSettings();renderActiveView();});
 
   document.getElementById('habitButton').onclick=function(){showMenu('habit','habitButton')};
   document.getElementById('typeButton').onclick=function(){showMenu('type','typeButton')};
