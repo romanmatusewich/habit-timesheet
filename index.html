@@ -707,18 +707,36 @@ body.sheet-open{
 
   function getStats(){
     if(statsCache)return statsCache;
-    var byHabit={},byDate={},byType={},total=0,sessionCount=0;
+    var byHabit={},byDate={},countByDate={},byType={},activeByMonth={},total=0,sessionCount=0,longest=0;
     for(var i=0;i<entries.length;i++){
       var e=entries[i];
       var minutes=Number(e.minutes)||0;
       total+=minutes;
       sessionCount++;
+      if(minutes>longest)longest=minutes;
       byDate[e.date]=(byDate[e.date]||0)+minutes;
+      countByDate[e.date]=(countByDate[e.date]||0)+1;
       byHabit[e.habitId]=(byHabit[e.habitId]||0)+minutes;
+      var entryMonth=(e.date||'').slice(0,7);
+      if(entryMonth)activeByMonth[entryMonth]=1;
       byType[e.type||'active']=(byType[e.type||'active']||0)+minutes;
     }
     var activeDays=Object.keys(byDate).length;
-    statsCache={byHabit:byHabit,byDate:byDate,byType:byType,total:total,sessionCount:sessionCount,activeDays:activeDays};
+    var habitTotals=habits.map(function(h){
+      return {habit:h,total:byHabit[h.id]||0};
+    }).sort(function(a,b){return b.total-a.total});
+    statsCache={
+      byHabit:byHabit,
+      byDate:byDate,
+      countByDate:countByDate,
+      byType:byType,
+      activeByMonth:activeByMonth,
+      habitTotals:habitTotals,
+      total:total,
+      sessionCount:sessionCount,
+      activeDays:activeDays,
+      longest:longest
+    };
     return statsCache;
   }
 
@@ -735,10 +753,7 @@ body.sheet-open{
   }
 
   function allTotals(){
-    var stats=getStats();
-    return habits.map(function(h){
-      return {habit:h,total:stats.byHabit[h.id]||0};
-    }).sort(function(a,b){return b.total-a.total});
+    return getStats().habitTotals;
   }
 
   function clean(value){
@@ -807,7 +822,7 @@ body.sheet-open{
   function renderMainStats(){
     var stats=getStats();
     var today=dayTotal(currentDate);
-    var todaySessions=entries.reduce(function(n,e){return n+(e.date===currentDate?1:0)},0);
+    var todaySessions=stats.countByDate[currentDate]||0;
     var total=stats.total;
     var average=stats.sessionCount?Math.round(total/stats.sessionCount):0;
     var totals=allTotals(),top=totals[0];
@@ -818,21 +833,26 @@ body.sheet-open{
     $('topHabit').textContent=top&&top.total?top.habit.name:'Пока нет данных';
     $('topHabitTime').textContent=top&&top.total?fmt(top.total)+' за весь период':'Добавь первое занятие';
 
-    var max=Math.max(60,Math.max.apply(Math,[0].concat(totals.map(function(x){return x.total}))));
+    var max=60;
+    for(var mi=0;mi<totals.length;mi++)if(totals[mi].total>max)max=totals[mi].total;
     $('breakdownRows').innerHTML=totals.map(function(x){
       var pct=Math.round(x.total/max*100);
       return '<div class="break-row"><div class="break-left"><div class="break-name">'+clean(x.habit.name)+'</div><div class="mini-progress"><i style="width:'+pct+'%"></i></div></div><div class="break-value">'+fmt(x.total)+'</div></div>';
     }).join('')||'<div class="break-row"><div class="break-name">Нет привычек</div><div class="break-value">—</div></div>';
 
     var monthPrefix=currentDate.slice(0,7);
-    var monthActive=Object.keys(stats.byDate).reduce(function(n,d){return n+(d.slice(0,7)===monthPrefix?1:0)},0);
+    var monthActive=stats.activeByMonth[monthPrefix]?1:0;
+    if(stats.activeByMonth[monthPrefix]){
+      monthActive=0;
+      var monthKeys=Object.keys(stats.byDate);
+      for(var mk=0;mk<monthKeys.length;mk++)if(monthKeys[mk].slice(0,7)===monthPrefix)monthActive++;
+    }
     var weekTotal=weekDates(currentDate).reduce(function(s,d){return s+dayTotal(d)},0);
     var insights=[];
     if(weekTotal)insights.push('За эту неделю накоплено <b>'+fmt(weekTotal)+'</b>.');
     if(monthActive)insights.push('В этом месяце активность была <b>'+monthActive+' '+(monthActive===1?'день':'дней')+'</b>.');
     if(stats.sessionCount>1){
-      var longest=0;
-      for(var li=0;li<entries.length;li++)longest=Math.max(longest,Number(entries[li].minutes)||0);
+      var longest=stats.longest;
       insights.push('Самое длинное занятие — <b>'+fmt(longest)+'</b>.');
     }
     $('insights').innerHTML=insights.map(function(t){return '<div class="insight"><span class="insight-mark"></span><div class="insight-text">'+t+'</div></div>'}).join('');
