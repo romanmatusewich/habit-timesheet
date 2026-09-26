@@ -389,10 +389,11 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   max-height:300px;
   overflow:auto;
   contain:layout paint;
-  background:linear-gradient(150deg,rgba(251,252,255,.72) 0%,rgba(242,244,250,.62) 100%);
-  -webkit-backdrop-filter:blur(12px) saturate(115%);
-  backdrop-filter:blur(12px) saturate(115%);
-  border:1px solid rgba(255,255,255,.90);
+  isolation:isolate;
+  background:linear-gradient(150deg,rgba(255,255,255,.90) 0%,rgba(242,244,250,.84) 100%);
+  -webkit-backdrop-filter:blur(18px) saturate(120%);
+  backdrop-filter:blur(18px) saturate(120%);
+  border:1px solid rgba(255,255,255,.96);
   border-radius:17px;
   box-shadow:0 18px 42px rgba(29,34,60,.14),inset 0 1px 0 rgba(255,255,255,.98);
   transform:translateY(-4px) scale(.985);
@@ -405,7 +406,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
  .menu-section{padding:10px 12px 7px;font-size:10px;color:var(--muted);font-weight:500}
 .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:7px 10px 10px}
 .quick{border:1px solid rgba(255,255,255,.72);background:rgba(239,241,247,.90);border-radius:11px;padding:9px 10px;text-align:left;color:var(--ink);font-size:12px;font-weight:500;transition:background-color .12s ease}
-.option{width:100%;display:block;border:0;background:transparent;text-align:left;padding:12px 14px;font-size:15px;line-height:1.2;color:var(--ink);border-top:1px solid rgba(30,34,50,.05)}
+.option{width:100%;display:block;border:0;background:rgba(255,255,255,.08);text-align:left;padding:12px 14px;font-size:15px;line-height:1.2;color:var(--ink);border-top:1px solid rgba(30,34,50,.05)}
 .option.selected{background:rgba(225,228,255,.92);color:var(--blue-deep);font-weight:600}
 
 .calendar{
@@ -514,7 +515,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.19</div>
+<div class="app-version" aria-label="Версия">v0.3.20</div>
 
 <main class="shell">
   <header class="top">
