@@ -209,7 +209,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .break-sub{margin-top:3px;font-size:11px;color:var(--muted)}
 .break-value{font-size:13px;font-weight:500}
 .mini-progress{height:4px;margin-top:7px;border-radius:999px;background:rgba(33,38,56,.10);overflow:hidden}
-.mini-progress i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#5d65ff,#49cfff)}
+ .mini-progress i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--row-color,#5d65ff),var(--row-color-end,#49cfff))}
 
 .insights{display:grid;gap:8px;margin-top:12px}
 .insight{
@@ -648,6 +648,11 @@ body.sheet-open{
     return map;
   },{});
 
+  var COLOR_BY_ID=COLOR_OPTIONS.reduce(function(map,item){
+    map[item.id]=item.color;
+    return map;
+  },{});
+
   var DEFAULT_HABITS=[
     {id:'accounting',name:'Бухгалтерия',goal:60},
     {id:'speech',name:'Дикция и речь',goal:30},
@@ -656,7 +661,7 @@ body.sheet-open{
   ];
 
   var habits=read(HABITS_KEY,DEFAULT_HABITS).map(function(h){
-    return {id:h.id,name:String(h.name||'Привычка'),goal:Number(h.goal)||30};
+    return {id:h.id,name:String(h.name||'Привычка'),goal:Number(h.goal)||30,color:COLOR_BY_ID[h.color]?h.color:null};
   });
 
   var entries=read(ENTRIES_KEY,[]).map(function(e){
@@ -934,7 +939,8 @@ body.sheet-open{
     for(var mi=0;mi<totals.length;mi++)if(totals[mi].total>max)max=totals[mi].total;
     $('breakdownRows').innerHTML=totals.map(function(x){
       var pct=Math.round(x.total/max*100);
-      return '<div class="break-row"><div class="break-left"><div class="break-name">'+clean(x.habit.name)+'</div><div class="mini-progress"><i style="width:'+pct+'%"></i></div></div><div class="break-value">'+fmt(x.total)+'</div></div>';
+      var color=habitColor(x.habit),end=habitColorEnd(color);
+      return '<div class="break-row"><div class="break-left"><div class="break-name"><span class="color-dot" style="background:'+color+';margin-right:7px;vertical-align:1px"></span>'+clean(x.habit.name)+'</div><div class="mini-progress"><i style="--row-color:'+color+';--row-color-end:'+end+';width:'+pct+'%"></i></div></div><div class="break-value">'+fmt(x.total)+'</div></div>';
     }).join('')||'<div class="break-row"><div class="break-name">Нет привычек</div><div class="break-value">—</div></div>';
 
     var monthPrefix=currentDate.slice(0,7);
@@ -961,14 +967,38 @@ body.sheet-open{
     var totals=allTotals();
     var max=Math.max(60,Math.max.apply(Math,[0].concat(totals.map(function(x){return x.total}))));
     $('statsBreakdown').innerHTML=totals.map(function(x){
-      return '<div class="break-row"><div class="break-left"><div class="break-name">'+clean(x.habit.name)+'</div><div class="break-sub">'+(x.total?fmt(x.total):'нет записей')+'</div><div class="mini-progress"><i style="width:'+Math.round(x.total/max*100)+'%"></i></div></div><div class="break-value">'+fmt(x.total)+'</div></div>';
+      var color=habitColor(x.habit),end=habitColorEnd(color);
+      return '<div class="break-row"><div class="break-left"><div class="break-name"><span class="color-dot" style="background:'+color+';margin-right:7px;vertical-align:1px"></span>'+clean(x.habit.name)+'</div><div class="break-sub">'+(x.total?fmt(x.total):'нет записей')+'</div><div class="mini-progress"><i style="--row-color:'+color+';--row-color-end:'+end+';width:'+Math.round(x.total/max*100)+'%"></i></div></div><div class="break-value">'+fmt(x.total)+'</div></div>';
     }).join('')||'<div class="empty">Нет данных.</div>';
   }
 
   function renderSettings(){
     $('settingsRows').innerHTML=habits.map(function(h){
-      return '<div class="break-row"><div class="break-left"><div class="break-name">'+clean(h.name)+'</div><div class="break-sub">Цель: '+fmt(h.goal)+' в день</div></div><button class="secondary-action" data-remove-habit="'+h.id+'">Удалить</button></div>';
+      var color=habitColor(h);
+      return '<div class="break-row"><div class="break-left"><div class="break-name"><span class="color-dot" style="background:'+color+';margin-right:7px;vertical-align:1px"></span>'+clean(h.name)+'</div><div class="break-sub">Цель: '+fmt(h.goal)+' в день</div></div><button class="secondary-action" data-remove-habit="'+h.id+'">Удалить</button></div>';
     }).join('')||'<div class="empty">Нет привычек.</div>';
+
+    var habitMap={};
+    for(var hi=0;hi<habits.length;hi++)habitMap[habits[hi].id]=habits[hi];
+
+    var sorted=entries.slice().sort(function(a,b){
+      var dateCompare=String(b.date||'').localeCompare(String(a.date||''));
+      if(dateCompare)return dateCompare;
+      return String(b.id||'').localeCompare(String(a.id||''));
+    });
+    var visible=sorted.slice(0,entryRenderLimit);
+    $('recordsSummary').textContent=entries.length+' '+(entries.length===1?'запись':'записей');
+    $('entriesRows').innerHTML=visible.map(function(e){
+      var habit=habitMap[e.habitId];
+      var color=COLOR_BY_ID[e.color]||'#6e73ff';
+      return '<div class="record-row"><span class="record-dot" style="background:'+color+'"></span><div class="record-info"><div class="record-name">'+clean(habit?habit.name:'Удаленная привычка')+'</div><div class="record-meta">'+formatFullDate(e.date||currentDate)+' · '+fmt(e.minutes)+'</div>'+(e.note?'<div class="record-note">'+clean(e.note)+'</div>':'')+'</div><button class="secondary-action record-delete" data-remove-entry="'+clean(e.id)+'">Удалить</button></div>';
+    }).join('')||'<div class="empty">Нет записей.</div>';
+
+    var more=entries.length>entryRenderLimit;
+    $('showMoreEntries').hidden=!more;
+    if(more)$('showMoreEntries').textContent='Показать ещё · '+(entries.length-entryRenderLimit);
+  }
+
 
     var habitMap={};
     for(var hi=0;hi<habits.length;hi++)habitMap[habits[hi].id]=habits[hi];
@@ -1057,6 +1087,32 @@ body.sheet-open{
     if(n.indexOf('бухгалтер')>=0)return {type:'active',color:'blue'};
     if(n.indexOf('дикци')>=0||n.indexOf('реч')>=0)return {type:'active',color:'purple'};
     return null;
+  }
+
+  function habitColor(habit){
+    if(habit&&habit.color&&COLOR_BY_ID[habit.color])return COLOR_BY_ID[habit.color];
+    var bestColor='',bestMinutes=0;
+    for(var i=0;i<entries.length;i++){
+      var e=entries[i];
+      if(e.habitId!==habit.id||!COLOR_BY_ID[e.color])continue;
+      var mins=Number(e.minutes)||0;
+      if(mins>bestMinutes){bestMinutes=mins;bestColor=e.color}
+    }
+    if(bestColor)return COLOR_BY_ID[bestColor];
+    var preset=presetForHabit(habit&&habit.name);
+    return COLOR_BY_ID[preset&&preset.color]||COLOR_BY_ID.blue;
+  }
+
+  function habitColorEnd(hex){
+    var map={
+      '#e3be47':'#f2d36a',
+      '#5f63ff':'#49cfff',
+      '#45c986':'#75e0aa',
+      '#8b72ff':'#b19bff',
+      '#ff6aa6':'#ff9ac4',
+      '#6e73ff':'#49cfff'
+    };
+    return map[hex]||hex;
   }
 
   function applySelection(habitId,typeId,colorId){
@@ -1215,7 +1271,20 @@ body.sheet-open{
     };
     entries.push(entry);
 
+    var targetHabit=habits.find(function(h){return h.id===chosenHabit});
+    var habitColorWasSet=!!(targetHabit&&targetHabit.color);
+    if(targetHabit&&!habitColorWasSet&&COLOR_BY_ID[chosenColor]){
+      targetHabit.color=chosenColor;
+      if(!persistHabits()){
+        entries.pop();
+        targetHabit.color=null;
+        showToast('Не удалось сохранить запись');
+        return;
+      }
+    }
+
     if(!persistEntries()){
+      if(targetHabit&&!habitColorWasSet)targetHabit.color=null;
       entries.pop();
       showToast('Не удалось сохранить данные');
       return;
@@ -1336,7 +1405,7 @@ body.sheet-open{
   });
 
   document.addEventListener('click',function(e){
-    if(!e.target.closest('.field'))closeMenus();
+    if(!e.target.closest('.field')&&!e.target.closest('.sheet'))closeMenus();
 
     var more=e.target.closest('#showMoreEntries');
     if(more){
