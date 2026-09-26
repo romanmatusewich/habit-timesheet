@@ -150,9 +150,9 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   display:grid;
   place-items:center;
   padding:18px;
-  background:rgba(235,235,239,.47);
-  backdrop-filter:blur(22px) saturate(.88);
-  -webkit-backdrop-filter:blur(22px) saturate(.88);
+  background:rgba(225,225,230,.38);
+  backdrop-filter:blur(18px) saturate(.9);
+  -webkit-backdrop-filter:blur(18px) saturate(.9);
   z-index:100;
 }
 .sheet{
@@ -171,6 +171,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .form{display:grid;gap:17px}
 .field{display:grid;gap:6px}
 .field-label{font-size:12px;line-height:1.2;color:var(--muted);font-weight:400}
+.menu-field .popover{box-sizing:border-box}
 .custom-select,.date-button{
   width:100%;
   display:flex;
@@ -189,15 +190,19 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 }
 .custom-select .chevron,.date-button .chevron{color:#8d8d92;font-size:16px;transition:transform .16s}
 .custom-select.open .chevron{transform:rotate(180deg)}
+.menu-field{position:relative}
 .popover{
-  position:relative;
-  margin-top:-8px;
+  position:absolute;
+  left:0;right:0;
+  top:calc(100% + 8px);
+  margin:0;
   border:1px solid #e0e0e3;
-  background:rgba(255,255,255,.98);
+  background:#fff;
   border-radius:16px;
   box-shadow:0 14px 34px rgba(0,0,0,.12);
   overflow:hidden;
-  z-index:10
+  z-index:120;
+  will-change:transform;
 }
 .option{
   width:100%;
@@ -361,13 +366,13 @@ body.sheet-open{overflow:hidden}
     </div>
 
     <div class="form">
-      <div class="field">
+      <div class="field menu-field">
         <span class="field-label">Привычка</span>
         <button class="custom-select" id="habitButton"><span id="habitButtonText">Бухгалтерия</span><span class="chevron">⌄</span></button>
         <div class="popover" id="habitPopover" hidden></div>
       </div>
 
-      <div class="field">
+      <div class="field menu-field">
         <span class="field-label">Тип записи</span>
         <button class="custom-select" id="typeButton"><span id="typeButtonText">Активное обучение</span><span class="chevron">⌄</span></button>
         <div class="popover" id="typePopover" hidden></div>
@@ -383,7 +388,7 @@ body.sheet-open{overflow:hidden}
         <input class="field-control text-input" id="note" maxlength="160" placeholder="Например, пассивное обучение">
       </label>
 
-      <div class="field">
+      <div class="field menu-field">
         <span class="field-label">Цвет</span>
         <button class="custom-select" id="colorButton">
           <span class="color-row"><span class="color-dot" id="colorDot"></span><span id="colorButtonText">Желтый</span></span>
@@ -560,45 +565,24 @@ body.sheet-open{overflow:hidden}
     var total=totals.reduce(function(a,b){return a+b},0);
     $('weekSummary').textContent=(Math.round(total/60*10)/10)+' часов за эту неделю';
 
-    var W=420,H=177,left=25,right=7,top=13,bottom=33;
-    var plotH=H-top-bottom;
-    var baseY=H-bottom;
+    var W=420,H=177,left=24,right=8,top=12,bottom=27;
+    var baseY=H-bottom,plotH=baseY-top;
     var max=Math.max(60,Math.max.apply(Math,totals));
-    var step=(W-left-right)/(dates.length-1);
-    var pts=dates.map(function(d,i){
-      var x=left+i*step;
-      var y=baseY-(totals[i]/max)*plotH;
-      return {x:x,y:y,date:d,total:totals[i]};
-    });
-
-    var linePath=pts.map(function(p,i){
-      if(i===0)return 'M '+p.x+' '+p.y;
-      var prev=pts[i-1],cx=(prev.x+p.x)/2;
-      return ' C '+cx+' '+prev.y+', '+cx+' '+p.y+', '+p.x+' '+p.y;
-    }).join('');
-    var areaPath=linePath+' L '+pts[pts.length-1].x+' '+baseY+' L '+pts[0].x+' '+baseY+' Z';
-
+    var slot=(W-left-right)/7, barW=Math.min(22,slot*.58);
     var guideY=baseY-plotH*.55;
-    var labels=dates.map(function(d,i){
-      return '<text class="chart-label" x="'+pts[i].x+'" y="'+(H-5)+'" text-anchor="middle">'+['Пн','Вт','Ср','Чт','Пт','Сб','Вс'][i]+'</text>';
-    }).join('');
-
-    var bars=pts.map(function(p){
-      var bw=18;
-      var barH=Math.max(5,baseY-p.y);
-      return '<rect class="chart-bar" x="'+(p.x-bw/2)+'" y="'+(baseY-barH)+'" width="'+bw+'" height="'+barH+'" rx="9"></rect>';
-    }).join('');
-
-    var points=pts.map(function(p){return '<circle class="chart-point '+(p.date===currentDate?'today':'')+'" cx="'+p.x+'" cy="'+p.y+'" r="'+(p.date===currentDate?4.6:3.3)+'"></circle>'}).join('');
-
-    $('weekSvg').innerHTML=
-      '<line class="chart-gridline" x1="'+left+'" y1="'+guideY+'" x2="'+(W-right)+'" y2="'+guideY+'"></line>'+
-      '<text class="chart-axis-label" x="'+left+'" y="'+(guideY-5)+'">'+Math.round(max*.55)+'</text>'+
-      bars+
-      '<path class="chart-area" d="'+areaPath+'"></path>'+
-      '<path class="chart-line" d="'+linePath+'"></path>'+
-      points+
-      labels;
+    var svg='';
+    svg+='<line class="chart-grid" x1="'+left+'" y1="'+guideY+'" x2="'+(W-right)+'" y2="'+guideY+'"></line>';
+    svg+='<line class="chart-base" x1="'+left+'" y1="'+baseY+'" x2="'+(W-right)+'" y2="'+baseY+'"></line>';
+    svg+='<text class="chart-value" x="'+left+'" y="'+(guideY-5)+'">'+Math.round(max*.55)+'</text>';
+    var dayNames=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+    for(var i=0;i<7;i++){
+      var x=left+slot*(i+.5);
+      var height=Math.max(5,Math.round(totals[i]/max*plotH));
+      var y=baseY-height;
+      svg+='<rect class="chart-bar '+(dates[i]===currentDate?'today':'')+'" x="'+(x-barW/2)+'" y="'+y+'" width="'+barW+'" height="'+height+'" rx="'+Math.min(7,barW/2)+'"></rect>';
+      svg+='<text class="chart-label" x="'+x+'" y="'+(H-7)+'" text-anchor="middle">'+dayNames[i]+'</text>';
+    }
+    $('weekSvg').innerHTML=svg;
   }
 
   function renderMainStats(){
@@ -658,10 +642,61 @@ body.sheet-open{overflow:hidden}
     document.querySelectorAll('[data-view]').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-view')===currentView)});
   }
 
+  function presetForHabit(name){
+    var n=(name||'').toLowerCase();
+    if(n.indexOf('спорт')>=0)return {type:'sport',color:'green'};
+    if(n.indexOf('чтени')>=0)return {type:'passive',color:'yellow'};
+    if(n.indexOf('бухгалтер')>=0)return {type:'active',color:'blue'};
+    if(n.indexOf('дикци')>=0||n.indexOf('реч')>=0)return {type:'active',color:'purple'};
+    return null;
+  }
+
+  function setPreset(habitId,typeId,colorId){
+    chosenHabit=habitId||chosenHabit;
+    if(typeId)chosenType=typeId;
+    if(colorId)chosenColor=colorId;
+    var h=habits.find(function(x){return x.id===chosenHabit});
+    var t=TYPE_OPTIONS.find(function(x){return x.id===chosenType});
+    var c=COLOR_OPTIONS.find(function(x){return x.id===chosenColor});
+    if(h)$('habitButtonText').textContent=h.name;
+    if(t)$('typeButtonText').textContent=t.label;
+    if(c){$('colorButtonText').textContent=c.label;$('colorDot').style.background=c.color}
+    populateHabitPopover();populateTypePopover();populateColorPopover();
+  }
+
   function populateHabitPopover(){
-    $('habitPopover').innerHTML=habits.map(function(h){
+    var quick=[
+      {label:'Спорт',find:'спорт'},
+      {label:'Бухгалтерия',find:'бухгалтер'},
+      {label:'Чтение',find:'чтени'},
+      {label:'Дикция и речь',find:'дикци'}
+    ];
+    var qhtml=quick.map(function(q){
+      var h=habits.find(function(x){return x.name.toLowerCase().indexOf(q.find)>=0});
+      return h?'<button class="quick" data-quick-habit="'+h.id+'">'+q.label+'</button>':'';
+    }).join('');
+    var html='<div class="menu-section">Популярные категории</div><div class="quick-grid">'+qhtml+'</div><div class="menu-section">Все привычки</div>';
+    html+=habits.map(function(h){
       return '<button class="option '+(h.id===chosenHabit?'selected':'')+'" data-habit-option="'+h.id+'">'+clean(h.name)+'</button>';
     }).join('');
+    $('habitPopover').innerHTML=html;
+  }
+
+  function populateTypePopover(){
+    var quick=[
+      {label:'Спорт',type:'sport',color:'green'},
+      {label:'Активное обучение',type:'active',color:'blue'},
+      {label:'Пассивное обучение',type:'passive',color:'yellow'},
+      {label:'Работа',type:'work',color:'purple'}
+    ];
+    var qhtml=quick.map(function(q){
+      return '<button class="quick" data-quick-type="'+q.type+'" data-quick-color="'+q.color+'">'+q.label+'</button>';
+    }).join('');
+    var html='<div class="menu-section">Популярные категории</div><div class="quick-grid">'+qhtml+'</div><div class="menu-section">Все типы</div>';
+    html+=TYPE_OPTIONS.map(function(o){
+      return '<button class="option '+(o.id===chosenType?'selected':'')+'" data-type-option="'+o.id+'">'+o.label+'</button>';
+    }).join('');
+    $('typePopover').innerHTML=html;
   }
 
   function populateTypePopover(){
@@ -679,8 +714,9 @@ body.sheet-open{overflow:hidden}
   function openSheet(){
     if(!habits.length){showToast('Сначала добавь привычку');return}
     chosenHabit=habits[0].id;
-    chosenType='active';
-    chosenColor='yellow';
+    var initial=presetForHabit(habits[0].name)||{type:'active',color:'yellow'};
+    chosenType=initial.type;
+    chosenColor=initial.color;
     $('habitButtonText').textContent=habits[0].name;
     $('typeButtonText').textContent=TYPE_OPTIONS[0].label;
     $('colorButtonText').textContent='Желтый';
@@ -768,19 +804,54 @@ body.sheet-open{overflow:hidden}
   };
 
   document.getElementById('habitPopover').onclick=function(e){
-    var b=e.target.closest('[data-habit-option]');if(!b)return;
-    chosenHabit=b.getAttribute('data-habit-option');
-    var h=habits.find(function(x){return x.id===chosenHabit});
-    $('habitButtonText').textContent=h?h.name:'';
-    closePopovers();
+    var quick=e.target.closest('[data-quick-habit]');
+    var option=e.target.closest('[data-habit-option]');
+    if(quick){
+      var qid=quick.getAttribute('data-quick-habit');
+      var qh=habits.find(function(x){return x.id===qid});
+      var qp=presetForHabit(qh?qh.name:'')||{};
+      setPreset(qid,qp.type,qp.color);
+      closePopovers();
+      return;
+    }
+    if(option){
+      var hid=option.getAttribute('data-habit-option');
+      var h=habits.find(function(x){return x.id===hid});
+      var p=presetForHabit(h?h.name:'')||{};
+      setPreset(hid,p.type,p.color);
+      closePopovers();
+    }
   };
 
   document.getElementById('typePopover').onclick=function(e){
-    var b=e.target.closest('[data-type-option]');if(!b)return;
-    chosenType=b.getAttribute('data-type-option');
-    var t=TYPE_OPTIONS.find(function(x){return x.id===chosenType});
-    $('typeButtonText').textContent=t.label;
-    closePopovers();
+    var quick=e.target.closest('[data-quick-type]');
+    var option=e.target.closest('[data-type-option]');
+    if(quick){
+      chosenType=quick.getAttribute('data-quick-type');
+      chosenColor=quick.getAttribute('data-quick-color')||chosenColor;
+      var qt=TYPE_OPTIONS.find(function(x){return x.id===chosenType});
+      var qc=COLOR_OPTIONS.find(function(x){return x.id===chosenColor});
+      $('typeButtonText').textContent=qt.label;
+      $('colorButtonText').textContent=qc.label;
+      $('colorDot').style.background=qc.color;
+      populateTypePopover();populateColorPopover();
+      closePopovers();
+      return;
+    }
+    if(option){
+      chosenType=option.getAttribute('data-type-option');
+      var t=TYPE_OPTIONS.find(function(x){return x.id===chosenType});
+      if(chosenType==='sport')chosenColor='green';
+      else if(chosenType==='passive')chosenColor='yellow';
+      else if(chosenType==='active')chosenColor='blue';
+      else if(chosenType==='work')chosenColor='purple';
+      var c=COLOR_OPTIONS.find(function(x){return x.id===chosenColor});
+      $('typeButtonText').textContent=t.label;
+      $('colorButtonText').textContent=c.label;
+      $('colorDot').style.background=c.color;
+      populateTypePopover();populateColorPopover();
+      closePopovers();
+    }
   };
 
   document.getElementById('colorPopover').onclick=function(e){
