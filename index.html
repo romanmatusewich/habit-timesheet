@@ -587,6 +587,7 @@ body.sheet-open{
 .record-delete{padding:8px 9px;white-space:nowrap;font-size:12px}
 .load-more{display:block;margin:9px auto 0}
 .empty{padding:8px 0;font-size:12px;color:var(--muted)}
+.history-list{display:grid}.history-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid rgba(30,34,50,.07)}.history-row:first-child{border-top:0;padding-top:0}.history-action{font-size:12px;font-weight:500}.history-meta{margin-top:3px;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.history-time{font-size:10px;color:var(--muted);white-space:nowrap}
 .calendar-filter{max-width:170px;padding:8px 10px;border:1px solid rgba(255,255,255,.76);border-radius:11px;background:rgba(255,255,255,.56);color:var(--ink);font:inherit;font-size:11px}
 @media(max-width:520px){.calendar-filter{max-width:none;flex:1}.calendar-view-nav{width:100%}}
 .habit-setting-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 0;border-top:1px solid rgba(30,34,50,.07);cursor:grab}.habit-setting-row:first-child{border-top:0;padding-top:0}.habit-setting-row.dragging{opacity:.45}.habit-setting-row.drop-target{background:rgba(225,228,255,.34);border-radius:13px}
@@ -757,6 +758,7 @@ body.sheet-open{
         <div id="entriesRows"></div>
         <button class="secondary-action load-more" id="showMoreEntries" hidden>Показать ещё</button>
       </div>
+       <div class="breakdown" style="margin-top:12px"><div class="breakdown-head"><strong>История изменений</strong><span>последние действия</span></div><div class="history-list" id="historyRows"></div></div>
     </section>
   </section>
 </main>
@@ -1371,8 +1373,6 @@ body.sheet-open{
   function reindexHabits(){for(var i=0;i<habits.length;i++)habits[i].order=i;}
   function saveHistory(){try{localStorage.setItem('habit-timesheet-history',JSON.stringify(history.slice(0,50)));}catch(e){}}
   function addHistory(action,details){history.unshift({id:uid(),time:new Date().toISOString(),action:action,details:details||''});history=history.slice(0,50);saveHistory();}
-  function saveHistory(){try{localStorage.setItem('habit-timesheet-history',JSON.stringify(history.slice(0,50)));}catch(e){}}
-  function addHistory(action,details){history.unshift({id:uid(),time:new Date().toISOString(),action:action,details:details||''});history=history.slice(0,50);saveHistory();}
   function showToast(text){
     var el=document.getElementById('toast');
     if(!el){
@@ -1589,6 +1589,14 @@ body.sheet-open{
     }).join('')||'<div class="empty">Нет данных.</div>';
   }
 
+  function renderHistory(){
+    var rows=history.slice(0,15);
+    $('historyRows').innerHTML=rows.map(function(item){
+      var when=new Date(item.time);
+      return '<div class="history-row"><div><div class="history-action">'+clean(item.action)+'</div><div class="history-meta">'+clean(item.details||'')+'</div></div><div class="history-time">'+clean(when.toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}))+'</div></div>';
+    }).join('')||'<div class="empty">Изменений пока нет.</div>';
+  }
+
   function renderSettings(){
     var settingsHabits=habits.slice();
     $('settingsRows').innerHTML=settingsHabits.map(function(h){var color=habitColor(h),d=habitDefaultSettings(h),typeLabel=(TYPE_OPTIONS.find(function(t){return t.id===d.type})||TYPE_OPTIONS[0]).label,colorLabel=(COLOR_OPTIONS.find(function(x){return x.id===d.color})||COLOR_OPTIONS[0]).label;return '<div class="habit-setting-row" draggable="true" data-habit-drag="'+clean(h.id)+'"><span class="habit-symbol" style="color:'+color+'">'+clean(iconSymbol(h))+'</span><div class="habit-setting-main"><div class="habit-setting-name">'+clean(h.name)+'</div><div class="habit-setting-meta">'+clean(typeLabel)+' · '+clean(colorLabel)+' · '+d.minutes+' мин</div></div><div class="habit-setting-actions"><button class="secondary-action" data-edit-habit="'+clean(h.id)+'">Настроить</button><button class="secondary-action" data-remove-habit="'+clean(h.id)+'">Удалить</button></div></div>';}).join('')||'<div class="empty">Нет привычек.</div>';
@@ -1621,6 +1629,7 @@ body.sheet-open{
     var more=filteredEntries.length>entryRenderLimit;
     $('showMoreEntries').hidden=!more;
     if(more)$('showMoreEntries').textContent='Показать ещё · '+(filteredEntries.length-entryRenderLimit);
+    renderHistory();
   }
 
   function updateViewVisibility(){
@@ -2216,7 +2225,7 @@ body.sheet-open{
   $('settingsRows').addEventListener('dragstart',function(e){var row=e.target.closest('[data-habit-drag]');if(!row)return;habitDragId=row.getAttribute('data-habit-drag');row.classList.add('dragging');if(e.dataTransfer)e.dataTransfer.effectAllowed='move';});
   $('settingsRows').addEventListener('dragover',function(e){var row=e.target.closest('[data-habit-drag]');if(!row)return;e.preventDefault();var rows=$('settingsRows').querySelectorAll('[data-habit-drag]');for(var i=0;i<rows.length;i++)rows[i].classList.remove('drop-target');if(row.getAttribute('data-habit-drag')!==habitDragId)row.classList.add('drop-target');});
   $('settingsRows').addEventListener('dragend',function(){var rows=$('settingsRows').querySelectorAll('[data-habit-drag]');for(var i=0;i<rows.length;i++)rows[i].classList.remove('dragging','drop-target');habitDragId='';});
-  $('settingsRows').addEventListener('drop',function(e){var row=e.target.closest('[data-habit-drag]');if(!row||!habitDragId)return;e.preventDefault();var targetId=row.getAttribute('data-habit-drag');if(targetId===habitDragId){habitDragId='';return}var from=habits.findIndex(function(h){return h.id===habitDragId}),to=habits.findIndex(function(h){return h.id===targetId});if(from<0||to<0){habitDragId='';return}var moved=habits.splice(from,1)[0];habits.splice(to,0,moved);reindexHabits();persistHabits();menusDirty=true;invalidateDataCaches();habitDragId='';renderSettings();renderActiveView();});
+  $('settingsRows').addEventListener('drop',function(e){var row=e.target.closest('[data-habit-drag]');if(!row||!habitDragId)return;e.preventDefault();var targetId=row.getAttribute('data-habit-drag');if(targetId===habitDragId){addHistory('Изменён порядок привычек',moved.name);habitDragId='';return}var from=habits.findIndex(function(h){return h.id===habitDragId}),to=habits.findIndex(function(h){return h.id===targetId});if(from<0||to<0){habitDragId='';return}var moved=habits.splice(from,1)[0];habits.splice(to,0,moved);reindexHabits();persistHabits();menusDirty=true;invalidateDataCaches();habitDragId='';renderSettings();renderActiveView();});
 
   document.getElementById('habitButton').onclick=function(){showMenu('habit','habitButton')};
   document.getElementById('typeButton').onclick=function(){showMenu('type','typeButton')};
@@ -2391,7 +2400,7 @@ body.sheet-open{
     invalidateDataCaches();
     renderSettings();
     scheduleActiveRender();
-    showToast('Удалено записей: '+ids.length);
+    addHistory('Удалены записи','Количество: '+ids.length);showToast('Удалено записей: '+ids.length);
   };
 
   document.addEventListener('click',function(e){
@@ -2435,7 +2444,7 @@ body.sheet-open{
           invalidateDataCaches();
           renderSettings();
           scheduleActiveRender();
-          showToast('Запись удалена');
+          addHistory('Удалена запись',(entryHabit?entryHabit.name:'Привычка')+' · '+fmt(removedEntry.minutes));showToast('Запись удалена');
         }
       }
       return;
@@ -2461,7 +2470,7 @@ body.sheet-open{
         entryRenderLimit=Math.min(entryRenderLimit,Math.max(60,entries.length));
         invalidateDataCaches();
         scheduleActiveRender();
-        showToast('Привычка удалена');
+        addHistory('Удалена привычка',habit.name);showToast('Привычка удалена');
       }
     }
   });
