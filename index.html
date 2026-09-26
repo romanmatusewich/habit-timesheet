@@ -637,7 +637,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.34</div>
+<div class="app-version" aria-label="Версия">v0.3.35</div>
 
 <main class="shell">
   <header class="top">
@@ -908,6 +908,7 @@ body.sheet-open{
 
   var currentDate=localDate();
   var currentView='today';
+  var calendarDateSelectionActive=false;
   var calendarDate=currentDate;
   var chosenHabit=habits[0]?habits[0].id:'';
   var chosenType='active';
@@ -1682,13 +1683,11 @@ body.sheet-open{
     var todaySessions=stats.countByDate[currentDate]||0;
     var total=stats.total;
     var average=stats.sessionCount?Math.round(total/stats.sessionCount):0;
-    var totals=allTotals(),top=totals[0];
+    var totals=allTotals();
 
     $('todayTotal').textContent=fmt(today);
     $('todaySessions').textContent=todaySessions+' '+(todaySessions===1?'занятие':'занятий');
     $('avgSession').textContent=fmt(average);
-    $('topHabit').textContent=top&&top.total?top.habit.name:'Пока нет данных';
-    $('topHabitTime').textContent=top&&top.total?fmt(top.total)+' за весь период':'Добавь первое занятие';
 
     $('breakdownRows').innerHTML=getHabitBreakdownHTML(totals);
 
@@ -2179,6 +2178,7 @@ body.sheet-open{
 
     currentDate=targetDate;
     calendarViewDate=currentDate;
+    calendarDateSelectionActive=false;
     invalidateDataCaches();
     closeSheet();
     scheduleActiveRender();
@@ -2546,6 +2546,7 @@ body.sheet-open{
     if(calendarCell&&currentView==='calendar'){
       currentDate=calendarCell.getAttribute('data-calendar-date');
       calendarViewDate=currentDate;
+      calendarDateSelectionActive=true;
       currentView='today';
       renderActiveView();
       return;
@@ -2616,6 +2617,11 @@ body.sheet-open{
     button.onclick=function(){
       var nextView=button.getAttribute('data-view');
       if(nextView===currentView)return;
+      if(calendarDateSelectionActive&&nextView!=='today'){
+        currentDate=localDate(new Date());
+        calendarViewDate=currentDate;
+        calendarDateSelectionActive=false;
+      }
       currentView=nextView;
       renderActiveView();
     };
