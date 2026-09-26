@@ -1213,7 +1213,6 @@ body.sheet-open{
       renderActiveView();
 
       scheduleLocalBackup();
-      setTimeout(function(){repairAugustImportedSummary();},900);
       window.__STORAGE_READY=true;
     }catch(e){
       storageMode='local';
