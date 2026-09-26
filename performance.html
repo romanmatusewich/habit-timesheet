@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#eef1ff">
-<title>Habit Timesheet — Performance Lab</title>
+<title>Habit Timesheet — Performance Lab v1.1</title>
 <style>
 :root{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;color:#171925;background:#eef1f7}
 *{box-sizing:border-box}
@@ -23,14 +23,14 @@ th{font-size:11px;color:#757a89;font-weight:600}
 .good{font-weight:600}
 .note{margin-top:12px;font-size:11px;line-height:1.45;color:#797e8c}
 .metric{font-variant-numeric:tabular-nums}
-.hidden-frame{position:fixed;left:-10000px;top:-10000px;width:2px;height:2px;border:0;opacity:0;pointer-events:none}
+.hidden-frame{position:fixed;right:10px;bottom:10px;width:260px;height:150px;border:1px solid rgba(30,34,50,.08);opacity:.015;pointer-events:none;background:#fff}
 @media(max-width:700px){table{font-size:12px}th,td{padding:8px 4px}}
 </style>
 </head>
 <body>
 <main>
   <h1>Performance Lab</h1>
-  <p class="lead">Сравнение исторической стабильной версии до рефакторинга хранения и текущей версии на одинаковых синтетических наборах данных. Тест выполняется в браузере, поэтому измеряет именно реальное поведение Web App на твоём устройстве.</p>
+  <p class="lead">Реальный браузерный A/B-тест: одна и та же машина, одинаковые синтетические данные, одинаковый способ загрузки, три повтора на каждом наборе. Сравнивается baseline <b>v0.3.11</b> (до IndexedDB, commit f6338efdc1ec) с текущей <b>v0.3.12</b> (IndexedDB). Замеры выполняются через High Resolution Time API и кадры браузера; это не Lighthouse и не теоретический расчёт.</p>
 
   <section class="card">
     <div class="row">
@@ -39,7 +39,7 @@ th{font-size:11px;color:#757a89;font-weight:600}
     </div>
     <div id="status">Готово. Тест безопасен: исходные localStorage-данные восстанавливаются после завершения.</div>
     <div id="results"></div>
-    <div class="note">Метрики: загрузка страницы, обновление статистики, открытие меню, обработчик сохранения записи, переключение экранов и максимальная задержка кадра во время стресс-переключений. Небольшое отличие результатов между запусками нормально: браузер, CPU, фоновые процессы и энергорежим влияют на замеры.</div>
+    <div class="note"><b>Как читать результаты:</b> «Время до кадра» включает JavaScript и реакцию рендера до следующего кадра; «Макс. кадр» — максимальный интервал между callback requestAnimationFrame во время нагрузки. Composite Performance Index нормирован на baseline = 100: выше 100 — быстрее baseline, ниже 100 — медленнее. «Изменение» — это процент изменения индекса относительно baseline. Это воспроизводимый локальный benchmark, но он не заменяет Chrome DevTools Performance и реальный INP пользователя. <a href="../" target="_blank" rel="noreferrer">Открыть приложение</a></div>
   </section>
 </main>
 <iframe id="runner" class="hidden-frame" title="performance runner"></iframe>
@@ -127,49 +127,69 @@ th{font-size:11px;color:#757a89;font-weight:600}
     })
   }
 
-  function waitLoad(url,srcdoc){
+  function waitForReady(win,timeoutMs){
+    var start=performance.now();
+    return new Promise(function(resolve){
+      var timeout=setTimeout(function(){resolve(performance.now()-start)},timeoutMs||5000);
+      function check(){
+        if(win.__APP_READY===true){
+          clearTimeout(timeout);
+          resolve(performance.now()-start);
+          return;
+        }
+        win.requestAnimationFrame(check);
+      }
+      check();
+    });
+  }
+
+  function waitLoad(srcdoc,afterLoad){
     return new Promise(function(resolve,reject){
-      var t0=performance.now();
-      var done=false;
-      var targetUrl='';
+      var t0=performance.now(),done=false;
       var timeout=setTimeout(function(){
         if(done)return;
         done=true;
-        reject(new Error('iframe timeout: '+(targetUrl||'srcdoc')));
+        reject(new Error('iframe timeout while loading benchmark app'));
       },20000);
 
       function finish(){
         if(done)return;
         done=true;
         clearTimeout(timeout);
-        resolve(performance.now()-t0);
+        afterLoad().then(function(extra){resolve(performance.now()-t0+extra)});
       }
-
       runner.onload=finish;
       runner.onerror=function(){
         if(done)return;
         done=true;
         clearTimeout(timeout);
-        reject(new Error('iframe load error: '+(targetUrl||'srcdoc')));
+        reject(new Error('iframe load error'));
       };
-
       runner.removeAttribute('src');
       runner.removeAttribute('srcdoc');
-
-      if(srcdoc!=null){
-        runner.srcdoc=srcdoc;
-        targetUrl='srcdoc';
-      }else{
-        targetUrl=new URL(url,location.href).href;
-        runner.src=targetUrl;
-      }
-    })
+      runner.srcdoc=srcdoc;
+    });
   }
 
-  function clickMeasure(el){
+  function nextFrame(win,count){
+    count=count||1;
+    return new Promise(function(resolve){
+      var remaining=count;
+      function tick(){
+        if(--remaining<=0){resolve();return}
+        win.requestAnimationFrame(tick);
+      }
+      win.requestAnimationFrame(tick);
+    });
+  }
+
+  async function measurePaint(win,action){
+    await nextFrame(win,2);
     var t0=performance.now();
-    el.click();
-    return performance.now()-t0;
+    action();
+    var sync=performance.now()-t0;
+    await nextFrame(win,2);
+    return {sync:sync,paint:performance.now()-t0};
   }
 
   async function stressFrames(win){
@@ -179,20 +199,47 @@ th{font-size:11px;color:#757a89;font-weight:600}
       doc.querySelector('[data-view="stats"]'),
       doc.querySelector('[data-view="settings"]')
     ].filter(Boolean);
-    var samples=[],last=performance.now(),running=true;
+    if(!navs.length)return {max:0,p50:0,longFrames:0,samples:0};
+    var frameTimes=[],running=true,last=null;
+
     function frame(now){
-      samples.push(now-last);
+      if(last!==null)frameTimes.push(now-last);
       last=now;
       if(running)win.requestAnimationFrame(frame);
     }
     win.requestAnimationFrame(frame);
-    for(var i=0;i<36;i++){
-      navs[i%navs.length].click();
+
+    for(var wave=0;wave<12;wave++){
+      for(var i=0;i<navs.length;i++)navs[i].click();
+      await nextFrame(win,1);
     }
-    await new Promise(function(resolve){win.requestAnimationFrame(function(){running=false;resolve()})});
-    var max=0;
-    for(var j=0;j<samples.length;j++)if(samples[j]>max)max=samples[j];
-    return max;
+
+    await nextFrame(win,3);
+    running=false;
+
+    if(!frameTimes.length)return {max:0,p50:0,longFrames:0,samples:0};
+    frameTimes.sort(function(a,b){return a-b});
+    var max=frameTimes[frameTimes.length-1];
+    var p50=frameTimes[Math.floor(frameTimes.length*0.5)];
+    var longFrames=frameTimes.filter(function(v){return v>50}).length;
+    return {max:max,p50:p50,longFrames:longFrames,samples:frameTimes.length};
+  }
+
+  function median(values){
+    var a=values.slice().sort(function(x,y){return x-y});
+    if(!a.length)return 0;
+    var mid=Math.floor(a.length/2);
+    return a.length%2?a[mid]:(a[mid-1]+a[mid])/2;
+  }
+
+  function warmSourceHTML(html,useCurrent){
+    var source=html;
+    if(useCurrent){
+      source=source.replace('<script>\n(function(){','<script>\nwindow.__PERF_MODE=true;\n(function(){');
+    }else{
+      source=source.replace('</body>','<script>window.__APP_READY=true;</script></body>');
+    }
+    return source;
   }
 
   async function testVersion(label,html,data,useCurrent){
@@ -200,46 +247,47 @@ th{font-size:11px;color:#757a89;font-weight:600}
     var backupEntries=localStorage.getItem('habit-timesheet-entries');
     localStorage.setItem('habit-timesheet-habits',json(data.habits));
     localStorage.setItem('habit-timesheet-entries',json(data.entries));
+
     try{
       if(useCurrent)await seedPerfDB(data);
-      var loadMs=await waitLoad(useCurrent?'index.html?perf=1':null,useCurrent?null:html);
-      await sleep(20);
+      var source=warmSourceHTML(html,useCurrent);
+      var loadMs=await waitLoad(source,async function(){
+        var win=runner.contentWindow;
+        var readyWait=useCurrent?await waitForReady(win,5000):0;
+        return readyWait;
+      });
       var win=runner.contentWindow,doc=runner.contentDocument;
+      await nextFrame(win,2);
 
-      var openSheet=doc.getElementById('openSheet');
-      var openSheetMs=clickMeasure(openSheet);
-      var habitButton=doc.getElementById('habitButton');
-      var menuMs=clickMeasure(habitButton);
-
-      var statsNav=doc.querySelector('[data-view="stats"]');
-      var statsMs=clickMeasure(statsNav);
-
-      var settingsNav=doc.querySelector('[data-view="settings"]');
-      var settingsMs=clickMeasure(settingsNav);
-
-      var stressMaxFrame=await stressFrames(win);
+      var open=await measurePaint(win,function(){doc.getElementById('openSheet').click()});
+      var habit=await measurePaint(win,function(){doc.getElementById('habitButton').click()});
+      var stats=await measurePaint(win,function(){doc.querySelector('[data-view="stats"]').click()});
+      var settings=await measurePaint(win,function(){doc.querySelector('[data-view="settings"]').click()});
 
       var close=doc.getElementById('closeSheet');
       if(close)close.click();
-      openSheet.click();
+      doc.getElementById('openSheet').click();
       var minutes=doc.getElementById('minutes');
       if(minutes)minutes.value='17';
       var note=doc.getElementById('note');
       if(note)note.value='performance';
-      var save=doc.getElementById('saveEntry');
-      var saveMs=clickMeasure(save);
 
-      await sleep(35);
+      var save=await measurePaint(win,function(){doc.getElementById('saveEntry').click()});
+      var frames=await stressFrames(win);
 
       return {
         version:label,
         size:data.entries.length,
         load:loadMs,
-        menu:menuMs,
-        stats:statsMs,
-        settings:settingsMs,
-        save:saveMs,
-        maxFrame:stressMaxFrame
+        menu:habit.paint,
+        menuSync:habit.sync,
+        stats:stats.paint,
+        settings:settings.paint,
+        save:save.paint,
+        maxFrame:frames.max,
+        p50Frame:frames.p50,
+        longFrames:frames.longFrames,
+        frameSamples:frames.samples
       };
     }finally{
       localStorage.removeItem('habit-timesheet-habits');
@@ -250,7 +298,28 @@ th{font-size:11px;color:#757a89;font-weight:600}
       if(useCurrent)await clearPerfDB();
       runner.src='about:blank';
       runner.srcdoc='';
+      await sleep(10);
     }
+  }
+
+  async function testRepeated(label,html,data,useCurrent){
+    var runs=[];
+    for(var i=0;i<3;i++){
+      setStatus(label+' · '+data.entries.length+' записей · повтор '+(i+1)+'/3…');
+      runs.push(await testVersion(label,html,data,useCurrent));
+    }
+    return {
+      version:label,
+      size:data.entries.length,
+      load:median(runs.map(function(x){return x.load})),
+      menu:median(runs.map(function(x){return x.menu})),
+      stats:median(runs.map(function(x){return x.stats})),
+      settings:median(runs.map(function(x){return x.settings})),
+      save:median(runs.map(function(x){return x.save})),
+      maxFrame:median(runs.map(function(x){return x.maxFrame})),
+      p50Frame:median(runs.map(function(x){return x.p50Frame})),
+      longFrames:median(runs.map(function(x){return x.longFrames}))
+    };
   }
 
   function avg(rows,key,version){
@@ -259,13 +328,41 @@ th{font-size:11px;color:#757a89;font-weight:600}
     return a.reduce(function(x,y){return x+y},0)/a.length;
   }
 
-  function pctChange(oldValue,newValue){
-    if(!oldValue)return null;
-    return ((newValue-oldValue)/oldValue)*100;
+  function relativeScore(before,after){
+    if(!before||!after)return 100;
+    return (before/after)*100;
+  }
+
+  function computeComposite(rows){
+    var metrics=[
+      {key:'load',weight:0.25},
+      {key:'menu',weight:0.10},
+      {key:'stats',weight:0.20},
+      {key:'settings',weight:0.15},
+      {key:'save',weight:0.20},
+      {key:'p50Frame',weight:0.10}
+    ];
+    var scoreParts=[];
+    metrics.forEach(function(m){
+      var b=avg(rows,m.key,'v0.3.11'),a=avg(rows,m.key,'v0.3.12');
+      if(b>0&&a>0)scoreParts.push(Math.pow(b/a,m.weight));
+    });
+    var score=scoreParts.length?scoreParts.reduce(function(x,y){return x*y},1)*100:100;
+    var rounded=Math.round(score*10)/10;
+    return {score:rounded,change:rounded-100};
+  }
+
+  function changeText(value){
+    if(value===null||!isFinite(value))return '—';
+    var sign=value>0?'+':'';
+    return sign+value.toFixed(1)+'%';
   }
 
   function renderResults(rows){
-    var html='<table><thead><tr><th>Набор</th><th>Версия</th><th>Загрузка</th><th>Меню</th><th>Статистика</th><th>Настройки</th><th>Сохранение</th><th>Макс. кадр</th></tr></thead><tbody>';
+    var composite=computeComposite(rows);
+    var html='<div class="card" style="margin-top:16px"><strong>Composite Performance Index</strong><div style="font-size:34px;margin-top:6px;font-weight:700">'+composite.score.toFixed(1)+'</div><div style="margin-top:4px;color:#707585">Baseline v0.3.11 = 100.0 · изменение: '+changeText(composite.change)+'</div></div>';
+
+    html+='<table><thead><tr><th>Набор</th><th>Версия</th><th>Загрузка + ready</th><th>Меню до кадра</th><th>Статистика до кадра</th><th>Настройки до кадра</th><th>Сохранение до кадра</th><th>p50 кадра</th><th>Макс. кадр</th><th>Long frames &gt;50ms</th></tr></thead><tbody>';
     rows.forEach(function(r){
       html+='<tr><td class="metric">'+r.size+'</td><td>'+r.version+'</td>'+
         '<td class="metric">'+r.load.toFixed(2)+' ms</td>'+
@@ -273,19 +370,24 @@ th{font-size:11px;color:#757a89;font-weight:600}
         '<td class="metric">'+r.stats.toFixed(2)+' ms</td>'+
         '<td class="metric">'+r.settings.toFixed(2)+' ms</td>'+
         '<td class="metric">'+r.save.toFixed(2)+' ms</td>'+
-        '<td class="metric">'+r.maxFrame.toFixed(2)+' ms</td></tr>';
+        '<td class="metric">'+r.p50Frame.toFixed(2)+' ms</td>'+
+        '<td class="metric">'+r.maxFrame.toFixed(2)+' ms</td>'+
+        '<td class="metric">'+r.longFrames+'</td></tr>';
     });
     html+='</tbody></table>';
 
-    html+='<table><thead><tr><th>Метрика</th><th>Среднее до</th><th>Среднее сейчас</th><th>Изменение</th></tr></thead><tbody>';
-    ['load','menu','stats','settings','save','maxFrame'].forEach(function(key){
-      var before=avg(rows,key,'До IndexedDB');
-      var after=avg(rows,key,'Сейчас');
-      var change=pctChange(before,after);
-      html+='<tr><td>'+key+'</td><td class="metric">'+before.toFixed(2)+' ms</td><td class="metric">'+after.toFixed(2)+' ms</td><td class="metric">'+(change===null?'—':change.toFixed(1)+'%')+'</td></tr>';
+    html+='<table><thead><tr><th>Метрика</th><th>Среднее v0.3.11</th><th>Среднее v0.3.12</th><th>Изменение времени</th><th>Индекс этой метрики</th></tr></thead><tbody>';
+    ['load','menu','stats','settings','save','p50Frame'].forEach(function(key){
+      var before=avg(rows,key,'v0.3.11');
+      var after=avg(rows,key,'v0.3.12');
+      var timeChange=before?((after-before)/before)*100:null;
+      var index=relativeScore(before,after);
+      html+='<tr><td>'+key+'</td><td class="metric">'+before.toFixed(2)+' ms</td><td class="metric">'+after.toFixed(2)+' ms</td><td class="metric">'+changeText(timeChange)+'</td><td class="metric">'+index.toFixed(1)+'</td></tr>';
     });
     html+='</tbody></table>';
-    resultsEl.innerHTML=html;
+
+    var methodology='<div class="card" style="margin-top:16px"><strong>Что действительно измеряется</strong><div class="note" style="margin-top:8px">Здесь измеряется реальный браузерный wall-clock time через <code>performance.now()</code>, а для рендер-реакции — прохождение через несколько кадров <code>requestAnimationFrame()</code>. Это валидно для сравнительного A/B-теста на одном устройстве. Однако это не «истинный INP»: программный <code>element.click()</code> не является реальным hardware/user input событием, а iframe добавляет собственные особенности планировщика. Поэтому Performance Lab показывает регрессию/улучшение нашей реализации, а Chrome DevTools Performance и реальный INP остаются отдельными источниками истины.</div></div>';
+    resultsEl.innerHTML=html+methodology;
   }
 
   async function loadBaselineHTML(){
@@ -302,20 +404,21 @@ th{font-size:11px;color:#757a89;font-weight:600}
     try{
       setStatus('Получаю baseline…');
       var baselineHTML=await loadBaselineHTML();
+      var currentResponse=await fetch('index.html?perf=1',{cache:'no-store'});
+      if(!currentResponse.ok)throw new Error('Не удалось получить текущую версию: HTTP '+currentResponse.status);
+      var currentHTML=await currentResponse.text();
+
       for(var s=0;s<DATA_SIZES.length;s++){
         var size=DATA_SIZES[s];
         var data=makeData(size);
-        setStatus('Тест до IndexedDB · '+size+' записей…');
-        rows.push(await testVersion('До IndexedDB',baselineHTML,data,false));
-        setStatus('Тест сейчас · '+size+' записей…');
-        rows.push(await testVersion('Сейчас',null,data,true));
+        rows.push(await testRepeated('v0.3.11',baselineHTML,data,false));
+        rows.push(await testRepeated('v0.3.12',currentHTML,data,true));
       }
       renderResults(rows);
-      setStatus('Готово. Теперь это твоя исходная точка для последующих оптимизаций.');
+      setStatus('Готово. Baseline v0.3.11 = 100.0; текущий Composite Performance Index посчитан относительно него.');
     }catch(e){
       setStatus('Ошибка: '+(e&&e.message?e.message:String(e)));
     }finally{
-      await sleep(100);
       runButton.disabled=false;
       clearButton.disabled=false;
     }
