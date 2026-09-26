@@ -317,11 +317,12 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
 .sheet-title{margin:0;font-size:29px;line-height:1;font-weight:600;letter-spacing:-.04em}
 .sheet-close{width:35px;height:35px;padding:0;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:rgba(120,125,140,.10);color:#777b87;font:400 24px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif}
-.sheet,.menu-popover{scrollbar-width:thin;scrollbar-color:rgba(74,81,110,.28) transparent}
-.sheet::-webkit-scrollbar,.menu-popover::-webkit-scrollbar{width:6px;height:6px}
-.sheet::-webkit-scrollbar-track,.menu-popover::-webkit-scrollbar-track{background:transparent}
-.sheet::-webkit-scrollbar-thumb,.menu-popover::-webkit-scrollbar-thumb{background:rgba(74,81,110,.26);border-radius:999px}
-.sheet::-webkit-scrollbar-thumb:hover,.menu-popover::-webkit-scrollbar-thumb:hover{background:rgba(74,81,110,.38)}
+.sheet,.menu-popover{
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+  -webkit-overflow-scrolling:touch
+}
+.sheet::-webkit-scrollbar,.menu-popover::-webkit-scrollbar{width:0;height:0;display:none}
 .form{display:grid;gap:16px}
 .field{display:grid;gap:6px;position:relative}
 .field-label{font-size:12px;color:var(--muted);font-weight:400}
@@ -509,7 +510,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.17</div>
+<div class="app-version" aria-label="Версия">v0.3.18</div>
 
 <main class="shell">
   <header class="top">
