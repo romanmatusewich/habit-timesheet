@@ -131,22 +131,37 @@ th{font-size:11px;color:#757a89;font-weight:600}
     return new Promise(function(resolve,reject){
       var t0=performance.now();
       var done=false;
+      var targetUrl='';
       var timeout=setTimeout(function(){
         if(done)return;
         done=true;
-        reject(new Error('iframe timeout'));
-      },12000);
-      runner.onload=function(){
+        reject(new Error('iframe timeout: '+(targetUrl||'srcdoc')));
+      },20000);
+
+      function finish(){
         if(done)return;
         done=true;
         clearTimeout(timeout);
         resolve(performance.now()-t0);
+      }
+
+      runner.onload=finish;
+      runner.onerror=function(){
+        if(done)return;
+        done=true;
+        clearTimeout(timeout);
+        reject(new Error('iframe load error: '+(targetUrl||'srcdoc')));
       };
+
+      runner.removeAttribute('src');
+      runner.removeAttribute('srcdoc');
+
       if(srcdoc!=null){
-        runner.src='';
         runner.srcdoc=srcdoc;
+        targetUrl='srcdoc';
       }else{
-        runner.src=location.href.replace(/\/[^/]*$/, '/')+url;
+        targetUrl=new URL(url,location.href).href;
+        runner.src=targetUrl;
       }
     })
   }
