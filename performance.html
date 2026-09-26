@@ -48,8 +48,8 @@ th{font-size:11px;color:#757a89;font-weight:600}
 (function(){
   'use strict';
 
-  var BASELINE_COMMIT='f6338efdc1ec686ba5a7bd16e2416a69f065801f'; // intentionally shortened below and replaced at runtime
-  var BASELINE_FULL='f6338efdc1ec686ba5a7bd16e2416a69f065801f';
+  var BASELINE_COMMIT='f6338efdc1ec686ba5a7bd16e2416a69f065801f';
+  var BASELINE_FULL=BASELINE_COMMIT;
   var CURRENT_URL='index.html';
   var BASELINE_URL='https://raw.githubusercontent.com/romanmatusewich/habit-timesheet/f6338efdc1ec686ba5a7bd16e2416a69f065801f/index.html';
   var DATA_SIZES=[100,1000,5000,10000];
@@ -198,10 +198,12 @@ th{font-size:11px;color:#757a89;font-weight:600}
       runner.removeAttribute('srcdoc');
 
       var source=srcdoc;
+      var opening=String.fromCharCode(60)+'script>\n(function(){';
+      var injectedOpen='<scr'+'ipt>\n';
       if(useCurrent){
-        source=source.replace('<head>','<head><script>window.__PERF_MODE=true;window.__PERF_DB_SUFFIX="'+dbSuffix+'";</script>');
+        source=source.replace(opening,injectedOpen+'window.__PERF_MODE=true;window.__PERF_DB_SUFFIX='+JSON.stringify(dbSuffix)+';\n(function(){');
       }else{
-        source=source.replace('<head>','<head><script>window.__APP_READY=true;</script>');
+        source=source.replace(opening,injectedOpen+'window.__APP_READY=true;\n(function(){');
       }
       runner.srcdoc=source;
     });
