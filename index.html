@@ -1319,7 +1319,7 @@ body.sheet-open{
         habits.map(function(h){return '<button class="option" data-habit-option="'+h.id+'">'+clean(h.name)+'</button>';}).join('');
     }else if(kind==='type'){
       menuHTMLCache.type='<div class="menu-section">Все типы</div>'+
-        TYPE_OPTIONS.map(function(t){return '<button class="option" data-type-option="'+t.id+'">'+t.label+'</button>').join('');
+        TYPE_OPTIONS.map(function(t){return '<button class="option" data-type-option="'+t.id+'">'+t.label+'</button>';}).join('');
     }else{
       menuHTMLCache.color=COLOR_OPTIONS.map(function(c){
         return '<button class="option" data-color-option="'+c.id+'"><span class="color-row"><span class="color-dot" style="background:'+c.color+'"></span><span>'+c.label+'</span></span></button>';
