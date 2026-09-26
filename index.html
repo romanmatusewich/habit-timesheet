@@ -587,6 +587,8 @@ body.sheet-open{
 .record-delete{padding:8px 9px;white-space:nowrap;font-size:12px}
 .load-more{display:block;margin:9px auto 0}
 .empty{padding:8px 0;font-size:12px;color:var(--muted)}
+.calendar-filter{max-width:170px;padding:8px 10px;border:1px solid rgba(255,255,255,.76);border-radius:11px;background:rgba(255,255,255,.56);color:var(--ink);font:inherit;font-size:11px}
+@media(max-width:520px){.calendar-filter{max-width:none;flex:1}.calendar-view-nav{width:100%}}
 .habit-setting-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 0;border-top:1px solid rgba(30,34,50,.07);cursor:grab}.habit-setting-row:first-child{border-top:0;padding-top:0}.habit-setting-row.dragging{opacity:.45}.habit-setting-row.drop-target{background:rgba(225,228,255,.34);border-radius:13px}
 .habit-symbol{width:32px;height:32px;display:grid;place-items:center;border-radius:10px;background:rgba(245,247,251,.92);border:1px solid rgba(255,255,255,.82);font-size:17px;font-weight:600}.habit-setting-main{min-width:0}.habit-setting-name{font-size:13px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.habit-setting-meta{margin-top:4px;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.habit-setting-actions{display:flex;gap:6px;align-items:center}.habit-setting-actions .secondary-action{font-size:11px;padding:7px 9px;white-space:nowrap}
 .habit-editor-scrim{position:fixed;inset:0;display:grid;place-items:center;padding:18px;background:rgba(255,255,255,.90);z-index:430}.habit-editor{width:min(470px,calc(100vw - 28px));max-height:min(760px,calc(100vh - 28px));overflow:auto;padding:23px;border-radius:24px;background:linear-gradient(150deg,rgba(255,255,255,.97),rgba(246,248,253,.92));border:1px solid rgba(255,255,255,.9);box-shadow:0 28px 80px rgba(25,32,66,.20)}
@@ -722,9 +724,7 @@ body.sheet-open{
           <h2 class="stats-title">Календарь</h2>
           <div class="calendar-view-sub" id="calendarRangeLabel"></div>
         </div>
-        <div class="calendar-view-nav">
-          <button class="calendar-nav-btn" id="calendarPrevMonth" type="button" aria-label="Предыдущий месяц">‹</button>
-          <button class="calendar-nav-btn" id="calendarNextMonth" type="button" aria-label="Следующий месяц">›</button>
+        <div class="calendar-view-nav"><select class="calendar-filter" id="calendarFilter" aria-label="Фильтр календаря"><option value="*">Все привычки</option></select><button class="calendar-nav-btn" id="calendarToday" type="button">Сегодня</button><button class="calendar-nav-btn" id="calendarPrevMonth" type="button" aria-label="Предыдущий месяц">‹</button><button class="calendar-nav-btn" id="calendarNextMonth" type="button" aria-label="Следующий месяц">›</button></div>
         </div>
       </div>
       <div class="month-calendar" id="monthCalendar"></div>
@@ -752,7 +752,7 @@ body.sheet-open{
             <button class="records-action" id="clearEntrySelection" type="button" hidden>Снять</button>
             <button class="records-action danger" id="deleteSelectedEntries" type="button" hidden>Удалить выбранные</button>
           </div>
-          <span class="records-selection-count" id="recordsSelectionCount"></span>
+           <select class="calendar-filter" id="recordsHabitFilter" aria-label="Фильтр записей"><option value="*">Все привычки</option></select><span class="records-selection-count" id="recordsSelectionCount"></span>
         </div>
         <div id="entriesRows"></div>
         <button class="secondary-action load-more" id="showMoreEntries" hidden>Показать ещё</button>
@@ -923,6 +923,8 @@ body.sheet-open{
   var draftSaveTimer=0;
   var history=read('habit-timesheet-history',[]).slice(0,50);
   var calendarDateSelectionActive=false;
+  var calendarFilterHabitId='*';
+  var recordsFilterHabitId='*';
   var calendarDate=currentDate;
   var chosenHabit=habits[0]?habits[0].id:'';
   var chosenType=habits[0]?habits[0].defaultType||'active':'active';
@@ -1594,8 +1596,11 @@ body.sheet-open{
     var habitMap={};
     for(var hi=0;hi<habits.length;hi++)habitMap[habits[hi].id]=habits[hi];
 
-    var visible=getSortedEntries().slice(0,entryRenderLimit);
-    $('recordsSummary').textContent=entries.length+' '+(entries.length===1?'запись':'записей');
+    var filterSelect=$('recordsHabitFilter');
+    if(filterSelect){filterSelect.innerHTML='<option value="*">Все привычки</option>'+habits.map(function(h){return '<option value="'+clean(h.id)+'">'+clean(h.name)+'</option>';}).join('');filterSelect.value=recordsFilterHabitId;}
+    var filteredEntries=getSortedEntries().filter(function(e){return recordsFilterHabitId==='*'||e.habitId===recordsFilterHabitId});
+    var visible=filteredEntries.slice(0,entryRenderLimit);
+    $('recordsSummary').textContent=filteredEntries.length+' '+(filteredEntries.length===1?'запись':'записей');
     $('entriesRows').className=entrySelectionMode?'selection-mode':'';
     $('entriesRows').innerHTML=visible.map(function(e){
       var habit=habitMap[e.habitId];
@@ -1613,9 +1618,9 @@ body.sheet-open{
     $('selectAllEntries').disabled=!entries.length||selectedCount===entries.length;
     $('toggleEntrySelection').textContent=entrySelectionMode?'Отменить':'Выделить';
 
-    var more=entries.length>entryRenderLimit;
+    var more=filteredEntries.length>entryRenderLimit;
     $('showMoreEntries').hidden=!more;
-    if(more)$('showMoreEntries').textContent='Показать ещё · '+(entries.length-entryRenderLimit);
+    if(more)$('showMoreEntries').textContent='Показать ещё · '+(filteredEntries.length-entryRenderLimit);
   }
 
   function updateViewVisibility(){
@@ -1657,6 +1662,27 @@ body.sheet-open{
     if(rect.top<nr.height+24)note.classList.add('below');
   }
 
+  function calendarDateData(date,stats){
+    if(calendarFilterHabitId==='*')return {total:stats.byDate[date]||0,colorTotals:stats.byDateColor[date]||{},habitTotals:stats.byDateHabit[date]||{}};
+    var total=(stats.byDateHabit[date]&&stats.byDateHabit[date][calendarFilterHabitId])||0;
+    return {total:total,colorTotals:stats.byDateColor[date]||{},habitTotals:{}};
+  }
+
+  function calendarTooltipFiltered(date,stats){
+    var data=calendarDateData(date,stats),lines=[formatFullDate(date)+' · '+fmt(data.total)];
+    if(calendarFilterHabitId!=='*'){
+      var h=habits.find(function(x){return x.id===calendarFilterHabitId});
+      if(h&&data.total)lines.push(h.name+': '+fmt(data.total));
+    }else{
+      var ids=Object.keys(data.habitTotals).sort(function(a,b){return data.habitTotals[b]-data.habitTotals[a]});
+      for(var i=0;i<ids.length&&lines.length<6;i++){
+        var h2=habits.find(function(x){return x.id===ids[i]});
+        lines.push((h2?h2.name:'Удаленная привычка')+': '+fmt(data.habitTotals[ids[i]]));
+      }
+    }
+    return lines.join('\n');
+  }
+
   function renderCalendarView(){
     var note=$('calendarHoverNote');
     if(note&&note.parentNode!==$('monthCalendar'))$('monthCalendar').appendChild(note);
@@ -1664,29 +1690,24 @@ body.sheet-open{
     var d=dateObj(calendarViewDate),year=d.getFullYear(),month=d.getMonth();
     var first=new Date(year,month,1),firstDay=(first.getDay()+6)%7,daysInMonth=new Date(year,month+1,0).getDate(),prevDays=new Date(year,month,0).getDate();
     var stats=getStats(),names=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'],html='';
-    $('calendarRangeLabel').textContent=monthLabel(calendarViewDate);
+    var filter=$('calendarFilter');
+    if(filter){filter.innerHTML='<option value="*">Все привычки</option>'+habits.map(function(h){return '<option value="'+clean(h.id)+'">'+clean(h.name)+'</option>';}).join('');filter.value=calendarFilterHabitId;}
+    $('calendarRangeLabel').textContent=monthLabel(calendarViewDate)+(calendarFilterHabitId==='*'?'':' · '+((habits.find(function(h){return h.id===calendarFilterHabitId})||{}).name||''));
     for(var w=0;w<7;w++)html+='<div class="calendar-weekday">'+names[w]+'</div>';
-
     var today=localDate(new Date());
     for(var i=0;i<42;i++){
       var day,muted,date;
-      if(i<firstDay){day=prevDays-firstDay+i+1;muted=true;date=localDate(new Date(year,month-1,day))}
-      else if(i<firstDay+daysInMonth){day=i-firstDay+1;muted=false;date=localDate(new Date(year,month,day))}
-      else{day=i-firstDay-daysInMonth+1;muted=true;date=localDate(new Date(year,month+1,day))}
-      var total=stats.byDate[date]||0,colorTotals=stats.byDateColor[date]||{};
-      var colors=Object.keys(colorTotals).filter(function(id){return colorTotals[id]>0&&COLOR_BY_ID[id]}).sort(function(a,b){return colorTotals[b]-colorTotals[a]});
-      var stack='';
-      for(var c=0;c<colors.length&&c<5;c++){
-        var colorId=colors[c],ratio=colorTotals[colorId]/Math.max(total,1);
-        stack+='<span class="calendar-color-segment" style="background:'+COLOR_BY_ID[colorId]+';flex:'+Math.max(.15,ratio)+'"></span>';
-      }
+      if(i<firstDay){day=prevDays-firstDay+i+1;muted=true;date=localDate(new Date(year,month-1,day));}
+      else if(i<firstDay+daysInMonth){day=i-firstDay+1;muted=false;date=localDate(new Date(year,month,day));}
+      else{day=i-firstDay-daysInMonth+1;muted=true;date=localDate(new Date(year,month+1,day));}
+      var data=calendarDateData(date,stats),total=data.total,colorTotals=data.colorTotals,colors=Object.keys(colorTotals).filter(function(id){return colorTotals[id]>0&&COLOR_BY_ID[id]}).sort(function(a,b){return colorTotals[b]-colorTotals[a]}),stack='';
+      for(var ci=0;ci<colors.length&&ci<5;ci++){var colorId=colors[ci],ratio=colorTotals[colorId]/Math.max(total,1);stack+='<span class="calendar-color-segment" style="background:'+COLOR_BY_ID[colorId]+';flex:'+Math.max(.15,ratio)+'"></span>';}
       var cls='calendar-cell'+(muted?' muted':'')+(total?' has-data':'')+(date===today?' today':'');
-      var tooltipAttr=total?' data-calendar-tooltip="'+clean(calendarTooltip(date,stats))+'"':'';
+      var tooltipAttr=total?' data-calendar-tooltip="'+clean(calendarTooltipFiltered(date,stats))+'"':'';
       html+='<div class="'+cls+'" data-calendar-date="'+date+'"'+tooltipAttr+'><div class="calendar-day-number">'+day+'</div><div class="calendar-day-total">'+(total?fmt(total):'')+'</div><div class="calendar-color-stack">'+stack+'</div></div>';
     }
     $('monthCalendar').innerHTML=html;
   }
-
   function positionChartHoverNote(day){
     var note=$('chartDayHoverNote');if(!note||!day)return;
     if(note.parentNode!==document.body)document.body.appendChild(note);
@@ -1727,8 +1748,8 @@ body.sheet-open{
   $('monthCalendar').addEventListener('mouseover',function(e){
     var cell=e.target.closest('[data-calendar-date]');
     if(!cell||cell===calendarHoverCell)return;
-    var hoverDate=cell.getAttribute('data-calendar-date');
-    if(!(getStats().byDate[hoverDate]||0))return;
+     var hoverDate=cell.getAttribute('data-calendar-date'),hoverData=calendarDateData(hoverDate,getStats());
+     if(!hoverData.total)return;
     clearTimeout(calendarHoverTimer);
     calendarHoverCell=cell;
     calendarHoverTimer=setTimeout(function(){
@@ -2293,9 +2314,10 @@ body.sheet-open{
   document.getElementById('calendarPrevMonth').onclick=function(){
     var d=dateObj(calendarViewDate);d.setDate(1);d.setMonth(d.getMonth()-1);calendarViewDate=localDate(d);renderCalendarView();
   };
-  document.getElementById('calendarNextMonth').onclick=function(){
-    var d=dateObj(calendarViewDate);d.setDate(1);d.setMonth(d.getMonth()+1);calendarViewDate=localDate(d);renderCalendarView();
-  };
+  document.getElementById('calendarNextMonth').onclick=function(){var d=dateObj(calendarViewDate);d.setDate(1);d.setMonth(d.getMonth()+1);calendarViewDate=localDate(d);renderCalendarView();};
+  document.getElementById('calendarToday').onclick=function(){calendarViewDate=localDate(new Date());renderCalendarView();};
+  document.getElementById('calendarFilter').onchange=function(e){calendarFilterHabitId=e.target.value||'*';renderCalendarView();};
+  document.getElementById('recordsHabitFilter').onchange=function(e){recordsFilterHabitId=e.target.value||'*';selectedEntryIds={};entryRenderLimit=60;renderSettings();};
 
   document.getElementById('sheet').addEventListener('click',function(e){
     if(e.target===this)closeSheet();
