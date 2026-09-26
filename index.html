@@ -203,6 +203,23 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 
 }
 .stat-card.wide{grid-column:1/-1}
+.stats-charts{display:grid;grid-template-columns:1.25fr .75fr;gap:10px;margin-top:12px}
+.stats-chart-card{min-width:0;padding:16px;border-radius:20px;background:linear-gradient(150deg,rgba(255,255,255,.58),rgba(255,255,255,.34));border:1px solid rgba(255,255,255,.72);box-shadow:var(--shadow-soft),inset 0 1px 0 rgba(255,255,255,.9)}
+.stats-chart-title{font-size:13px;font-weight:600}
+.stats-chart-note{margin-top:3px;font-size:10px;color:var(--muted)}
+.weekly-chart{display:flex;align-items:flex-end;gap:6px;height:126px;margin-top:14px}
+.weekly-bar-wrap{height:100%;flex:1;display:flex;align-items:flex-end;justify-content:center}
+.weekly-bar{width:100%;max-width:18px;min-height:4px;border-radius:7px 7px 4px 4px;background:linear-gradient(180deg,#6e73ff,#49cfff);box-shadow:0 5px 12px rgba(78,91,235,.16)}
+.weekly-labels{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:6px}
+.weekly-label{font-size:9px;color:var(--muted);text-align:center}
+.type-donut-wrap{display:grid;place-items:center;height:126px;margin-top:10px}
+.type-donut{width:94px;height:94px;border-radius:50%;background:conic-gradient(#d7dbe5 0deg 360deg);position:relative;box-shadow:0 8px 20px rgba(50,57,100,.10)}
+.type-donut::after{content:"";position:absolute;inset:25px;border-radius:50%;background:#f1f3f8;box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}
+.type-donut-total{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font-size:11px;font-weight:600;z-index:1}
+.type-mini-legend{display:grid;gap:5px;margin-top:4px}
+.type-mini-item{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px}
+.type-mini-left{display:flex;align-items:center;gap:5px;min-width:0}
+.type-mini-dot{width:7px;height:7px;border-radius:50%;flex:none}
 .stat-label{font-size:12px;color:var(--muted);font-weight:400}
 .stat-value{margin-top:8px;font-size:25px;line-height:1.04;font-weight:600;letter-spacing:-.035em}
 .stat-note{margin-top:4px;font-size:12px;color:var(--muted)}
@@ -467,21 +484,22 @@ body.sheet-open{
 .calendar-hover-note{
   position:fixed;
   z-index:520;
-  width:min(260px,calc(100vw - 28px));
-  padding:11px 12px;
-  border-radius:13px;
-  background:rgba(24,27,40,.96);
+  width:min(270px,calc(100vw - 28px));
+  padding:12px 13px;
+  border-radius:15px;
+  background:rgba(25,28,42,.96);
   color:#fff;
-  box-shadow:0 14px 34px rgba(18,22,42,.22);
+  box-shadow:0 16px 38px rgba(18,22,42,.24),inset 0 1px 0 rgba(255,255,255,.08);
   font-size:11px;
-  line-height:1.45;
+  line-height:1.48;
   white-space:pre-line;
   pointer-events:none;
   opacity:0;
   visibility:hidden;
-  transform:translateY(4px);
-  transition:opacity .12s ease,transform .12s ease
+  transform:translateY(7px) scale(.985);
+  transition:opacity .16s ease,transform .16s ease
 }
+.calendar-hover-note.active{opacity:1;visibility:visible;transform:translateY(0) scale(1)}
 .calendar-hover-note.active{opacity:1;visibility:visible;transform:translateY(0)}
 @media (hover:hover){.calendar-cell:hover{transform:translateY(-1px);background:rgba(255,255,255,.78)}}
 @media(max-width:560px){.calendar-cell{min-height:66px;padding:7px 5px}.calendar-color-stack{margin-top:7px}.calendar-view-sub{font-size:10px}}
@@ -562,7 +580,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.24</div>
+<div class="app-version" aria-label="Версия">v0.3.25</div>
 
 <main class="shell">
   <header class="top">
@@ -616,6 +634,20 @@ body.sheet-open{
         <div class="stat-mini"><div class="stat-mini-label">Всего занятий</div><div class="stat-mini-value" id="allSessions">0</div><div class="stat-mini-note">за весь период</div></div>
         <div class="stat-mini"><div class="stat-mini-label">Самый продуктивный день</div><div class="stat-mini-value" id="bestDayTime">0 мин</div><div class="stat-mini-note" id="bestDayDate">Нет данных</div></div>
         <div class="stat-mini"><div class="stat-mini-label">Среднее занятие · 30 дней</div><div class="stat-mini-value" id="last30Avg">0 мин</div><div class="stat-mini-note" id="last30SessionNote">0 занятий</div></div>
+      </div>
+      <div class="stats-charts">
+        <div class="stats-chart-card">
+          <div class="stats-chart-title">Динамика по неделям</div>
+          <div class="stats-chart-note">Последние 8 календарных недель</div>
+          <div class="weekly-chart" id="weeklyStatsChart"></div>
+          <div class="weekly-labels" id="weeklyStatsLabels"></div>
+        </div>
+        <div class="stats-chart-card">
+          <div class="stats-chart-title">По типам</div>
+          <div class="stats-chart-note">Распределение времени</div>
+          <div class="type-donut-wrap"><div class="type-donut" id="statsTypeDonut"><div class="type-donut-total" id="statsTypeDonutTotal">0 ч</div></div></div>
+          <div class="type-mini-legend" id="statsTypeMiniLegend"></div>
+        </div>
       </div>
       <div class="breakdown" style="margin-top:12px"><div class="breakdown-head"><strong>По привычкам</strong><span>за весь период</span></div><div id="statsBreakdown"></div></div>
       <div class="breakdown" style="margin-top:12px"><div class="breakdown-head"><strong>По типам</strong><span>за весь период</span></div><div id="statsTypeBreakdown" class="type-list"></div></div>
@@ -782,6 +814,8 @@ body.sheet-open{
     map[item.id]=item.color;
     return map;
   },{});
+
+  var IMPORT_SUMMARY_HABIT={id:'__daily_summary__',name:'Сводка по дням (импорт)',goal:0,color:'blue'};
 
   var DEFAULT_HABITS=[
     {id:'accounting',name:'Бухгалтерия',goal:60},
@@ -1200,7 +1234,12 @@ body.sheet-open{
   }
 
   function allTotals(){
-    return getStats().habitTotals;
+    var totals=getStats().habitTotals.slice(),stats=getStats();
+    if(stats.byHabit[IMPORT_SUMMARY_HABIT.id]){
+      totals.push({habit:IMPORT_SUMMARY_HABIT,total:stats.byHabit[IMPORT_SUMMARY_HABIT.id]});
+      totals.sort(function(a,b){return b.total-a.total});
+    }
+    return totals;
   }
 
   function clean(value){
@@ -1356,15 +1395,36 @@ body.sheet-open{
   }
 
   function getTypeBreakdownHTML(byType){
-    var items=TYPE_OPTIONS.map(function(t){
-      return {label:t.label,total:byType[t.id]||0,color:COLOR_BY_ID[t.defaultColor]||'#6e73ff'};
-    }).filter(function(x){return x.total>0});
+    var items=TYPE_OPTIONS.map(function(t){return {label:t.label,total:byType[t.id]||0,color:COLOR_BY_ID[t.defaultColor]||'#6e73ff'};}).filter(function(x){return x.total>0});
     if(!items.length)return '<div class="empty">Нет данных.</div>';
     var max=Math.max(60,Math.max.apply(Math,items.map(function(x){return x.total})));
     return items.map(function(x){
       var pct=Math.round(x.total/max*100);
       return '<div class="break-row"><div class="break-left"><div class="break-name"><span class="color-dot" style="background:'+x.color+';margin-right:7px;vertical-align:1px"></span>'+x.label+'</div><div class="mini-progress"><i style="--row-color:'+x.color+';width:'+pct+'%"></i></div></div><div class="break-value">'+fmt(x.total)+'</div></div>';
     }).join('');
+  }
+
+  function weeklyStatsTotals(){
+    var stats=getStats(),today=dateObj(localDate(new Date())),out=[];
+    for(var w=7;w>=0;w--){
+      var end=new Date(today);end.setDate(today.getDate()-w*7);
+      var start=new Date(end);start.setDate(end.getDate()-6);
+      var total=0;
+      for(var d=new Date(start);d<=end;d.setDate(d.getDate()+1))total+=stats.byDate[localDate(d)]||0;
+      out.push({start:localDate(start),end:localDate(end),total:total});
+    }
+    return out;
+  }
+
+  function typeDonutData(byType,total){
+    var parts=TYPE_OPTIONS.map(function(t){return {label:t.label,total:byType[t.id]||0,color:COLOR_BY_ID[t.defaultColor]||'#6e73ff'};}).filter(function(x){return x.total>0});
+    var stops=[],cursor=0;
+    for(var i=0;i<parts.length;i++){
+      var end=cursor+(parts[i].total/Math.max(total,1))*360;
+      stops.push(parts[i].color+' '+cursor.toFixed(1)+'deg '+end.toFixed(1)+'deg');
+      cursor=end;
+    }
+    return {parts:parts,gradient:stops.length?'conic-gradient('+stops.join(',')+')':'conic-gradient(#d7dbe5 0deg 360deg)'};
   }
 
   function renderStats(){
@@ -1378,20 +1438,39 @@ body.sheet-open{
     $('avgSessionStats').textContent=fmt(avgSession);
     $('sessionCountNote').textContent=stats.sessionCount+' '+(stats.sessionCount===1?'занятие':'занятий');
 
-    $('last30Total').textContent=fmt(stats.last30Total);
-    $('last30ActiveNote').textContent=stats.last30ActiveDays+' '+(stats.last30ActiveDays===1?'активный день':'активных дней');
+    $('last30Total').textContent=fmt(stats.last30Total||0);
+    $('last30ActiveNote').textContent=(stats.last30ActiveDays||0)+' '+(stats.last30ActiveDays===1?'активный день':'активных дней');
     $('last30Avg').textContent=fmt(stats.last30Sessions?stats.last30Total/stats.last30Sessions:0);
-    $('last30SessionNote').textContent=stats.last30Sessions+' '+(stats.last30Sessions===1?'занятие':'занятий');
+    $('last30SessionNote').textContent=(stats.last30Sessions||0)+' '+(stats.last30Sessions===1?'занятие':'занятий');
 
     $('bestDayTime').textContent=fmt(stats.bestDayTotal||0);
     $('bestDayDate').textContent=stats.bestDayDate?formatFullDate(stats.bestDayDate):'Нет данных';
 
     $('statsBreakdown').innerHTML=getStatsBreakdownHTML(allTotals());
     $('statsTypeBreakdown').innerHTML=getTypeBreakdownHTML(stats.byType);
+
+    var weeks=weeklyStatsTotals(),maxWeek=Math.max(60,Math.max.apply(Math,weeks.map(function(x){return x.total})));
+    $('weeklyStatsChart').innerHTML=weeks.map(function(x){
+      var pct=Math.max(4,Math.round(x.total/maxWeek*100));
+      return '<div class="weekly-bar-wrap"><div class="weekly-bar" style="height:'+pct+'%" title="'+fmt(x.total)+'"></div></div>';
+    }).join('');
+    $('weeklyStatsLabels').innerHTML=weeks.map(function(x){
+      var d=dateObj(x.start);
+      return '<div class="weekly-label">'+d.getDate()+'.'+String(d.getMonth()+1).padStart(2,'0')+'</div>';
+    }).join('');
+
+    var donut=typeDonutData(stats.byType,total);
+    $('statsTypeDonut').style.background=donut.gradient;
+    $('statsTypeDonutTotal').textContent=fmt(total);
+    $('statsTypeMiniLegend').innerHTML=donut.parts.slice(0,5).map(function(x){
+      return '<div class="type-mini-item"><div class="type-mini-left"><span class="type-mini-dot" style="background:'+x.color+'"></span><span>'+clean(x.label)+'</span></div><b>'+fmt(x.total)+'</b></div>';
+    }).join('')||'<div class="empty">Нет данных.</div>';
   }
 
   function renderSettings(){
-    $('settingsRows').innerHTML=habits.map(function(h){
+    var settingsHabits=habits.slice();
+    if(entries.some(function(e){return e.habitId===IMPORT_SUMMARY_HABIT.id}))settingsHabits.push(IMPORT_SUMMARY_HABIT);
+    $('settingsRows').innerHTML=settingsHabits.map(function(h){
       var color=habitColor(h);
       return '<div class="break-row"><div class="break-left"><div class="break-name"><span class="color-dot" style="background:'+color+';margin-right:7px;vertical-align:1px"></span>'+clean(h.name)+'</div></div><button class="secondary-action" data-remove-habit="'+h.id+'">Удалить</button></div>';
     }).join('')||'<div class="empty">Нет привычек.</div>';
@@ -1431,6 +1510,7 @@ body.sheet-open{
   function calendarTooltip(date,stats){
     var lines=[formatFullDate(date)+' · '+fmt(stats.byDate[date]||0)],habitTotals=stats.byDateHabit[date]||{},habitMap={};
     for(var i=0;i<habits.length;i++)habitMap[habits[i].id]=habits[i];
+    habitMap[IMPORT_SUMMARY_HABIT.id]=IMPORT_SUMMARY_HABIT;
     var ids=Object.keys(habitTotals).sort(function(a,b){return habitTotals[b]-habitTotals[a]});
     for(var j=0;j<ids.length&&lines.length<6;j++)lines.push((habitMap[ids[j]]?habitMap[ids[j]].name:'Удаленная привычка')+': '+fmt(habitTotals[ids[j]]));
     if(lines.length===1)lines.push('Нет записей');
@@ -1474,18 +1554,22 @@ body.sheet-open{
     $('monthCalendar').innerHTML=html;
   }
 
-  var calendarHoverCell=null;
+  var calendarHoverCell=null,calendarHoverTimer=0;
   $('monthCalendar').addEventListener('mouseover',function(e){
     var cell=e.target.closest('[data-calendar-date]');
     if(!cell||cell===calendarHoverCell)return;
+    clearTimeout(calendarHoverTimer);
     calendarHoverCell=cell;
-    $('calendarHoverNote').textContent=cell.getAttribute('data-calendar-tooltip')||'Нет записей';
-    positionCalendarHoverNote(cell);
+    calendarHoverTimer=setTimeout(function(){
+      if(calendarHoverCell!==cell)return;
+      $('calendarHoverNote').textContent=cell.getAttribute('data-calendar-tooltip')||'Нет записей';
+      positionCalendarHoverNote(cell);
+    },550);
   });
   $('monthCalendar').addEventListener('mouseout',function(e){
-    if(!calendarHoverCell)return;
     var next=e.relatedTarget&&e.relatedTarget.closest?e.relatedTarget.closest('[data-calendar-date]'):null;
     if(next===calendarHoverCell)return;
+    clearTimeout(calendarHoverTimer);
     calendarHoverCell=null;
     $('calendarHoverNote').classList.remove('active');
   });
@@ -1585,6 +1669,7 @@ body.sheet-open{
 
   function habitColor(habit){
     if(!habit)return COLOR_BY_ID.blue;
+    if(habit.id===IMPORT_SUMMARY_HABIT.id)return COLOR_BY_ID.blue;
     var stats=getStats();
     var entryColor=stats.habitColorById[habit.id];
     if(entryColor&&COLOR_BY_ID[entryColor])return COLOR_BY_ID[entryColor];
@@ -1756,9 +1841,10 @@ body.sheet-open{
   }
 
   function openImportDialog(){
-    if(!habits.length){showToast('Сначала добавь привычку');return}
-    $('importHabit').innerHTML=habits.map(function(h){return '<option value="'+clean(h.id)+'">'+clean(h.name)+'</option>';}).join('');
-    $('importHabit').value=habits.some(function(h){return h.id===chosenHabit})?chosenHabit:habits[0].id;
+    var select=$('importHabit');
+    select.innerHTML='<optgroup label="Специальные категории"><option value="'+IMPORT_SUMMARY_HABIT.id+'">'+IMPORT_SUMMARY_HABIT.name+'</option></optgroup>'+
+      (habits.length?'<optgroup label="Привычки">'+habits.map(function(h){return '<option value="'+clean(h.id)+'">'+clean(h.name)+'</option>';}).join('')+'</optgroup>':'');
+    select.value=IMPORT_SUMMARY_HABIT.id;
     $('importText').value='';
     $('dataTransfer').hidden=false;
     setTimeout(function(){$('importText').focus()},0);
@@ -1827,14 +1913,18 @@ body.sheet-open{
   function importFromSheet(){
     var parsed=parseSheetImport($('importText').value);
     if(!parsed.rows.length){showToast('Не нашёл корректных строк для импорта');return}
-    var habitId=$('importHabit').value,habit=habits.find(function(h){return h.id===habitId});
-    if(!habit){showToast('Выбери привычку');return}
-    var preset=presetForHabit(habit.name)||{};
-    if(!confirm('Импортировать '+parsed.rows.length+' '+(parsed.rows.length===1?'строку':'строк')+' для «'+habit.name+'»?'))return;
 
+    var selectedId=$('importHabit').value;
+    var isSummary=selectedId===IMPORT_SUMMARY_HABIT.id;
+    var habit=isSummary?IMPORT_SUMMARY_HABIT:habits.find(function(h){return h.id===selectedId});
+    if(!habit){showToast('Выбери категорию');return}
+    if(!confirm('Импортировать '+parsed.rows.length+' '+(parsed.rows.length===1?'строку':'строк')+' в «'+habit.name+'»?'))return;
+
+    var preset=isSummary?{type:'other',color:'blue'}:(presetForHabit(habit.name)||{});
     var newEntries=parsed.rows.map(function(row){
       return {id:uid(),habitId:habit.id,date:row.date,minutes:row.minutes,note:'Импорт из Google Таблиц',type:preset.type||'active',color:preset.color||'blue'};
     });
+
     entries=entries.concat(newEntries);
     if(!persistEntriesBatch(newEntries)){
       entries.splice(entries.length-newEntries.length,newEntries.length);
