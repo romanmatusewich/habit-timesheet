@@ -164,15 +164,12 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   width:22px;
   min-height:0;
   border-radius:11px 11px 5px 5px;
-  background:linear-gradient(180deg,#767cff 0%,#6870ff 24%,#5661f4 53%,#4858ea 78%,#3e50df 100%);
-  box-shadow:
-    0 7px 14px rgba(76,83,230,.16),
-    -1px 0 0 rgba(255,89,171,.14),
-    1px 0 0 rgba(66,202,255,.16);
+  background:linear-gradient(180deg,#858aff 0%,#737bf7 58%,#626dee 100%);
+  box-shadow:0 6px 13px rgba(76,83,230,.11);
   transition:transform .14s ease,filter .14s ease
 }
 .bar.today{
-  background:linear-gradient(180deg,#7d82ff 0%,#6f76ff 24%,#5d68f5 54%,#4b5bea 78%,#4254e2 100%);
+  background:linear-gradient(180deg,#8e92ff 0%,#7a82f8 58%,#6873ee 100%);
 }
 .chart-day-hover-note{
   position:fixed;
@@ -235,8 +232,8 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .weekly-label-range{display:block;font-size:8px;color:#969aa8}
 .type-donut-wrap{display:grid;place-items:center;height:126px;margin-top:10px}
 .type-donut{width:94px;height:94px;border-radius:50%;background:conic-gradient(#d7dbe5 0deg 360deg);position:relative;box-shadow:0 8px 20px rgba(50,57,100,.10)}
-.type-donut::after{content:"";position:absolute;inset:25px;border-radius:50%;background:#f1f3f8;box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}
-.type-donut-total{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font-size:11px;font-weight:600;z-index:1}
+.type-donut::after{content:"";position:absolute;inset:18px;border-radius:50%;background:#f1f3f8;box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}
+.type-donut-total{position:absolute;inset:18px;display:grid;place-items:center;text-align:center;font-size:10px;line-height:1.2;font-weight:600;z-index:1;white-space:normal;padding:0 2px}
 .type-mini-legend{display:grid;gap:5px;margin-top:4px}
 .type-mini-item{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px}
 .type-mini-left{display:flex;align-items:center;gap:5px;min-width:0}
@@ -549,8 +546,8 @@ body.sheet-open{
 .calendar-hover-note.below{top:calc(100% + 8px);bottom:auto}
 @media (hover:hover){.calendar-cell:hover{transform:translateY(-1px);background:rgba(255,255,255,.78)}}
 @media(max-width:760px){.calendar-view-head{align-items:stretch;flex-direction:column}.calendar-view-nav{width:100%;grid-template-columns:minmax(0,1fr) 72px 34px 34px}}
-@media(max-width:560px){.calendar-cell{min-height:66px;padding:7px 5px}.calendar-color-stack{margin-top:7px}.calendar-view-sub{font-size:10px}.records-habit-filter{width:min(210px,100%);flex:1 1 170px}}
-@media(max-width:420px){.calendar-view-nav{grid-template-columns:minmax(0,1fr) 72px 34px 34px}.calendar-filter-button{grid-column:1 / -1}.records-toolbar{align-items:stretch}.records-habit-filter{width:100%;order:3}.records-selection-count{margin-left:auto}}
+@media(max-width:560px){.calendar-cell{min-height:66px;padding:7px 5px}.calendar-color-stack{margin-top:7px}.calendar-view-sub{font-size:10px}.records-habit-filter-button{width:min(210px,100%);flex:1 1 170px}.records-table-head{display:none}.history-foot{font-size:9px}}
+@media(max-width:420px){.calendar-view-nav{grid-template-columns:minmax(0,1fr) 72px 34px 34px}.calendar-filter-button{grid-column:1 / -1}.records-toolbar{align-items:stretch}.records-habit-filter-button{width:100%;order:3}.records-selection-count{margin-left:auto}.history-foot{align-items:flex-start;flex-direction:column}}
 .secondary-action{border:1px solid rgba(255,255,255,.74);background:rgba(255,255,255,.50);border-radius:12px;padding:9px 12px;font-weight:500;color:var(--ink)}
 .data-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .data-transfer-scrim{position:fixed;inset:0;display:grid;place-items:center;padding:18px;background:rgba(255,255,255,.90);z-index:420}
@@ -567,7 +564,11 @@ body.sheet-open{
 .data-dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
 .records-section{contain:layout paint;content-visibility:auto;contain-intrinsic-size:520px}
 .records-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:2px;margin-bottom:8px}
-.records-habit-filter{width:min(210px,100%);height:34px;box-sizing:border-box}
+.records-habit-filter-button{width:min(210px,100%);height:34px;box-sizing:border-box}
+.records-table-head{display:grid;grid-template-columns:86px minmax(140px,1fr) 72px minmax(110px,1fr) 68px;gap:10px;align-items:center;padding:7px 0 6px;border-bottom:1px solid rgba(30,34,50,.08);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.records-table-head span:nth-child(3){text-align:right}
+.history-foot{display:flex;justify-content:space-between;gap:10px;margin-top:9px;font-size:9px;color:var(--muted)}
+
 .records-select-actions{display:flex;gap:6px;flex-wrap:wrap}
 .records-action{border:1px solid rgba(120,125,140,.16);background:rgba(246,247,251,.78);border-radius:10px;padding:7px 9px;font-size:11px;color:var(--ink)}
 .records-action.danger{color:#b43c52;background:rgba(255,240,243,.78);border-color:rgba(200,90,112,.18)}
@@ -581,8 +582,8 @@ body.sheet-open{
   border-top:1px solid rgba(30,34,50,.07)
 }
 .record-row:first-child{border-top:0;padding-top:0}
-#entriesRows:not(.selection-mode) .record-row{grid-template-columns:auto 1fr auto}
-#entriesRows.selection-mode .record-row{grid-template-columns:auto auto 1fr auto}
+#entriesRows:not(.selection-mode) .record-row{grid-template-columns:auto 78px minmax(120px,1fr) 62px minmax(100px,1fr) auto}
+#entriesRows.selection-mode .record-row{grid-template-columns:auto auto 78px minmax(120px,1fr) 62px minmax(100px,1fr) auto}
 .record-select{width:18px;height:18px;display:grid;place-items:center;margin:0}
 .record-select input{position:absolute;opacity:0;pointer-events:none}
 .record-select span{width:18px;height:18px;border-radius:6px;border:1.5px solid rgba(104,109,128,.34);background:rgba(255,255,255,.52);box-shadow:inset 0 1px 0 rgba(255,255,255,.85);transition:background-color .12s ease,border-color .12s ease,transform .12s ease}
@@ -593,6 +594,11 @@ body.sheet-open{
 .record-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .record-meta{margin-top:3px;font-size:11px;color:var(--muted)}
 .record-note{margin-top:4px;font-size:11px;color:#666a77;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.record-history-date,.record-history-time,.record-history-note{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.record-history-date{color:var(--muted)}
+.record-history-time{font-weight:550;text-align:right;white-space:nowrap}
+.record-history-note{color:#707482}
+
 .record-delete{padding:8px 9px;white-space:nowrap;font-size:12px}
 .load-more{display:block;margin:9px auto 0}
 .empty{padding:8px 0;font-size:12px;color:var(--muted)}
@@ -646,7 +652,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.38</div>
+<div class="app-version" aria-label="Версия">v0.3.39</div>
 
 <main class="shell">
   <header class="top">
@@ -758,10 +764,12 @@ body.sheet-open{
             <button class="records-action" id="clearEntrySelection" type="button" hidden>Снять</button>
             <button class="records-action danger" id="deleteSelectedEntries" type="button" hidden>Удалить выбранные</button>
           </div>
-          <select class="calendar-filter records-habit-filter" id="recordsHabitFilter" aria-label="Фильтр записей"><option value="*">Все привычки</option></select>
+          <button class="calendar-filter-button records-habit-filter-button" id="recordsHabitFilterButton" type="button" aria-haspopup="listbox" aria-expanded="false"><span id="recordsHabitFilterButtonText">Все привычки</span><span class="filter-chevron" aria-hidden="true"></span></button>
           <span class="records-selection-count" id="recordsSelectionCount"></span>
         </div>
+        <div class="records-table-head"><span>Дата</span><span>Привычка</span><span>Время</span><span>Заметка</span><span></span></div>
         <div id="entriesRows"></div>
+        <div class="history-foot"><span>Показаны последние записи</span><span id="historyCountLabel"></span></div>
         <button class="secondary-action load-more" id="showMoreEntries" hidden>Показать ещё</button>
       </div>
     </section>
@@ -1607,21 +1615,23 @@ body.sheet-open{
     var habitMap={};
     for(var hi=0;hi<habits.length;hi++)habitMap[habits[hi].id]=habits[hi];
 
-    var recordsFilter=$('recordsHabitFilter');
-    if(recordsFilter){
-      recordsFilter.innerHTML='<option value="*">Все привычки</option>'+habits.map(function(h){return '<option value="'+clean(h.id)+'">'+clean(h.name)+'</option>';}).join('');
-      recordsFilter.value=recordsFilterHabitId;
+    var filterText='Все привычки';
+    if(recordsFilterHabitId!=='*'){
+      var filterHabit=habits.find(function(h){return h.id===recordsFilterHabitId});
+      filterText=filterHabit?filterHabit.name:'Все привычки';
     }
+    $('recordsHabitFilterButtonText').textContent=filterText;
     var filteredEntries=getSortedEntries().filter(function(e){return recordsFilterHabitId==='*'||e.habitId===recordsFilterHabitId});
     var visible=filteredEntries.slice(0,entryRenderLimit);
     $('recordsSummary').textContent=filteredEntries.length+' '+(filteredEntries.length===1?'запись':'записей');
+    $('historyCountLabel').textContent=filteredEntries.length+' '+(filteredEntries.length===1?'запись':'записей');
     $('entriesRows').className=entrySelectionMode?'selection-mode':'';
     $('entriesRows').innerHTML=visible.map(function(e){
       var habit=habitMap[e.habitId];
       var color=COLOR_BY_ID[e.color]||'#6e73ff';
       var checked=selectedEntryIds[e.id]?' checked':'';
       var selector=entrySelectionMode?'<label class="record-select"><input type="checkbox" data-entry-check="'+clean(e.id)+'"'+checked+' aria-label="Выбрать запись"><span></span></label>':'';
-      return '<div class="record-row">'+selector+'<span class="record-dot" style="background:'+color+'"></span><div class="record-info"><div class="record-name">'+clean(habit?habit.name:'Удаленная привычка')+'</div><div class="record-meta">'+formatFullDate(e.date||currentDate)+' · '+fmt(e.minutes)+'</div>'+(e.note?'<div class="record-note">'+clean(e.note)+'</div>':'')+'</div><button class="secondary-action record-delete" data-remove-entry="'+clean(e.id)+'">Удалить</button></div>';
+      return '<div class="record-row">'+selector+'<span class="record-dot" style="background:'+color+'"></span><div class="record-history-date">'+formatFullDate(e.date||currentDate)+'</div><div class="record-info"><div class="record-name">'+clean(habit?habit.name:'Удаленная привычка')+'</div><div class="record-meta">'+(habit?'':'Удаленная привычка')+'</div></div><div class="record-history-time">'+fmt(e.minutes)+'</div><div class="record-history-note">'+(e.note?clean(e.note):'—')+'</div><button class="secondary-action record-delete" data-remove-entry="'+clean(e.id)+'">Удалить</button></div>';
     }).join('')||'<div class="empty">Нет записей.</div>';
 
     var selectedCount=Object.keys(selectedEntryIds).filter(function(id){return selectedEntryIds[id]&&filteredEntries.some(function(e){return e.id===id})}).length;
@@ -1739,6 +1749,13 @@ body.sheet-open{
   }
 
   var chartHoverDay=null,chartHoverTimer=0;
+  function clearChartHover(){
+    clearTimeout(chartHoverTimer);
+    chartHoverDay=null;
+    var note=$('chartDayHoverNote');
+    if(note)note.classList.remove('active','below');
+  }
+
   $('weekChart').addEventListener('mouseover',function(e){
     var day=e.target.closest('[data-chart-date]');
     if(!day||day===chartHoverDay||!day.querySelector('.bar:not([style*="display: none"])'))return;
@@ -1753,12 +1770,11 @@ body.sheet-open{
       positionChartHoverNote(day);
     },550);
   });
+  $('weekChart').addEventListener('wheel',function(){clearChartHover();},{passive:true});
   $('weekChart').addEventListener('mouseout',function(e){
     var next=e.relatedTarget&&e.relatedTarget.closest?e.relatedTarget.closest('[data-chart-date]'):null;
     if(next===chartHoverDay)return;
-    clearTimeout(chartHoverTimer);
-    chartHoverDay=null;
-    $('chartDayHoverNote').classList.remove('active','below');
+    clearChartHover();
   });
 
   var calendarHoverCell=null,calendarHoverTimer=0;
@@ -1812,6 +1828,8 @@ body.sheet-open{
     $('colorButton').classList.remove('open');
     $('calendarFilterButton').classList.remove('open');
     $('calendarFilterButton').setAttribute('aria-expanded','false');
+    $('recordsHabitFilterButton').classList.remove('open');
+    $('recordsHabitFilterButton').setAttribute('aria-expanded','false');
   }
 
   function syncMenuSelection(){
@@ -1869,6 +1887,22 @@ body.sheet-open{
     syncMenuSelection();
     positionMenu(button);
     button.classList.add('open');
+  }
+
+  function showRecordsHabitFilterMenu(){
+    var menu=$('menuPopover'),button=$('recordsHabitFilterButton');
+    var same=activeMenuKind==='recordsHabit'&&menu.classList.contains('active');
+    closeMenus();
+    if(same)return;
+    activeMenuKind='recordsHabit';
+    menu.innerHTML='<div class="menu-section">Фильтр записей</div>'+
+      '<button class="option" data-records-habit-option="*">Все привычки</button>'+
+      habits.map(function(h){return '<button class="option" data-records-habit-option="'+clean(h.id)+'">'+clean(h.name)+'</button>';}).join('');
+    var nodes=menu.querySelectorAll('[data-records-habit-option]');
+    for(var i=0;i<nodes.length;i++)nodes[i].classList.toggle('selected',nodes[i].getAttribute('data-records-habit-option')===recordsFilterHabitId);
+    positionMenu(button);
+    button.classList.add('open');
+    button.setAttribute('aria-expanded','true');
   }
 
   function showCalendarFilterMenu(){
@@ -2250,6 +2284,17 @@ body.sheet-open{
   });
 
   document.getElementById('menuPopover').onclick=function(e){
+    var recordsHabitOption=e.target.closest('[data-records-habit-option]');
+    if(recordsHabitOption){
+      recordsFilterHabitId=recordsHabitOption.getAttribute('data-records-habit-option')||'*';
+      var recordsFilterHabit=habits.find(function(h){return h.id===recordsFilterHabitId});
+      $('recordsHabitFilterButtonText').textContent=recordsFilterHabit?recordsFilterHabit.name:'Все привычки';
+      selectedEntryIds={};
+      entryRenderLimit=60;
+      closeMenus();
+      renderSettings();
+      return;
+    }
     var calendarHabitOption=e.target.closest('[data-calendar-habit-option]');
     if(calendarHabitOption){
       calendarFilterHabitId=calendarHabitOption.getAttribute('data-calendar-habit-option')||'*';
@@ -2342,7 +2387,7 @@ body.sheet-open{
   };
   document.getElementById('calendarToday').onclick=function(){calendarViewDate=localDate(new Date());renderCalendarView();};
   document.getElementById('calendarFilterButton').onclick=function(){showCalendarFilterMenu();};
-  document.getElementById('recordsHabitFilter').onchange=function(e){recordsFilterHabitId=e.target.value||'*';selectedEntryIds={};entryRenderLimit=60;renderSettings();};
+  document.getElementById('recordsHabitFilterButton').onclick=function(){showRecordsHabitFilterMenu();};
 
   document.getElementById('sheet').addEventListener('click',function(e){
     if(e.target===this)closeSheet();
@@ -2350,7 +2395,7 @@ body.sheet-open{
 
   function repositionOpenMenu(){
     if(!activeMenuKind)return;
-    var buttonId=activeMenuKind==='habit'?'habitButton':activeMenuKind==='type'?'typeButton':activeMenuKind==='color'?'colorButton':'calendarFilterButton';
+    var buttonId=activeMenuKind==='habit'?'habitButton':activeMenuKind==='type'?'typeButton':activeMenuKind==='color'?'colorButton':activeMenuKind==='calendarHabit'?'calendarFilterButton':activeMenuKind==='recordsHabit'?'recordsHabitFilterButton':'calendarFilterButton';
     var button=$(buttonId);
     if(button)positionMenu(button);
   }
@@ -2360,9 +2405,10 @@ body.sheet-open{
     positionCalendar();
   },{passive:true});
   window.addEventListener('scroll',function(){
+    clearChartHover();
     repositionOpenMenu();
     positionCalendar();
-  },{passive:true});
+  },{passive:true,capture:true});
 
   document.addEventListener('keydown',function(e){
     if(e.key==='Escape'&&!$('dataTransfer').hidden){closeImportDialog();return}
