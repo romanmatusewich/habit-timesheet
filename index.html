@@ -611,18 +611,10 @@ body.sheet-open{
 .calendar-hover-note.below{top:calc(100% + 8px);bottom:auto}
 @media (hover:hover){.calendar-cell:hover{transform:translateY(-1px);background:rgba(255,255,255,.78)}}
 @media(max-width:760px){.calendar-view-head{align-items:stretch;flex-direction:column}.calendar-view-nav{width:100%;grid-template-columns:minmax(0,1fr) 72px 34px 34px}}
-@media(max-width:560px){.calendar-cell{min-height:66px;padding:7px 5px}.calendar-color-stack{margin-top:7px}.calendar-view-sub{font-size:10px}.records-habit-filter-button{width:min(210px,100%);flex:1 1 170px}.records-table-head{display:none}.record-row{grid-template-columns:18px 8px minmax(0,1fr) auto minmax(0,1fr) auto}.record-info{grid-column:3;grid-row:1}.record-history-time{grid-column:4;grid-row:1}.record-history-note{grid-column:3 / span 3;grid-row:2}.record-menu-trigger{
-  width:62px;
-  height:56px;
-  padding:0;
-  flex:none;
-  display:grid;
-  place-items:center;
-  border:1px solid rgba(255,255,255,.90);
-  border-radius:18px;
-  background:rgba(255,255,255,.78);
-  color:#5a5e6a;
-  box-shadow:0 5px 14px rgba(36,42,71,.055),inset 0 1px 0 rgba(255,255,255,.95);
+.record-menu-trigger{
+  width:62px;height:56px;padding:0;flex:none;display:grid;place-items:center;
+  border:1px solid rgba(255,255,255,.90);border-radius:18px;background:rgba(255,255,255,.78);
+  color:#5a5e6a;box-shadow:0 5px 14px rgba(36,42,71,.055),inset 0 1px 0 rgba(255,255,255,.95);
   transition:background-color .12s ease,box-shadow .12s ease,transform .12s ease,border-color .12s ease;
 }
 .record-menu-trigger:hover{background:#fff}
@@ -632,6 +624,7 @@ body.sheet-open{
 .record-menu-icon i{display:block;height:2px;width:28px;border-radius:99px;background:currentColor}
 .history-foot{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:9px;color:var(--muted)}
 .load-more{display:block;margin:10px auto 0}
+
 @media(max-width:560px){
   .calendar-cell{min-height:66px;padding:7px 5px}
   .calendar-color-stack{margin-top:7px}
@@ -1958,7 +1951,6 @@ body.sheet-open{
 
   function renderCalendarView(){
     var note=$('calendarHoverNote');
-    if(note&&note.parentNode!==$('monthCalendar'))$('monthCalendar').appendChild(note);
     note&&note.classList.remove('active','below');
     var d=dateObj(calendarViewDate),year=d.getFullYear(),month=d.getMonth();
     var first=new Date(year,month,1),firstDay=(first.getDay()+6)%7,daysInMonth=new Date(year,month+1,0).getDate(),prevDays=new Date(year,month,0).getDate();
@@ -1985,6 +1977,10 @@ body.sheet-open{
       html+='<div class="'+cls+'" data-calendar-date="'+date+'"><div class="calendar-day-number">'+day+'</div><div class="calendar-day-total">'+(total?fmt(total):'')+'</div><div class="calendar-color-stack">'+stack+'</div></div>';
     }
     $('monthCalendar').innerHTML=html;
+    if(note){
+      $('monthCalendar').appendChild(note);
+      note.classList.remove('active','below');
+    }
   }
 
   function positionChartHoverNote(day){
