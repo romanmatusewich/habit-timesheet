@@ -712,7 +712,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.50</div>
+<div class="app-version" aria-label="Версия">v0.3.51</div>
 
 <main class="shell">
   <header class="top">
@@ -811,8 +811,9 @@ body.sheet-open{
         <button class="secondary-action" id="addHabit">+ Добавить</button>
       </div>
       <div class="data-tools">
-        <button class="secondary-action" id="exportData">Экспорт данных</button>
-        <button class="secondary-action" id="importData">Импорт из Google Таблиц</button>
+        <button class="secondary-action" id="exportData">Экспорт JSON</button>
+        <button class="secondary-action" id="exportCsvData">Экспорт CSV</button>
+        <button class="secondary-action" id="importData">Импорт из таблицы</button>
       </div>
       <div class="breakdown" style="margin-top:12px"><div id="settingsRows"></div></div>
       <div class="breakdown records-section" style="margin-top:12px">
@@ -906,10 +907,10 @@ body.sheet-open{
 <div class="data-transfer-scrim" id="dataTransfer" hidden>
   <section class="data-dialog" role="dialog" aria-modal="true" aria-labelledby="dataDialogTitle">
     <div class="data-dialog-head">
-      <h2 class="data-dialog-title" id="dataDialogTitle">Импорт из Google Таблиц</h2>
+      <h2 class="data-dialog-title" id="dataDialogTitle">Импорт из таблицы</h2>
       <button class="data-dialog-close" id="dataDialogClose" aria-label="Закрыть">×</button>
     </div>
-    <div class="data-help">Вставь сюда два столбика из Google Таблиц: <b>день</b> и <b>количество минут</b>. Поддерживаются полные даты, даты без года и числовые даты Google Таблиц. Если в первом столбце указан только номер дня, ниже выбери нужный месяц.<br><br>Пример:<br><code>26.09.2026&nbsp;&nbsp;&nbsp;&nbsp;45</code><br><code>27.09.2026&nbsp;&nbsp;&nbsp;&nbsp;60</code></div>
+    <div class="data-help">Скопируй сюда два столбика из Google Таблиц или другой таблицы: <b>день</b> и <b>количество минут</b>. Поддерживаются полные даты, даты без года и числовые даты Google Таблиц. Это вставка данных из таблицы, а не прямое подключение к Google Sheets. Если в первом столбце указан только номер дня, ниже выбери нужный месяц.<br><br>Пример:<br><code>26.09.2026&nbsp;&nbsp;&nbsp;&nbsp;45</code><br><code>27.09.2026&nbsp;&nbsp;&nbsp;&nbsp;60</code></div>
     <label class="field"><span class="field-label">Привязать импорт к привычке</span><select class="data-select" id="importHabit"></select></label>
     <label class="field" style="margin-top:12px"><span class="field-label">Месяц для строк только с номером дня</span><input class="data-select" id="importMonth" type="month"></label>
     <label class="field" style="margin-top:12px"><span class="field-label">Данные из таблицы</span><textarea class="import-area" id="importText" placeholder="26.09.2026&#9;45&#10;27.09.2026&#9;60"></textarea></label>
@@ -940,13 +941,13 @@ body.sheet-open{
   var localMutationEpoch=0;
 
   var TYPE_OPTIONS=[
-    {id:'active',label:'Активное обучение',defaultColor:'blue'},
-    {id:'passive',label:'Пассивное обучение',defaultColor:'yellow'},
-    {id:'sport',label:'Спорт',defaultColor:'green'},
-    {id:'work',label:'Работа',defaultColor:'purple'},
-    {id:'creative',label:'Творчество',defaultColor:'pink'},
-    {id:'reading',label:'Чтение',defaultColor:'blue'},
-    {id:'other',label:'Другое',defaultColor:'blue'}
+    {id:'active',label:'Активное обучение',defaultColor:'blue',chartColor:'#5f63ff'},
+    {id:'passive',label:'Пассивное обучение',defaultColor:'yellow',chartColor:'#e3be47'},
+    {id:'sport',label:'Спорт',defaultColor:'green',chartColor:'#45c986'},
+    {id:'work',label:'Работа',defaultColor:'purple',chartColor:'#8b72ff'},
+    {id:'creative',label:'Творчество',defaultColor:'pink',chartColor:'#ff6aa6'},
+    {id:'reading',label:'Чтение',defaultColor:'blue',chartColor:'#20b6b8'},
+    {id:'other',label:'Другое',defaultColor:'blue',chartColor:'#e88a3d'}
   ];
 
   var COLOR_OPTIONS=[
@@ -1709,7 +1710,7 @@ body.sheet-open{
   }
 
   function typeDonutData(byType,total){
-    var parts=TYPE_OPTIONS.map(function(t){return {label:t.label,total:byType[t.id]||0,color:COLOR_BY_ID[t.defaultColor]||'#6e73ff'};}).filter(function(x){return x.total>0});
+    var parts=TYPE_OPTIONS.map(function(t){return {label:t.label,total:byType[t.id]||0,color:t.chartColor||COLOR_BY_ID[t.defaultColor]||'#6e73ff'};}).filter(function(x){return x.total>0});
     var stops=[],cursor=0;
     for(var i=0;i<parts.length;i++){
       var end=cursor+(parts[i].total/Math.max(total,1))*360;
@@ -1738,7 +1739,7 @@ body.sheet-open{
     $('bestDayTime').textContent=fmt(stats.bestDayTotal||0);
     $('bestDayDate').textContent=stats.bestDayDate?formatFullDate(stats.bestDayDate):'Нет данных';
 
-    $('statsBreakdown').innerHTML=getStatsBreakdownHTML(allTotals());
+    $('statsBreakdown').innerHTML=getStatsBreakdownHTML(allTotals().filter(function(x){return x.total>0}));
 
     var weeks=weeklyStatsTotals(),maxWeek=Math.max(60,Math.max.apply(Math,weeks.map(function(x){return x.total})));
     $('weeklyStatsChart').innerHTML=weeks.map(function(x){
@@ -2319,20 +2320,51 @@ body.sheet-open{
     showToast('Запись сохранена');
   }
 
+  function getExportEntries(){
+    var filtered=getSortedEntries().filter(function(e){
+      return recordsFilterHabitId==='*'||e.habitId===recordsFilterHabitId;
+    });
+    return filtered;
+  }
+  function getExportHabits(exportEntries){
+    var used={};
+    for(var i=0;i<exportEntries.length;i++)used[exportEntries[i].habitId]=true;
+    return habits.filter(function(h){return used[h.id]});
+  }
+  function downloadBlob(blob,filename,message){
+    var url=URL.createObjectURL(blob),link=document.createElement('a');
+    link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();
+    setTimeout(function(){URL.revokeObjectURL(url)},0);
+    showToast(message);
+  }
   function exportData(){
+    var exportEntries=getExportEntries(),exportHabits=getExportHabits(exportEntries);
     var payload={
       app:'Habit Timesheet',
       version:(document.querySelector('.app-version')||{}).textContent||'',
       exportedAt:new Date().toISOString(),
-      habits:habits.map(function(h){return {id:h.id,name:h.name}}),
-      entries:entries.map(function(e){return {id:e.id,habitId:e.habitId,date:e.date,minutes:e.minutes,note:e.note,type:e.type,color:e.color}})
+      filter:recordsFilterHabitId==='*'?'Все привычки':(habits.find(function(h){return h.id===recordsFilterHabitId})||{}).name||'',
+      habits:exportHabits.map(function(h){return {id:h.id,name:h.name}}),
+      entries:exportEntries.map(function(e){return {id:e.id,habitId:e.habitId,date:e.date,minutes:e.minutes,note:e.note,type:e.type,color:e.color}})
     };
-    var blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});
-    var url=URL.createObjectURL(blob),link=document.createElement('a');
-    link.href=url;link.download='habit-timesheet-'+localDate()+'.json';
-    document.body.appendChild(link);link.click();link.remove();
-    setTimeout(function(){URL.revokeObjectURL(url)},0);
-    showToast('Данные экспортированы');
+    var suffix=recordsFilterHabitId==='*'?'all':recordsFilterHabitId;
+    downloadBlob(new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'}),'habit-timesheet-'+suffix+'-'+localDate()+'.json','JSON экспортирован');
+  }
+  function csvCell(value){
+    var s=String(value==null?'':value);
+    return '"'+s.replace(/"/g,'""')+'"';
+  }
+  function exportCsvData(){
+    var exportEntries=getExportEntries(),habitMap={};
+    for(var i=0;i<habits.length;i++)habitMap[habits[i].id]=habits[i];
+    var rows=[['Дата','Привычка','Минуты','Тип','Цвет','Описание']];
+    for(var j=0;j<exportEntries.length;j++){
+      var e=exportEntries[j],type=TYPE_OPTIONS.find(function(t){return t.id===e.type});
+      rows.push([e.date,habitMap[e.habitId]?habitMap[e.habitId].name:'Удаленная привычка',Math.round(Number(e.minutes)||0),type?type.label:e.type||'',e.color||'',e.note||'']);
+    }
+    var csv='\\ufeff'+rows.map(function(row){return row.map(csvCell).join(';')}).join('\\r\\n');
+    var suffix=recordsFilterHabitId==='*'?'all':recordsFilterHabitId;
+    downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8'}),'habit-timesheet-'+suffix+'-'+localDate()+'.csv','CSV экспортирован');
   }
 
   function openImportDialog(){
@@ -2503,6 +2535,7 @@ body.sheet-open{
 
   document.getElementById('openSheet').onclick=openSheet;
   document.getElementById('exportData').onclick=exportData;
+  document.getElementById('exportCsvData').onclick=exportCsvData;
   document.getElementById('importData').onclick=openImportDialog;
   document.getElementById('dataDialogClose').onclick=closeImportDialog;
   document.getElementById('dataDialogCancel').onclick=closeImportDialog;
