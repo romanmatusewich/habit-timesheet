@@ -712,7 +712,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.49</div>
+<div class="app-version" aria-label="Версия">v0.3.50</div>
 
 <main class="shell">
   <header class="top">
@@ -2714,7 +2714,9 @@ body.sheet-open{
     invalidateDataCaches();
     renderSettings();
     scheduleActiveRender();
+    var undoEpochBatch=localMutationEpoch;
     showUndoToast('Удалено записей: '+ids.length,function(){
+      if(localMutationEpoch!==undoEpochBatch){showToast('Отмена недоступна: данные уже изменились');return}
       entries=entries.concat(removedForUndo);
       if(!persistEntries()){showToast('Не удалось отменить удаление');return}
       selectedEntryIds={};
@@ -2774,7 +2776,9 @@ body.sheet-open{
           invalidateDataCaches();
           renderSettings();
           scheduleActiveRender();
+          var undoEpochSingle=localMutationEpoch;
           showUndoToast('Запись удалена',function(){
+            if(localMutationEpoch!==undoEpochSingle){showToast('Отмена недоступна: данные уже изменились');return}
             entries.splice(Math.min(entryIndex,entries.length),0,removedForUndoSingle);
             if(!persistEntries()){showToast('Не удалось отменить удаление');return}
             invalidateDataCaches();
@@ -2808,7 +2812,9 @@ body.sheet-open{
         entryRenderLimit=Math.min(entryRenderLimit,Math.max(60,entries.length));
         invalidateDataCaches();
         scheduleActiveRender();
+        var undoEpochHabit=localMutationEpoch;
         showUndoToast('Привычка удалена',function(){
+          if(localMutationEpoch!==undoEpochHabit){showToast('Отмена недоступна: данные уже изменились');return}
           habits=oldHabits;
           entries=oldEntries;
           if(!persistAll()){showToast('Не удалось отменить удаление');return}
