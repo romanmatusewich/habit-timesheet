@@ -705,7 +705,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.44</div>
+<div class="app-version" aria-label="Версия">v0.3.45</div>
 
 <main class="shell">
   <header class="top">
@@ -919,6 +919,7 @@ body.sheet-open{
 
   var HABITS_KEY='habit-timesheet-habits';
   var ENTRIES_KEY='habit-timesheet-entries';
+  var UI_STATE_KEY='habit-timesheet-ui-state';
   var PERF_MODE=window.__PERF_MODE===true||window.location.search.indexOf('perf=1')>=0;
   var IDB_NAME='habit-timesheet-db'+(PERF_MODE?'-perf':'')+(window.__PERF_DB_SUFFIX||'');
   var IDB_VERSION=2;
@@ -979,7 +980,9 @@ body.sheet-open{
   });
   cleanLegacyImportedData();
 
-  var currentDate=localDate();
+  var savedUIState=read(UI_STATE_KEY,{});
+  var savedCurrentDate=/^\d{4}-\d{2}-\d{2}$/.test(savedUIState.currentDate||'')?savedUIState.currentDate:localDate();
+  var currentDate=savedCurrentDate;
   var currentView='today';
   var calendarDateSelectionActive=false;
   var calendarDate=currentDate;
@@ -999,9 +1002,10 @@ body.sheet-open{
   var renderFrame=0;
   var nodeCache={};
   var renderCache={habitBreakdownHTML:null,statsBreakdownHTML:null,habitBreakdownMax:0};
-  var calendarViewDate=currentDate;
-  var calendarFilterHabitId='*';
-  var recordsFilterHabitId='*';
+  var calendarViewDate=/^\d{4}-\d{2}-\d{2}$/.test(savedUIState.calendarViewDate||'')?savedUIState.calendarViewDate:currentDate;
+  var calendarFilterHabitId=String(savedUIState.calendarFilterHabitId||'*');
+  var recordsFilterHabitId=String(savedUIState.recordsFilterHabitId||'*');
+
   var domCache={
     views:document.querySelectorAll('.view'),
     navs:document.querySelectorAll('[data-view]')
@@ -1009,6 +1013,17 @@ body.sheet-open{
 
   function $(id){
     return nodeCache[id]||(nodeCache[id]=document.getElementById(id));
+  }
+
+  function saveUIState(){
+    try{
+      localStorage.setItem(UI_STATE_KEY,JSON.stringify({
+        currentDate:currentDate,
+        calendarViewDate:calendarViewDate,
+        calendarFilterHabitId:calendarFilterHabitId,
+        recordsFilterHabitId:recordsFilterHabitId
+      }));
+    }catch(e){}
   }
 
   function scheduleActiveRender(){
@@ -1035,6 +1050,14 @@ body.sheet-open{
     try{if(dataChannel)dataChannel.postMessage({type:'data-changed'})}catch(e){}
   }
 
+  function resetInvalidFilters(){
+    var changed=false;
+    if(calendarFilterHabitId!=='*'&&!habits.some(function(h){return h.id===calendarFilterHabitId})){calendarFilterHabitId='*';changed=true}
+    if(recordsFilterHabitId!=='*'&&!habits.some(function(h){return h.id===recordsFilterHabitId})){recordsFilterHabitId='*';changed=true}
+    if(chosenHabit&&!habits.some(function(h){return h.id===chosenHabit})){chosenHabit=habits[0]?habits[0].id:'';changed=true}
+    if(changed)saveUIState();
+  }
+
   function syncFromLocalStorage(){
     try{
       var nextHabits=normalizeStoredHabits(JSON.parse(localStorage.getItem(HABITS_KEY)||'[]'));
@@ -1042,8 +1065,7 @@ body.sheet-open{
       if(!Array.isArray(nextHabits)||!Array.isArray(nextEntries))return;
       habits=nextHabits;
       entries=nextEntries;
-      if(!habits.some(function(h){return h.id===calendarFilterHabitId}))calendarFilterHabitId='*';
-      if(!habits.some(function(h){return h.id===recordsFilterHabitId}))recordsFilterHabitId='*';
+      resetInvalidFilters();
       selectedEntryIds={};
       entrySelectionMode=false;
       entryRenderLimit=Math.min(entryRenderLimit,Math.max(60,entries.length));
@@ -2194,6 +2216,7 @@ body.sheet-open{
     currentDate=targetDate;
     calendarViewDate=currentDate;
     calendarDateSelectionActive=false;
+    saveUIState();
     invalidateDataCaches();
     closeSheet();
     scheduleActiveRender();
@@ -2401,6 +2424,7 @@ body.sheet-open{
     var recordsHabitOption=e.target.closest('[data-records-habit-option]');
     if(recordsHabitOption){
       recordsFilterHabitId=recordsHabitOption.getAttribute('data-records-habit-option')||'*';
+      saveUIState();
       var recordsFilterHabit=habits.find(function(h){return h.id===recordsFilterHabitId});
       $('recordsHabitFilterButtonText').textContent=recordsFilterHabit?recordsFilterHabit.name:'Все привычки';
       selectedEntryIds={};
@@ -2412,6 +2436,7 @@ body.sheet-open{
     var calendarHabitOption=e.target.closest('[data-calendar-habit-option]');
     if(calendarHabitOption){
       calendarFilterHabitId=calendarHabitOption.getAttribute('data-calendar-habit-option')||'*';
+      saveUIState();
       $('calendarFilterButtonText').textContent=calendarFilterHabitId==='*'?'Все привычки':((habits.find(function(h){return h.id===calendarFilterHabitId})||{}).name||'Все привычки');
       closeMenus();
       renderCalendarView();
@@ -2494,12 +2519,12 @@ body.sheet-open{
   };
 
   document.getElementById('calendarPrevMonth').onclick=function(){
-    var d=dateObj(calendarViewDate);d.setDate(1);d.setMonth(d.getMonth()-1);calendarViewDate=localDate(d);renderCalendarView();
+    var d=dateObj(calendarViewDate);d.setDate(1);d.setMonth(d.getMonth()-1);calendarViewDate=localDate(d);saveUIState();renderCalendarView();
   };
   document.getElementById('calendarNextMonth').onclick=function(){
-    var d=dateObj(calendarViewDate);d.setDate(1);d.setMonth(d.getMonth()+1);calendarViewDate=localDate(d);renderCalendarView();
+    var d=dateObj(calendarViewDate);d.setDate(1);d.setMonth(d.getMonth()+1);calendarViewDate=localDate(d);saveUIState();renderCalendarView();
   };
-  document.getElementById('calendarToday').onclick=function(){calendarViewDate=localDate(new Date());renderCalendarView();};
+  document.getElementById('calendarToday').onclick=function(){calendarViewDate=localDate(new Date());saveUIState();renderCalendarView();};
   document.getElementById('calendarFilterButton').onclick=function(){showCalendarFilterMenu();};
   document.getElementById('recordsHabitFilterButton').onclick=function(){showRecordsHabitFilterMenu();};
 
@@ -2587,6 +2612,7 @@ body.sheet-open{
       currentDate=calendarCell.getAttribute('data-calendar-date');
       calendarViewDate=currentDate;
       calendarDateSelectionActive=true;
+      saveUIState();
       currentView='today';
       renderActiveView();
       return;
@@ -2645,6 +2671,7 @@ body.sheet-open{
           return;
         }
         menusDirty=true;
+        resetInvalidFilters();
         entryRenderLimit=Math.min(entryRenderLimit,Math.max(60,entries.length));
         invalidateDataCaches();
         scheduleActiveRender();
@@ -2661,6 +2688,7 @@ body.sheet-open{
         currentDate=localDate(new Date());
         calendarViewDate=currentDate;
         calendarDateSelectionActive=false;
+        saveUIState();
       }
       currentView=nextView;
       renderActiveView();
