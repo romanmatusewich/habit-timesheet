@@ -601,7 +601,7 @@ body.sheet-open{
 .calendar-hover-note.below{top:calc(100% + 8px);bottom:auto}
 @media (hover:hover){.calendar-cell:hover{transform:translateY(-1px);background:rgba(255,255,255,.78)}}
 @media(max-width:760px){.calendar-view-head{align-items:stretch;flex-direction:column}.calendar-view-nav{width:100%;grid-template-columns:minmax(0,1fr) 72px 34px 34px}}
-@media(max-width:560px){.calendar-cell{min-height:66px;padding:7px 5px}.calendar-color-stack{margin-top:7px}.calendar-view-sub{font-size:10px}.records-habit-filter-button{width:min(210px,100%);flex:1 1 170px}.records-table-head{display:none}.record-row{grid-template-columns:18px 8px minmax(0,1fr) auto auto}.record-history-date{grid-column:3;grid-row:1}.record-info{grid-column:3;grid-row:2}.record-history-time{grid-column:4;grid-row:1 / span 2}.record-history-note{grid-column:3 / span 2;grid-row:3}.record-actions{grid-column:5;grid-row:1 / span 2;flex-direction:column;align-items:stretch}
+@media(max-width:560px){.calendar-cell{min-height:66px;padding:7px 5px}.calendar-color-stack{margin-top:7px}.calendar-view-sub{font-size:10px}.records-habit-filter-button{width:min(210px,100%);flex:1 1 170px}.records-table-head{display:none}.record-row{grid-template-columns:18px 8px minmax(0,1fr) auto minmax(0,1fr) auto}.record-info{grid-column:3;grid-row:1}.record-history-time{grid-column:4;grid-row:1}.record-history-note{grid-column:3 / span 3;grid-row:2}.record-actions{grid-column:6;grid-row:1 / span 2;flex-direction:column;align-items:stretch}
 .record-edit,.record-delete{width:64px;min-width:64px}
 .history-foot{font-size:9px}}
 @media(max-width:420px){.calendar-view-nav{grid-template-columns:minmax(0,1fr) 72px 34px 34px}.calendar-filter-button{grid-column:1 / -1}.records-toolbar{align-items:stretch}.records-habit-filter-button{width:100%;order:3}.records-selection-count{margin-left:auto}.history-foot{align-items:flex-start;flex-direction:column}}
@@ -717,7 +717,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.54</div>
+<div class="app-version" aria-label="Версия">v0.3.55</div>
 
 <main class="shell">
   <header class="top">
@@ -1770,7 +1770,7 @@ body.sheet-open{
     var settingsHabits=habits.slice();
     $('settingsRows').innerHTML=settingsHabits.map(function(h){
       var color=habitColor(h);
-      return '<div class="break-row"><div class="break-left"><div class="break-name"><span class="color-dot" style="background:'+color+';margin-right:7px;vertical-align:1px"></span>'+clean(h.name)+'</div></div><button class="secondary-action" data-remove-habit="'+h.id+'">Удалить</button></div>';
+      return '<div class="break-row"><div class="break-left"><div class="break-name" title="'+clean(h.name)+'"><span class="color-dot" style="background:'+color+';margin-right:7px;vertical-align:1px"></span>'+clean(h.name)+'</div></div><button class="secondary-action" data-remove-habit="'+h.id+'">Удалить</button></div>';
     }).join('')||'<div class="empty">Нет привычек.</div>';
 
     var habitMap={};
