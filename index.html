@@ -705,7 +705,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.42</div>
+<div class="app-version" aria-label="Версия">v0.3.43</div>
 
 <main class="shell">
   <header class="top">
@@ -1109,12 +1109,18 @@ body.sheet-open{
   function persistHabits(){
     localMutationEpoch++;
     if(storageMode==='indexeddb'){
-      var lastHabit=habits.length?cloneData(habits[habits.length-1]):null;
-      if(lastHabit){
-        queueIDBWrite(function(){
-          return idbRequest(db.transaction(IDB_HABITS,'readwrite').objectStore(IDB_HABITS).put(lastHabit));
+      var batch=cloneData(habits);
+      queueIDBWrite(function(){
+        return new Promise(function(resolve,reject){
+          var tx=db.transaction(IDB_HABITS,'readwrite');
+          var store=tx.objectStore(IDB_HABITS);
+          store.clear();
+          for(var i=0;i<batch.length;i++)store.put(batch[i]);
+          tx.oncomplete=function(){resolve()};
+          tx.onerror=function(){reject(tx.error||new Error('IndexedDB habits save failed'))};
+          tx.onabort=function(){reject(tx.error||new Error('IndexedDB habits save aborted'))};
         });
-      }
+      });
       scheduleLocalBackup();
       return true;
     }
@@ -1148,19 +1154,9 @@ body.sheet-open{
 
 
   function cleanLegacyImportedData(){
-    var oldEntries=entries.length,oldHabits=habits.length;
-    entries=entries.filter(function(e){
-      var note=String(e.note||'').toLowerCase();
-      return e.habitId!=='__daily_summary__'&&
-        note.indexOf('импорт из google таблиц')<0&&
-        note.indexOf('распределено из импорта google таблиц')<0&&
-        note.indexOf('распределено из сводки google таблиц')<0;
-    });
-    habits=habits.filter(function(h){
-      return h.id!=='training'&&h.id!=='reading-aloud'&&
-        h.name!=='Тренинг'&&h.name!=='Чтение вслух';
-    });
-    return entries.length!==oldEntries||habits.length!==oldHabits;
+    // Legacy cleanup was intentionally retired. Imported records are user data
+    // and must not be removed automatically on startup.
+    return false;
   }
 
   function deleteEntriesFromStorage(ids){
@@ -1288,7 +1284,6 @@ body.sheet-open{
       renderActiveView();
 
       scheduleLocalBackup();
-      setTimeout(function(){repairAugustImportedSummary();},900);
       window.__STORAGE_READY=true;
     }catch(e){
       storageMode='local';
