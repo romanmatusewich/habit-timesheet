@@ -624,14 +624,14 @@ body.sheet-open{
 .records-section{contain:layout paint;content-visibility:auto;contain-intrinsic-size:520px}
 .records-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:2px;margin-bottom:8px}
 .records-habit-filter-button{width:min(210px,100%);height:34px;box-sizing:border-box}
-.records-table-head{display:grid;grid-template-columns:18px 8px 78px minmax(120px,1fr) 62px minmax(100px,1fr) auto;gap:10px;align-items:center;padding:7px 0 6px;border-bottom:1px solid rgba(30,34,50,.08);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.records-table-head span:nth-child(5){text-align:right}
+.records-table-head{display:grid;grid-template-columns:18px 8px minmax(150px,1fr) 62px minmax(120px,1fr) auto;gap:10px;align-items:center;padding:7px 0 6px;border-bottom:1px solid rgba(30,34,50,.08);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.records-table-head span:nth-child(4){text-align:right}
 .history-foot{display:flex;justify-content:space-between;gap:10px;margin-top:9px;font-size:9px;color:var(--muted)}
 
 .records-select-actions{display:flex;gap:6px;flex-wrap:wrap}
 .records-action{border:1px solid rgba(120,125,140,.16);background:rgba(246,247,251,.78);border-radius:10px;padding:7px 9px;font-size:11px;color:var(--ink)}
 .records-action.danger{color:#b43c52;background:rgba(255,240,243,.78);border-color:rgba(200,90,112,.18)}
-.break-row>[data-remove-habit]{width:58px;min-width:58px;padding:7px 8px;font-size:11px}
+.break-row>[data-remove-habit]{width:58px;min-width:58px;padding:7px 8px;font-size:11px;justify-self:end;align-self:center}
 .records-selection-count{font-size:10px;color:var(--muted)}
 .record-row{
   display:grid;
@@ -642,7 +642,7 @@ body.sheet-open{
   border-top:1px solid rgba(30,34,50,.07)
 }
 .record-row:first-child{border-top:0;padding-top:0}
-#entriesRows .record-row{grid-template-columns:18px 8px 78px minmax(120px,1fr) 62px minmax(100px,1fr) auto}
+#entriesRows .record-row{grid-template-columns:18px 8px minmax(150px,1fr) 62px minmax(120px,1fr) auto}
 
 .record-select-spacer{width:18px;height:18px;display:block}
 .record-select{width:18px;height:18px;display:grid;place-items:center;margin:0}
@@ -656,6 +656,8 @@ body.sheet-open{
 .record-meta{margin-top:3px;font-size:11px;color:var(--muted)}
 .record-note{margin-top:4px;font-size:11px;color:#666a77;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .record-history-date,.record-history-time,.record-history-note{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.record-expandable{cursor:default}
+.record-expandable.is-expanded{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
 .record-history-date{color:var(--muted)}
 .record-history-time{font-weight:550;text-align:right;white-space:nowrap}
 .record-history-note{color:#707482}
@@ -715,7 +717,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.53</div>
+<div class="app-version" aria-label="Версия">v0.3.54</div>
 
 <main class="shell">
   <header class="top">
@@ -831,7 +833,7 @@ body.sheet-open{
           <button class="calendar-filter-button records-habit-filter-button" id="recordsHabitFilterButton" type="button" aria-haspopup="listbox" aria-expanded="false"><span id="recordsHabitFilterButtonText">Все привычки</span><span class="filter-chevron" aria-hidden="true"></span></button>
           <span class="records-selection-count" id="recordsSelectionCount"></span>
         </div>
-        <div class="records-table-head"><span></span><span></span><span>Дата</span><span>Привычка</span><span>Время</span><span>Заметка</span><span></span></div>
+        <div class="records-table-head"><span></span><span></span><span>Привычка · дата</span><span>Время</span><span>Заметка</span><span></span></div>
         <div id="entriesRows"></div>
         <div class="history-foot"><span>Показаны последние записи</span><span id="historyCountLabel"></span></div>
         <button class="secondary-action load-more" id="showMoreEntries" hidden>Показать ещё</button>
@@ -968,14 +970,14 @@ body.sheet-open{
 
 
   var DEFAULT_HABITS=[
-    {id:'accounting',name:'Бухгалтерия',goal:60},
-    {id:'speech',name:'Дикция и речь',goal:30},
-    {id:'reading',name:'Чтение',goal:30},
-    {id:'sport',name:'Спорт',goal:45}
+    {id:'accounting',name:'Бухгалтерия',goal:60,color:'blue'},
+    {id:'speech',name:'Дикция и речь',goal:30,color:'purple'},
+    {id:'reading',name:'Чтение',goal:30,color:'yellow'},
+    {id:'sport',name:'Спорт',goal:45,color:'green'}
   ];
 
   var habits=read(HABITS_KEY,DEFAULT_HABITS).map(function(h){
-    return {id:h.id,name:String(h.name||'Привычка'),goal:Number(h.goal)||30};
+    return {id:h.id,name:String(h.name||'Привычка'),goal:Number(h.goal)||30,color:COLOR_BY_ID[h.color]?h.color:null};
   });
 
   var entries=read(ENTRIES_KEY,[]).map(function(e){
@@ -1790,7 +1792,8 @@ body.sheet-open{
       var color=COLOR_BY_ID[e.color]||'#6e73ff';
       var checked=selectedEntryIds[e.id]?' checked':'';
       var selector=entrySelectionMode?'<label class="record-select"><input type="checkbox" data-entry-check="'+clean(e.id)+'"'+checked+' aria-label="Выбрать запись"><span></span></label>':'';
-      return '<div class="record-row">'+selector+'<span class="record-dot" style="background:'+color+'"></span><div class="record-history-date">'+formatFullDate(e.date||currentDate)+'</div><div class="record-info"><div class="record-name">'+clean(habit?habit.name:'Удаленная привычка')+'</div><div class="record-meta">'+(habit?'':'Удаленная привычка')+'</div></div><div class="record-history-time">'+fmt(e.minutes)+'</div><div class="record-history-note">'+(e.note?clean(e.note):'—')+'</div><div class="record-actions">'+(habit?'<button class="secondary-action record-edit" data-edit-entry="'+clean(e.id)+'">Изменить</button>':'')+'<button class="secondary-action record-delete" data-remove-entry="'+clean(e.id)+'">Удалить</button></div></div>';
+      var displayName=habit?habit.name:'Удаленная привычка',displayNote=e.note||'—',dateText=formatFullDate(e.date||currentDate);
+      return '<div class="record-row">'+selector+'<span class="record-dot" style="background:'+color+'"></span><div class="record-info"><div class="record-name record-expandable" data-expand-record title="'+clean(displayName)+'">'+clean(displayName)+'</div><div class="record-meta">'+dateText+(habit?'':' · Удаленная привычка')+'</div></div><div class="record-history-time">'+fmt(e.minutes)+'</div><div class="record-history-note record-expandable" data-expand-record title="'+clean(displayNote)+'">'+clean(displayNote)+'</div><div class="record-actions">'+(habit?'<button class="secondary-action record-edit" data-edit-entry="'+clean(e.id)+'">Изменить</button>':'')+'<button class="secondary-action record-delete" data-remove-entry="'+clean(e.id)+'">Удалить</button></div></div>';
     }).join('')||'<div class="empty">Нет записей.</div>';
 
     var selectedCount=Object.keys(selectedEntryIds).filter(function(id){return selectedEntryIds[id]&&filteredEntries.some(function(e){return e.id===id})}).length;
@@ -2090,9 +2093,7 @@ body.sheet-open{
 
   function habitColor(habit){
     if(!habit)return COLOR_BY_ID.blue;
-    var stats=getStats();
-    var entryColor=stats.habitColorById[habit.id];
-    if(entryColor&&COLOR_BY_ID[entryColor])return COLOR_BY_ID[entryColor];
+    if(habit.color&&COLOR_BY_ID[habit.color])return COLOR_BY_ID[habit.color];
     var preset=presetForHabit(habit.name);
     return COLOR_BY_ID[preset&&preset.color]||COLOR_BY_ID.blue;
   }
@@ -2520,7 +2521,7 @@ body.sheet-open{
   function addHabit(){
     var name=prompt('Название привычки');
     if(!name||!name.trim())return;
-    var habit={id:uid(),name:name.trim(),goal:30};
+    var habit={id:uid(),name:name.trim(),goal:30,color:'blue'};
     habits.push(habit);
     if(!persistHabits()){
       habits.pop();
@@ -2780,6 +2781,12 @@ body.sheet-open{
     if(more){
       entryRenderLimit+=60;
       renderSettings();
+      return;
+    }
+
+    var expandableRecord=e.target.closest('[data-expand-record]');
+    if(expandableRecord){
+      expandableRecord.classList.toggle('is-expanded');
       return;
     }
 
