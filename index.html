@@ -705,7 +705,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.47</div>
+<div class="app-version" aria-label="Версия">v0.3.48</div>
 
 <main class="shell">
   <header class="top">
@@ -1426,9 +1426,10 @@ body.sheet-open{
   function getStats(){
     if(statsCache)return statsCache;
     var byHabit={},byDate={},byDateHabit={},byDateColor={},habitColorById={},countByDate={},byType={},activeByMonth={},total=0,sessionCount=0,longest=0;
+    var todayKey=localDate(new Date());
     for(var i=0;i<entries.length;i++){
-      var e=entries[i];
-      var minutes=Number(e.minutes)||0;
+      var e=entries[i],minutes=Number(e.minutes)||0;
+      if(!e.date||e.date>todayKey||minutes<=0)continue;
       total+=minutes;
       sessionCount++;
       if(minutes>longest)longest=minutes;
@@ -1450,7 +1451,6 @@ body.sheet-open{
       var monthKey=dateKeys[di].slice(0,7);
       activeByMonth[monthKey]=(activeByMonth[monthKey]||0)+1;
     }
-    var todayKey=localDate(new Date());
     var cutoffObj=dateObj(todayKey);cutoffObj.setDate(cutoffObj.getDate()-29);
     var cutoffKey=localDate(cutoffObj);
     var last30Total=0,last30Sessions=0,last30ActiveDays=0,bestDayDate='',bestDayTotal=0;
@@ -2196,6 +2196,11 @@ body.sheet-open{
     if(!minutes){showToast('Укажи время больше 0 минут');return}
 
     var targetDate=calendarDate||currentDate;
+    var todayKey=localDate(new Date());
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(targetDate)||targetDate>todayKey){
+      showToast('Нельзя добавить запись за будущую дату');
+      return;
+    }
     var entry={
       id:uid(),
       habitId:chosenHabit,
@@ -2306,7 +2311,7 @@ body.sheet-open{
   }
 
   function parseSheetImport(textValue,baseMonth){
-    var lines=String(textValue||'').replace(/\r/g,'').split('\n'),errors=0,merged={},skipped=0;
+    var lines=String(textValue||'').replace(/\r/g,'').split('\n'),errors=0,merged={},skipped=0,todayKey=localDate(new Date());
     for(var i=0;i<lines.length;i++){
       var line=lines[i].trim();if(!line)continue;
       var parts=line.split('\t');
@@ -2318,9 +2323,9 @@ body.sheet-open{
       var date=parseImportDate(first,baseMonth);
       var numericText=second.replace(/\s/g,'').replace(/[^\d,.-]/g,'').replace(',','.');
       var minutes=Number(numericText);
-      if(!date||!isFinite(minutes)||minutes<0){errors++;continue}
+      if(!date||date>todayKey||!isFinite(minutes)||minutes<=0){errors++;continue}
       var rounded=Math.round(minutes);
-      if(rounded<0){errors++;continue}
+      if(rounded<=0){errors++;continue}
       merged[date]=(merged[date]||0)+rounded;
     }
     var dates=Object.keys(merged).sort(),rows=[];
