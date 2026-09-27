@@ -584,21 +584,29 @@ body.sheet-open{
   z-index:520;
   left:50%;
   bottom:calc(100% + 8px);
-  width:min(270px,calc(100vw - 28px));
-  padding:12px 13px;
-  border-radius:15px;
-  background:rgba(25,28,42,.96);
+  width:min(310px,calc(100vw - 28px));
+  max-height:min(420px,calc(100vh - 40px));
+  overflow:auto;
+  padding:13px;
+  border-radius:20px;
+  background:rgba(25,28,42,.97);
   color:#fff;
   box-shadow:0 16px 38px rgba(18,22,42,.24),inset 0 1px 0 rgba(255,255,255,.08);
   font-size:11px;
-  line-height:1.48;
-  white-space:pre-line;
+  line-height:1.4;
   pointer-events:none;
   opacity:0;
   visibility:hidden;
   transform:translateX(calc(-50% + var(--tip-shift,0px))) translateY(7px) scale(.985);
   transition:opacity .16s ease,transform .16s ease
 }
+.tooltip-head{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;font-weight:600}
+.tooltip-head-total{font-weight:500;color:rgba(255,255,255,.68);white-space:nowrap}
+.tooltip-list{display:grid;gap:6px;margin-top:10px}
+.tooltip-row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0}
+.tooltip-habit{min-width:0;flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(255,255,255,.94)}
+.tooltip-minutes{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:23px;padding:0 8px;box-sizing:border-box;border-radius:999px;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;flex:none}
+.tooltip-empty{margin-top:8px;color:rgba(255,255,255,.64)}
 .calendar-hover-note.active{opacity:1;visibility:visible;transform:translateX(calc(-50% + var(--tip-shift,0px))) translateY(0) scale(1)}
 .calendar-hover-note.below{top:calc(100% + 8px);bottom:auto}
 @media (hover:hover){.calendar-cell:hover{transform:translateY(-1px);background:rgba(255,255,255,.78)}}
@@ -606,7 +614,8 @@ body.sheet-open{
 @media(max-width:560px){.calendar-cell{min-height:66px;padding:7px 5px}.calendar-color-stack{margin-top:7px}.calendar-view-sub{font-size:10px}.records-habit-filter-button{width:min(210px,100%);flex:1 1 170px}.records-table-head{display:none}.record-row{grid-template-columns:18px 8px minmax(0,1fr) auto minmax(0,1fr) auto}.record-info{grid-column:3;grid-row:1}.record-history-time{grid-column:4;grid-row:1}.record-history-note{grid-column:3 / span 3;grid-row:2}.record-actions{grid-column:6;grid-row:1 / span 2;flex-direction:column;align-items:stretch}
 .record-edit,.record-delete{width:64px;min-width:64px}
 .history-foot{font-size:9px}}
-@media(max-width:420px){.calendar-view-nav{grid-template-columns:minmax(0,1fr) 72px 34px 34px}.calendar-filter-button{grid-column:1 / -1}.records-toolbar{align-items:stretch}.records-habit-filter-button{width:100%;order:3}.records-selection-count{margin-left:auto}.history-foot{align-items:flex-start;flex-direction:column}}
+@media(max-width:420px){.calendar-hover-note{width:min(280px,calc(100vw - 28px))}
+.calendar-view-nav{grid-template-columns:minmax(0,1fr) 72px 34px 34px}.calendar-filter-button{grid-column:1 / -1}.records-toolbar{align-items:stretch}.records-habit-filter-button{width:100%;order:3}.records-selection-count{margin-left:auto}.history-foot{align-items:flex-start;flex-direction:column}}
 .secondary-action{border:1px solid rgba(255,255,255,.74);background:rgba(255,255,255,.50);border-radius:12px;padding:9px 12px;font-weight:500;color:var(--ink)}
 .toast-inner{display:flex;align-items:center;gap:12px}
 .toast-undo{border:0;background:#fff;color:#20233a;border-radius:8px;padding:6px 9px;font:inherit;font-size:11px;font-weight:600;white-space:nowrap}
@@ -638,10 +647,9 @@ body.sheet-open{
 .records-selection-count{font-size:10px;color:var(--muted);white-space:nowrap}
 .records-list{display:grid;gap:8px}
 .record-row{
-  display:grid;
-  grid-template-columns:18px 8px minmax(0,1fr) auto auto;
+  display:flex;
+  align-items:flex-start;
   gap:10px;
-  align-items:start;
   min-width:0;
   padding:13px 12px;
   border:1px solid rgba(30,34,50,.07);
@@ -649,37 +657,35 @@ body.sheet-open{
   background:rgba(255,255,255,.46);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.78);
 }
-.record-row:first-child{border-top:1px solid rgba(30,34,50,.07);padding-top:13px}
-.record-select{width:18px;height:18px;display:grid;place-items:center;margin-top:1px}
+.record-select{width:18px;height:18px;display:grid;place-items:center;flex:none;margin-top:1px}
 .record-select input{position:absolute;opacity:0;pointer-events:none}
 .record-select span{width:18px;height:18px;border-radius:6px;border:1.5px solid rgba(104,109,128,.34);background:rgba(255,255,255,.60);box-shadow:inset 0 1px 0 rgba(255,255,255,.85);transition:background-color .12s ease,border-color .12s ease,transform .12s ease}
 .record-select input:checked+span{border-color:var(--blue);background:var(--blue);transform:scale(1.02)}
 .record-select input:checked+span::after{content:"✓";display:block;color:#fff;font-size:11px;line-height:16px;text-align:center;font-weight:700}
-.record-dot{width:8px;height:8px;margin-top:5px;border-radius:50%;display:block;box-shadow:0 2px 5px rgba(35,42,77,.14)}
-.record-info{min-width:0}
-.record-name{font-size:13px;font-weight:600;line-height:1.25;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere}
-.record-name:hover{cursor:default}
+.record-dot{width:8px;height:8px;margin-top:5px;border-radius:50%;display:block;flex:none;box-shadow:0 2px 5px rgba(35,42,77,.14)}
+.record-info{min-width:0;flex:1 1 auto}
+.record-name{
+  font-size:13px;
+  font-weight:600;
+  line-height:1.28;
+  color:var(--ink);
+  overflow-wrap:anywhere;
+}
 .record-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:5px;font-size:10px;color:var(--muted)}
 .record-meta-sep{opacity:.45}
 .record-type{display:inline-flex;align-items:center;gap:5px}
 .record-type-dot{width:5px;height:5px;border-radius:50%;display:inline-block;flex:none}
 .record-history-note{
-  grid-column:3;
   margin-top:7px;
   min-width:0;
   font-size:11px;
-  line-height:1.4;
+  line-height:1.42;
   color:#707482;
-  display:-webkit-box;
-  -webkit-box-orient:vertical;
-  -webkit-line-clamp:2;
-  overflow:hidden;
   overflow-wrap:anywhere;
 }
-.record-expandable{cursor:default}
-.record-expandable.is-expanded{display:block;-webkit-line-clamp:unset;white-space:normal;overflow:visible}
 .record-history-time{
-  min-width:64px;
+  flex:none;
+  width:70px;
   padding-top:1px;
   font-size:13px;
   font-weight:600;
@@ -693,11 +699,11 @@ body.sheet-open{
   align-items:center;
   justify-content:flex-end;
   gap:6px;
-  white-space:nowrap;
+  flex:none;
 }
-.record-edit,.record-delete{width:58px;min-width:58px;padding:7px 8px;white-space:nowrap;font-size:11px}
-.load-more{display:block;margin:10px auto 0}
+.record-edit,.record-delete{width:62px;min-width:62px;padding:7px 8px;white-space:nowrap;font-size:11px}
 .history-foot{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:9px;color:var(--muted)}
+.load-more{display:block;margin:10px auto 0}
 @media(max-width:560px){
   .calendar-cell{min-height:66px;padding:7px 5px}
   .calendar-color-stack{margin-top:7px}
@@ -707,15 +713,14 @@ body.sheet-open{
   .records-filter-wrap{width:100%;margin-left:0}
   .records-habit-filter-button{width:100%;flex:1 1 auto}
   .records-list{gap:7px}
-  .record-row{
-    grid-template-columns:18px 8px minmax(0,1fr) auto;
-    gap:8px;
-    padding:12px 10px;
-  }
+  .record-row{display:grid;grid-template-columns:18px 8px minmax(0,1fr) auto;gap:8px;padding:12px 10px}
+  .record-select{grid-column:1;grid-row:1 / span 3}
+  .record-dot{grid-column:2;grid-row:1}
   .record-info{grid-column:3;grid-row:1}
-  .record-history-time{grid-column:4;grid-row:1;min-width:56px;font-size:12px}
+  .record-history-time{grid-column:4;grid-row:1;width:auto;min-width:56px;font-size:12px}
   .record-history-note{grid-column:3 / span 2;grid-row:2;margin-top:6px}
   .record-actions{grid-column:3 / span 2;grid-row:3;justify-content:flex-start;padding-top:3px}
+  .record-edit,.record-delete{width:auto;min-width:0}
   .record-history-time-label{text-align:right}
   .history-foot{align-items:flex-start;flex-direction:column}
 }
@@ -723,7 +728,6 @@ body.sheet-open{
   .records-select-actions{gap:5px}
   .records-action{padding:7px 8px}
   .record-row{grid-template-columns:18px 8px minmax(0,1fr) auto}
-  .record-history-note{grid-column:3 / span 2}
 }
 .empty{padding:8px 0;font-size:12px;color:var(--muted)}
 
@@ -776,7 +780,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.58</div>
+<div class="app-version" aria-label="Версия">v0.3.59</div>
 
 <main class="shell">
   <header class="top">
@@ -1868,18 +1872,18 @@ body.sheet-open{
       var type=TYPE_OPTIONS.find(function(t){return t.id===e.type});
       var typeLabel=type?type.label:(e.type||'Запись');
       var typeColor=type?(type.chartColor||COLOR_BY_ID[type.defaultColor]||'#6e73ff'):color;
-      var noteHtml=displayNote?'<div class="record-history-note record-expandable" data-expand-record title="'+clean(displayNote)+'">'+clean(displayNote)+'</div>':'';
+      var noteHtml=displayNote?'<div class="record-history-note" title="'+clean(displayNote)+'">'+clean(displayNote)+'</div>':'';
       return '<div class="record-row">'+selector+
         '<span class="record-dot" style="background:'+color+'"></span>'+
         '<div class="record-info">'+
-          '<div class="record-name record-expandable" data-expand-record title="'+clean(displayName)+'">'+clean(displayName)+'</div>'+
+          '<div class="record-name" title="'+clean(displayName)+'">'+clean(displayName)+'</div>'+
           '<div class="record-meta"><span>'+dateText+'</span><span class="record-meta-sep">·</span><span class="record-type"><i class="record-type-dot" style="background:'+typeColor+'"></i>'+clean(typeLabel)+'</span></div>'+
           noteHtml+
         '</div>'+
         '<div class="record-history-time">'+fmt(e.minutes)+'<span class="record-history-time-label">время</span></div>'+
         '<div class="record-actions">'+
-          (habit?'<button class="secondary-action record-edit" data-edit-entry="'+clean(e.id)+'">Изменить</button>':'')+
-          '<button class="secondary-action record-delete" data-remove-entry="'+clean(e.id)+'">Удалить</button>'+
+          (habit?'<button class="secondary-action record-edit" data-edit-entry="'+clean(e.id)+'" aria-label="Изменить запись">Изменить</button>':'')+
+          '<button class="secondary-action record-delete" data-remove-entry="'+clean(e.id)+'" aria-label="Удалить запись">Удалить</button>'+
         '</div>'+
       '</div>';
     }).join('')||'<div class="empty">Нет записей.</div>';
@@ -1913,13 +1917,34 @@ body.sheet-open{
     return names[d.getMonth()]+' '+d.getFullYear();
   }
 
-  function calendarTooltip(date,stats){
-    var lines=[formatFullDate(date)+' · '+fmt(stats.byDate[date]||0)],habitTotals=stats.byDateHabit[date]||{},habitMap={};
+  function habitColorId(habit){
+    if(habit&&habit.color&&COLOR_BY_ID[habit.color])return habit.color;
+    var preset=presetForHabit(habit?habit.name:'')||{};
+    return preset.color&&COLOR_BY_ID[preset.color]?preset.color:'blue';
+  }
+  function tooltipColorText(colorId){
+    return colorId==='yellow'?'#2f2b1a':'#fff';
+  }
+  function calendarTooltip(date,stats,filteredHabitId){
+    var total=stats.byDate[date]||0,habitTotals=stats.byDateHabit[date]||{},habitMap={};
     for(var i=0;i<habits.length;i++)habitMap[habits[i].id]=habits[i];
-    var ids=Object.keys(habitTotals).sort(function(a,b){return habitTotals[b]-habitTotals[a]});
-    for(var j=0;j<ids.length;j++)lines.push((habitMap[ids[j]]?habitMap[ids[j]].name:'Удаленная привычка')+': '+fmt(habitTotals[ids[j]]));
-    if(lines.length===1)lines.push('Нет записей');
-    return lines.join('\n');
+    var ids=Object.keys(habitTotals).filter(function(id){
+      return filteredHabitId==='*'||id===filteredHabitId;
+    }).sort(function(a,b){return habitTotals[b]-habitTotals[a]});
+    var visibleTotal=filteredHabitId==='*'?total:(habitTotals[filteredHabitId]||0);
+    var html='<div class="tooltip-head">'+clean(formatFullDate(date))+'<span class="tooltip-head-total">'+fmt(visibleTotal)+'</span></div>';
+    if(!ids.length)return html+'<div class="tooltip-empty">Нет записей</div>';
+    html+='<div class="tooltip-list">';
+    for(var j=0;j<ids.length;j++){
+      var id=ids[j],habit=habitMap[id],minutes=habitTotals[id]||0,colorId=habit?habitColorId(habit):'blue';
+      html+='<div class="tooltip-row"><span class="tooltip-habit" title="'+clean(habit?habit.name:'Удаленная привычка')+'">'+clean(habit?habit.name:'Удаленная привычка')+'</span><span class="tooltip-minutes" style="background:'+COLOR_BY_ID[colorId]+';color:'+tooltipColorText(colorId)+'">'+Math.round(minutes)+'</span></div>';
+    }
+    html+='</div>';
+    return html;
+  }
+
+  function calendarTooltipFiltered(date,stats){
+    return calendarTooltip(date,stats,calendarFilterHabitId);
   }
 
   function positionCalendarHoverNote(cell){
@@ -1979,8 +2004,7 @@ body.sheet-open{
         stack+='<span class="calendar-color-segment" style="background:'+COLOR_BY_ID[colorId]+';flex:'+Math.max(.15,ratio)+'"></span>';
       }
       var cls='calendar-cell'+(muted?' muted':'')+(total?' has-data':'')+(date===today?' today':'');
-      var tooltipAttr=total?' data-calendar-tooltip="'+clean(calendarTooltipFiltered(date,stats))+'"':'';
-      html+='<div class="'+cls+'" data-calendar-date="'+date+'"'+tooltipAttr+'><div class="calendar-day-number">'+day+'</div><div class="calendar-day-total">'+(total?fmt(total):'')+'</div><div class="calendar-color-stack">'+stack+'</div></div>';
+      html+='<div class="'+cls+'" data-calendar-date="'+date+'"><div class="calendar-day-number">'+day+'</div><div class="calendar-day-total">'+(total?fmt(total):'')+'</div><div class="calendar-color-stack">'+stack+'</div></div>';
     }
     $('monthCalendar').innerHTML=html;
   }
@@ -2015,7 +2039,7 @@ body.sheet-open{
     chartHoverDay=day;
     chartHoverTimer=setTimeout(function(){
       if(chartHoverDay!==day)return;
-      $('chartDayHoverNote').textContent=calendarTooltip(date,stats);
+      $('chartDayHoverNote').innerHTML=calendarTooltip(date,stats);
       positionChartHoverNote(day);
     },550);
   });
@@ -2036,7 +2060,7 @@ body.sheet-open{
     calendarHoverCell=cell;
     calendarHoverTimer=setTimeout(function(){
       if(calendarHoverCell!==cell)return;
-      $('calendarHoverNote').textContent=cell.getAttribute('data-calendar-tooltip')||'Нет записей';
+      $('calendarHoverNote').innerHTML=calendarTooltipFiltered(hoverDate,getStats());
       positionCalendarHoverNote(cell);
     },550);
   });
@@ -2995,12 +3019,6 @@ body.sheet-open{
     if(more){
       entryRenderLimit+=60;
       renderSettings();
-      return;
-    }
-
-    var expandableRecord=e.target.closest('[data-expand-record]');
-    if(expandableRecord){
-      expandableRecord.classList.toggle('is-expanded');
       return;
     }
 
