@@ -705,7 +705,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.45</div>
+<div class="app-version" aria-label="Версия">v0.3.46</div>
 
 <main class="shell">
   <header class="top">
@@ -2259,41 +2259,40 @@ body.sheet-open{
     var v=String(value||'').trim(),m,base=String(baseMonth||currentDate).match(/^(\d{4})-(\d{1,2})$/),baseYear=base?+base[1]:dateObj(currentDate).getFullYear(),baseMonthIndex=base?+base[2]-1:dateObj(currentDate).getMonth();
     if(!v)return null;
 
-    // Google Sheets may copy a date as a serial number.
-    if(/^\d{4,6}$/.test(v)){
+    // Google Sheets serial date.
+    if(/^\d{4,6}(?:\.0+)?$/.test(v)){
       var serial=Number(v);
       if(serial>20000&&serial<100000){
-        var serialDate=new Date(Date.UTC(1899,11,30)+serial*86400000);
+        var serialDate=new Date(Date.UTC(1899,11,30)+Math.floor(serial)*86400000);
         return localDate(new Date(serialDate.getUTCFullYear(),serialDate.getUTCMonth(),serialDate.getUTCDate()));
       }
     }
 
-    m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    // ISO date, optionally followed by a time.
+    m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s].*)?$/);
     if(m){
-      var y=+m[1],mo=+m[2],d=+m[3],date=new Date(y,mo-1,d);
-      return date.getFullYear()===y&&date.getMonth()===mo-1&&date.getDate()===d?localDate(date):null;
-    }
-    m=v.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/);
-    if(m){
-      var first=+m[1],second=+m[2],year=+m[3];if(year<100)year+=2000;
-      var separator=v.indexOf('/')>=0?'slash':(v.indexOf('.')>=0?'dot':'dash');
-      var day=first,month=second;
-      if((separator==='slash'||separator==='dash')&&second>12&&first<=12){month=first;day=second}
-      var date2=new Date(year,month-1,day);
-      return date2.getFullYear()===year&&date2.getMonth()===month-1&&date2.getDate()===day?localDate(date2):null;
+      var y=+m[1],mo=+m[2],d=+m[3],isoDate=new Date(y,mo-1,d);
+      return isoDate.getFullYear()===y&&isoDate.getMonth()===mo-1&&isoDate.getDate()===d?localDate(isoDate):null;
     }
 
-    // Date without a year, e.g. 26.09 or 9/26.
-    m=v.match(/^(\d{1,2})[.\/-](\d{1,2})$/);
+    // Russian / day-first date, with optional time.
+    m=v.match(/^(\d{1,2})[.\/]?(\d{1,2})[.](\d{2,4})(?:[\sT].*)?$/);
     if(m){
-      var a=+m[1],b=+m[2],dayNo=a,monthNo=b;
-      if(b>12&&a<=12){monthNo=a;dayNo=b}
+      var day=+m[1],month=+m[2],year=+m[3];if(year<100)year+=2000;
+      var fullDate=new Date(year,month-1,day);
+      return fullDate.getFullYear()===year&&fullDate.getMonth()===month-1&&fullDate.getDate()===day?localDate(fullDate):null;
+    }
+
+    // Dates without a year are interpreted as DD.MM or DD/MM in the selected/current year.
+    m=v.match(/^(\d{1,2})[.\/](\d{1,2})$/);
+    if(m){
+      var dayNo=+m[1],monthNo=+m[2];
       if(dayNo>31||monthNo<1||monthNo>12)return null;
       var partialDate=new Date(baseYear,monthNo-1,dayNo);
       return partialDate.getFullYear()===baseYear&&partialDate.getMonth()===monthNo-1&&partialDate.getDate()===dayNo?localDate(partialDate):null;
     }
 
-    // Bare day number: use the selected import month/year.
+    // Bare day number uses the selected import month/year.
     m=v.match(/^(\d{1,2})$/);
     if(m){
       var onlyDay=+m[1];
@@ -2302,30 +2301,31 @@ body.sheet-open{
       return dayDate.getFullYear()===baseYear&&dayDate.getMonth()===baseMonthIndex&&dayDate.getDate()===onlyDay?localDate(dayDate):null;
     }
 
-    var parsed=new Date(v);
-    return isNaN(parsed.getTime())?null:localDate(new Date(parsed.getFullYear(),parsed.getMonth(),parsed.getDate()));
+    // No locale-dependent Date.parse fallback: unknown formats are rejected.
+    return null;
   }
 
   function parseSheetImport(textValue,baseMonth){
-    var lines=String(textValue||'').replace(/\r/g,'').split('\n'),errors=0,merged={};
+    var lines=String(textValue||'').replace(/\r/g,'').split('\n'),errors=0,merged={},skipped=0;
     for(var i=0;i<lines.length;i++){
       var line=lines[i].trim();if(!line)continue;
       var parts=line.split('\t');
       if(parts.length<2)parts=line.split(';');
       if(parts.length<2)parts=line.split(/\s{2,}/);
-      if(parts.length<2)continue;
-      var first=parts[0].trim(),second=parts.slice(1).join(' ').trim();
+      var first=parts[0]?parts[0].trim():'',second=parts[1]?parts[1].trim():'';
+      if((/день|дата|date/i.test(first))&&(!second||/минут|minute|min/i.test(second)))continue;
+      if(parts.length<2||!first||!second){errors++;continue}
       var date=parseImportDate(first,baseMonth);
-      if(!date&&/день|дата|date/i.test(first))continue;
       var numericText=second.replace(/\s/g,'').replace(/[^\d,.-]/g,'').replace(',','.');
       var minutes=Number(numericText);
       if(!date||!isFinite(minutes)||minutes<0){errors++;continue}
       var rounded=Math.round(minutes);
+      if(rounded<0){errors++;continue}
       merged[date]=(merged[date]||0)+rounded;
     }
     var dates=Object.keys(merged).sort(),rows=[];
     for(var j=0;j<dates.length;j++)rows.push({date:dates[j],minutes:merged[dates[j]]});
-    return {rows:rows,errors:errors};
+    return {rows:rows,errors:errors,skipped:skipped};
   }
 
   function persistEntriesBatch(newEntries){
@@ -2358,10 +2358,22 @@ body.sheet-open{
     if(!habit){showToast('Выбери привычку');return}
     if(!confirm('Импортировать '+parsed.rows.length+' '+(parsed.rows.length===1?'строку':'строк')+' в «'+habit.name+'»?'))return;
 
-    var preset=presetForHabit(habit.name)||{};
-    var newEntries=parsed.rows.map(function(row){
-      return {id:uid(),habitId:habit.id,date:row.date,minutes:row.minutes,note:'Импорт из Google Таблиц',type:preset.type||'active',color:preset.color||'blue'};
-    });
+    var preset=presetForHabit(habit.name)||{},existing={};
+    for(var ei=0;ei<entries.length;ei++){
+      var ex=entries[ei];
+      if(ex.habitId===habit.id&&ex.note==='Импорт из Google Таблиц')existing[ex.date+'|'+Number(ex.minutes)]=true;
+    }
+    var skippedDuplicates=0,newEntries=[];
+    for(var ri=0;ri<parsed.rows.length;ri++){
+      var row=parsed.rows[ri],dupKey=row.date+'|'+Number(row.minutes);
+      if(existing[dupKey]){skippedDuplicates++;continue}
+      existing[dupKey]=true;
+      newEntries.push({id:uid(),habitId:habit.id,date:row.date,minutes:row.minutes,note:'Импорт из Google Таблиц',type:preset.type||'active',color:preset.color||'blue'});
+    }
+    if(!newEntries.length){
+      showToast('Все строки уже были импортированы');
+      return;
+    }
 
     entries=entries.concat(newEntries);
     if(!persistEntriesBatch(newEntries)){
@@ -2371,7 +2383,9 @@ body.sheet-open{
     invalidateDataCaches();
     closeImportDialog();
     renderActiveView();
-    showToast('Импортировано '+newEntries.length+' '+(newEntries.length===1?'запись':'записей')+(parsed.errors?'. Пропущено строк: '+parsed.errors:''));
+    var resultNote=parsed.errors?'. Ошибок строк: '+parsed.errors:'';
+    if(skippedDuplicates)resultNote+=' Уже были загружены: '+skippedDuplicates;
+    showToast('Импортировано '+newEntries.length+' '+(newEntries.length===1?'запись':'записей')+resultNote);
   }
   function addHabit(){
     var name=prompt('Название привычки');
