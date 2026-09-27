@@ -720,7 +720,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.56</div>
+<div class="app-version" aria-label="Версия">v0.3.57</div>
 
 <main class="shell">
   <header class="top">
@@ -801,7 +801,7 @@ body.sheet-open{
           <div class="calendar-view-sub" id="calendarRangeLabel"></div>
         </div>
         <div class="calendar-view-nav">
-          <button class="calendar-filter-button" id="calendarFilterButton" type="button" aria-haspopup="listbox" aria-expanded="false"><span id="calendarFilterButtonText">Все привычки</span><span class="filter-chevron" aria-hidden="true"></span></button>
+          <button class="calendar-filter-button" id="calendarFilterButton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="menuPopover"><span id="calendarFilterButtonText">Все привычки</span><span class="filter-chevron" aria-hidden="true"></span></button>
           <button class="calendar-nav-btn calendar-today-btn" id="calendarToday" type="button">Сегодня</button>
           <button class="calendar-nav-btn" id="calendarPrevMonth" type="button" aria-label="Предыдущий месяц">‹</button>
           <button class="calendar-nav-btn" id="calendarNextMonth" type="button" aria-label="Следующий месяц">›</button>
@@ -833,7 +833,7 @@ body.sheet-open{
             <button class="records-action" id="clearEntrySelection" type="button" hidden>Снять</button>
             <button class="records-action danger" id="deleteSelectedEntries" type="button" hidden>Удалить выбранные</button>
           </div>
-          <button class="calendar-filter-button records-habit-filter-button" id="recordsHabitFilterButton" type="button" aria-haspopup="listbox" aria-expanded="false"><span id="recordsHabitFilterButtonText">Все привычки</span><span class="filter-chevron" aria-hidden="true"></span></button>
+          <button class="calendar-filter-button records-habit-filter-button" id="recordsHabitFilterButton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="menuPopover"><span id="recordsHabitFilterButtonText">Все привычки</span><span class="filter-chevron" aria-hidden="true"></span></button>
           <span class="records-selection-count" id="recordsSelectionCount"></span>
         </div>
         <div class="records-table-head"><span></span><span></span><span>Привычка · дата</span><span>Время</span><span>Заметка</span><span></span></div>
@@ -871,12 +871,12 @@ body.sheet-open{
 
       <div class="field">
         <span class="field-label">Привычка</span>
-        <button class="custom-select" id="habitButton" type="button" aria-haspopup="listbox" aria-expanded="false"><span id="habitButtonText">Бухгалтерия</span><span class="chevron">⌄</span></button>
+        <button class="custom-select" id="habitButton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="menuPopover"><span id="habitButtonText">Бухгалтерия</span><span class="chevron">⌄</span></button>
       </div>
 
       <div class="field">
         <span class="field-label">Тип записи</span>
-        <button class="custom-select" id="typeButton" type="button" aria-haspopup="listbox" aria-expanded="false"><span id="typeButtonText">Активное обучение</span><span class="chevron">⌄</span></button>
+        <button class="custom-select" id="typeButton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="menuPopover"><span id="typeButtonText">Активное обучение</span><span class="chevron">⌄</span></button>
       </div>
 
       <label class="field">
@@ -891,7 +891,7 @@ body.sheet-open{
 
       <div class="field">
         <span class="field-label">Цвет</span>
-        <button class="custom-select" id="colorButton" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <button class="custom-select" id="colorButton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="menuPopover">
           <span class="color-row"><span class="color-dot" id="colorDot"></span><span id="colorButtonText">Желтый</span></span>
           <span class="chevron">⌄</span>
         </button>
@@ -921,7 +921,7 @@ body.sheet-open{
     <div class="data-help">Скопируй сюда два столбика из Google Таблиц или другой таблицы: <b>день</b> и <b>количество минут</b>. Поддерживаются полные даты, даты без года и числовые даты Google Таблиц. Это вставка данных из таблицы, а не прямое подключение к Google Sheets. Если в первом столбце указан только номер дня, ниже выбери нужный месяц.<br><br>Пример:<br><code>26.09.2026&nbsp;&nbsp;&nbsp;&nbsp;45</code><br><code>27.09.2026&nbsp;&nbsp;&nbsp;&nbsp;60</code></div>
     <div class="field">
       <span class="field-label">Привязать импорт к привычке</span>
-      <button class="custom-select" id="importHabitButton" type="button" aria-haspopup="listbox" aria-expanded="false"><span id="importHabitButtonText">Выбрать привычку</span><span class="chevron">⌄</span></button>
+      <button class="custom-select" id="importHabitButton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="menuPopover"><span id="importHabitButtonText">Выбрать привычку</span><span class="chevron">⌄</span></button>
       <select class="sr-only" id="importHabit" aria-hidden="true" tabindex="-1"></select>
     </div>
     <label class="field" style="margin-top:12px"><span class="field-label">Месяц для строк только с номером дня</span><input class="data-select" id="importMonth" type="month"></label>
@@ -2057,6 +2057,7 @@ body.sheet-open{
 
     menu.innerHTML=menuHTMLCache[kind];
     menu.setAttribute('role','listbox');
+    menu.setAttribute('aria-labelledby',button.id);
     menu.setAttribute('aria-label',kind==='habit'?'Привычки':kind==='type'?'Типы':'Цвета');
     menuOptionCache.habit=[];menuOptionCache.type=[];menuOptionCache.color=[];
     if(kind==='habit')menuOptionCache.habit=menu.querySelectorAll('[data-habit-option]');
@@ -2084,6 +2085,7 @@ body.sheet-open{
     menu.innerHTML='<div class="menu-section">Привязать к привычке</div>'+
       habits.map(function(h){return '<button class="option" role="option" data-import-habit-option="'+clean(h.id)+'" aria-selected="'+(h.id===$('importHabit').value?'true':'false')+'" tabindex="'+(h.id===$('importHabit').value?'0':'-1')+'">'+clean(h.name)+'</button>';}).join('');
     menu.setAttribute('role','listbox');
+    menu.setAttribute('aria-labelledby','importHabitButton');
     menu.setAttribute('aria-label','Привычка для импорта');
     positionMenu(button);
     button.classList.add('open');
@@ -2207,7 +2209,6 @@ body.sheet-open{
     $('dateButtonText').textContent=formatFullDate(currentDate);
     closeMenus();
     rememberModalFocus();
-    rememberModalFocus();
     $('sheet').hidden=false;
     document.body.classList.add('sheet-open');
     requestAnimationFrame(function(){if(!$('sheet').hidden)$('minutes').focus()});
@@ -2295,6 +2296,7 @@ body.sheet-open{
     $('sheetTitle').textContent='Изменить запись';
     $('saveEntry').textContent='Сохранить изменения';
     closeMenus();
+    rememberModalFocus();
     $('sheet').hidden=false;
     document.body.classList.add('sheet-open');
     requestAnimationFrame(function(){if(!$('sheet').hidden)$('minutes').focus()});
@@ -2773,7 +2775,7 @@ body.sheet-open{
   }
   function modalFocusable(dialog){
     return Array.prototype.slice.call(dialog.querySelectorAll('button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),[href],[tabindex]:not([tabindex="-1"])')).filter(function(el){
-      return !el.closest('.sr-only')&&el.offsetParent!==null;
+      return el.offsetParent!==null&&!el.closest('.sr-only');
     });
   }
   var lastModalFocus=null;
@@ -2783,21 +2785,40 @@ body.sheet-open{
   function trapModalFocus(e,dialog){
     if(!dialog||dialog.hidden)return false;
     var focusables=modalFocusable(dialog);
-    if(!focusables.length)return false;
+    if(!focusables.length||e.key!=='Tab')return false;
     var first=focusables[0],last=focusables[focusables.length-1];
-    if(e.key==='Tab'){
-      if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();return true}
-      if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();return true}
-    }
+    if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();return true}
+    if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();return true}
     return false;
   }
   function restoreModalFocus(){
     if(lastModalFocus&&document.contains(lastModalFocus)&&typeof lastModalFocus.focus==='function')lastModalFocus.focus();
     lastModalFocus=null;
   }
+  function activeModalDialog(){
+    return !$('dataTransfer').hidden?$('dataTransfer').querySelector('.data-dialog'):(!$('sheet').hidden?$('sheet'):null);
+  }
+  function activeMenuTrigger(){
+    var buttonId=activeMenuKind==='habit'?'habitButton':activeMenuKind==='type'?'typeButton':activeMenuKind==='color'?'colorButton':activeMenuKind==='calendarHabit'?'calendarFilterButton':activeMenuKind==='recordsHabit'?'recordsHabitFilterButton':'importHabitButton';
+    return $(buttonId);
+  }
+  function moveTabFromMenu(e){
+    var dialog=activeModalDialog(),trigger=activeMenuTrigger();
+    if(!dialog||!trigger)return false;
+    var focusables=modalFocusable(dialog),idx=focusables.indexOf(trigger);
+    if(idx<0)return false;
+    e.preventDefault();
+    closeMenus();
+    var nextIndex=e.shiftKey?idx-1:idx+1;
+    if(nextIndex<0)nextIndex=focusables.length-1;
+    if(nextIndex>=focusables.length)nextIndex=0;
+    focusables[nextIndex].focus();
+    return true;
+  }
   document.addEventListener('keydown',function(e){
     if(e.key==='Escape'&&activeMenuKind){closeMenus();return}
     if(activeMenuKind){
+      if(e.key==='Tab'&&moveTabFromMenu(e))return;
       if(e.key==='ArrowDown'){e.preventDefault();moveMenuFocus(1);return}
       if(e.key==='ArrowUp'){e.preventDefault();moveMenuFocus(-1);return}
       if(e.key==='Home'){e.preventDefault();focusMenuEdge(true);return}
@@ -2809,7 +2830,7 @@ body.sheet-open{
     }
     if(e.key==='Escape'&&!$('dataTransfer').hidden){closeImportDialog();return}
     if(e.key==='Escape'&&!$('sheet').hidden){closeSheet();return}
-    var activeDialog=!$('dataTransfer').hidden?$('dataTransfer').querySelector('.data-dialog'):(!$('sheet').hidden?$('sheet'):null);
+    var activeDialog=activeModalDialog();
     if(activeDialog&&trapModalFocus(e,activeDialog))return;
     if((e.ctrlKey||e.metaKey)&&e.key==='Enter'&&!$('sheet').hidden)saveEntry();
   });
