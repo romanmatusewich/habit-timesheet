@@ -238,58 +238,109 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .type-mini-item{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px}
 .type-mini-left{display:flex;align-items:center;gap:5px;min-width:0}
 .type-mini-dot{width:7px;height:7px;border-radius:50%;flex:none}
-/* Flat analytics surface: scoped to Statistics only */
+/* Flat analytics dashboard: scoped to Statistics only */
 #statsView{
-  background:#f5f6f8;
+  background:#f3f4f6;
   margin:0 -14px;
-  padding:0 14px 84px;
+  padding:0 14px 96px;
   min-height:100vh;
 }
-#statsView .stats-section{margin-top:28px}
-#statsView .stats-title{color:#171a21;font-weight:650}
-#statsView .stat-card{
+#statsView .stats-dashboard{padding-top:28px}
+#statsView .analytics-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:0 2px 16px}
+#statsView .analytics-title{margin:0;font-size:26px;line-height:1;font-weight:650;letter-spacing:-.04em;color:#171a21}
+#statsView .analytics-subtitle{margin:7px 0 0;max-width:470px;font-size:11px;line-height:1.45;color:#7b808c}
+#statsView .analytics-period{
+  flex:none;padding:7px 11px;border:1px solid #dfe3e8;border-radius:9px;background:#fff;
+  font-size:10px;font-weight:550;color:#5d6370;
+}
+#statsView .analytics-top-grid{display:grid;grid-template-columns:minmax(0,1.72fr) minmax(190px,.78fr);gap:12px;align-items:stretch}
+#statsView .analytics-panel{
+  min-width:0;
   background:#fff;
-  border:1px solid #e3e6eb;
-  box-shadow:0 4px 14px rgba(27,33,46,.055);
+  border:1px solid #e1e4e8;
+  border-radius:17px;
+  box-shadow:0 5px 16px rgba(27,33,46,.045);
 }
-#statsView .stat-mini{
-  background:#fff;
-  border:1px solid #e3e6eb;
-  box-shadow:0 4px 12px rgba(27,33,46,.045);
+#statsView .heatmap-panel{padding:17px 17px 14px}
+#statsView .analytics-panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+#statsView .analytics-panel-title{font-size:13px;font-weight:650;color:#252933}
+#statsView .analytics-panel-note{margin-top:4px;font-size:9px;line-height:1.35;color:#878d98}
+#statsView .heatmap-legend{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-top:2px;font-size:9px;color:#747a86;white-space:nowrap}
+#statsView .heat-legend-dot{width:8px;height:8px;display:inline-block;border-radius:2px;margin-right:4px;vertical-align:-1px}
+#statsView .heat-blue{background:#5962dd}
+#statsView .heat-yellow{background:#e3b83f}
+#statsView .stats-heatmap{display:grid;grid-template-columns:26px repeat(12,minmax(0,1fr));gap:5px;margin-top:16px;align-items:center}
+#statsView .heat-row-labels{display:grid;gap:5px}
+#statsView .heat-row-label{height:12px;font-size:8px;line-height:12px;color:#a0a5ae;text-align:left}
+#statsView .heat-week{display:grid;grid-template-rows:repeat(7,12px);gap:5px}
+#statsView .heat-cell{width:100%;min-width:0;height:12px;border-radius:3px;background:#eef0f3;border:1px solid #eceef1}
+#statsView .heat-cell.filled{border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.22)}
+#statsView .heat-week-labels{display:grid;grid-template-columns:26px repeat(12,minmax(0,1fr));gap:5px;margin-top:7px}
+#statsView .heat-week-labels span{font-size:7px;line-height:1.1;color:#9aa0aa;text-align:center}
+#statsView .heatmap-scale{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:9px;font-size:8px;color:#9aa0aa}
+#statsView .heatmap-scale>div{display:flex;gap:3px}
+#statsView .heatmap-scale i{width:10px;height:7px;border-radius:2px;background:#edf0f3}
+#statsView .heatmap-scale i:nth-child(2){background:#c6c9ef}
+#statsView .heatmap-scale i:nth-child(3){background:#7c83e6}
+#statsView .heatmap-scale i:nth-child(4){background:#4e57d2}
+#statsView .analytics-kpi-stack{display:grid;gap:8px}
+#statsView .analytics-kpi{display:flex;flex-direction:column;justify-content:center;min-height:102px;padding:15px 16px;background:#fff;border:1px solid #e1e4e8;border-radius:17px;box-shadow:0 5px 16px rgba(27,33,46,.045)}
+#statsView .analytics-kpi-accent{background:#1e5f42;border-color:#1e5f42;color:#fff;box-shadow:none}
+#statsView .analytics-kpi-label{font-size:9px;color:#878d98;font-weight:500}
+#statsView .analytics-kpi-accent .analytics-kpi-label{color:rgba(255,255,255,.72)}
+#statsView .analytics-kpi-value{margin-top:6px;font-size:26px;line-height:1;font-weight:650;letter-spacing:-.04em;color:#1c2027}
+#statsView .analytics-kpi-accent .analytics-kpi-value{color:#fff}
+#statsView .analytics-kpi-note{margin-top:5px;font-size:9px;color:#8a909b}
+#statsView .analytics-kpi-accent .analytics-kpi-note{color:rgba(255,255,255,.72)}
+#statsView .analytics-bottom-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:12px;margin-top:12px}
+#statsView .analytics-bars-panel{padding:16px}
+#statsView .analytics-total-note{font-size:11px;color:#777e89;font-weight:600;white-space:nowrap}
+#statsView .analytics-bars{display:grid;gap:8px;margin-top:14px}
+#statsView .analytics-bar-row{display:grid;grid-template-columns:minmax(115px,1.25fr) minmax(80px,1fr) 46px 42px;gap:8px;align-items:center}
+#statsView .analytics-bar-name{display:flex;align-items:center;gap:7px;min-width:0;font-size:10px;color:#30343c}
+#statsView .analytics-bar-name span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#statsView .analytics-bar-track{height:7px;border-radius:999px;background:#eef0f3;overflow:hidden}
+#statsView .analytics-bar-fill{display:block;height:100%;border-radius:inherit;max-width:100%}
+#statsView .analytics-bar-time{font-size:10px;font-weight:600;color:#3b4049;text-align:right;white-space:nowrap}
+#statsView .analytics-bar-share{font-size:9px;color:#9a9fa8;text-align:right;white-space:nowrap}
+#statsView .analytics-detail-panel{margin-top:12px;padding:16px}
+#statsView .analytics-detail-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-top:13px}
+#statsView .analytics-detail-grid>div{min-width:0;padding-right:10px;border-right:1px solid #eceef1}
+#statsView .analytics-detail-grid>div:last-child{border-right:0}
+#statsView .analytics-detail-grid span{display:block;font-size:8px;color:#8a909b}
+#statsView .analytics-detail-grid b{display:block;margin-top:5px;font-size:15px;line-height:1.05;color:#252a32;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#statsView .analytics-detail-grid small{display:block;margin-top:4px;font-size:8px;color:#9aa0aa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#statsView .analytics-panel,
+#statsView .analytics-kpi{backdrop-filter:none;-webkit-backdrop-filter:none}
+#statsView .stats-charts,#statsView .stats-grid,#statsView .stat-extra-grid,#statsView .breakdown{display:none!important}
+@media(max-width:760px){
+  #statsView .analytics-head{align-items:flex-start;flex-direction:column}
+  #statsView .analytics-period{align-self:flex-start}
+  #statsView .analytics-top-grid,#statsView .analytics-bottom-grid{grid-template-columns:1fr}
+  #statsView .analytics-detail-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
-#statsView .stats-chart-card{
-  background:#fff;
-  border:1px solid #e3e6eb;
-  box-shadow:0 4px 14px rgba(27,33,46,.055);
+@media(max-width:520px){
+  #statsView{margin:0 -12px;padding:0 12px 94px}
+  #statsView .stats-dashboard{padding-top:22px}
+  #statsView .analytics-title{font-size:22px}
+  #statsView .analytics-subtitle{font-size:10px}
+  #statsView .heatmap-panel{padding:14px 13px 12px}
+  #statsView .analytics-kpi{min-height:88px}
+  #statsView .analytics-kpi-value{font-size:23px}
+  #statsView .analytics-bar-row{grid-template-columns:minmax(104px,1fr) minmax(76px,1fr) 44px}
+  #statsView .analytics-bar-share{display:none}
+  #statsView .analytics-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #statsView .analytics-detail-grid>div:nth-child(3){border-right:0}
+  #statsView .heatmap-legend{width:100%}
 }
-#statsView .breakdown{
-  background:#fff;
-  border:1px solid #e3e6eb;
-  box-shadow:0 4px 14px rgba(27,33,46,.055);
+@media(max-width:380px){
+  #statsView .stats-heatmap{grid-template-columns:20px repeat(12,minmax(0,1fr));gap:3px}
+  #statsView .heat-week{gap:3px;grid-template-rows:repeat(7,10px)}
+  #statsView .heat-row-labels{gap:3px}
+  #statsView .heat-row-label{height:10px;line-height:10px;font-size:7px}
+  #statsView .heat-cell{height:10px}
+  #statsView .heat-week-labels{grid-template-columns:20px repeat(12,minmax(0,1fr));gap:3px}
 }
-#statsView .stats-chart-note,
-#statsView .stat-note,
-#statsView .stat-mini-note,
-#statsView .breakdown-head span{color:#7b808c}
-#statsView .stats-chart-title,
-#statsView .breakdown-head strong{color:#252933}
-#statsView .weekly-bar{
-  background:linear-gradient(180deg,#666ef0 0%,#525bdc 100%);
-  box-shadow:none;
-}
-#statsView .habit-stats-bar i{
-  background:var(--row-color,#5d65ff);
-}
-#statsView .habit-stats-bar{background:#edf0f4}
-#statsView .type-donut{box-shadow:0 5px 14px rgba(27,33,46,.08)}
-#statsView .type-donut::after{
-  background:#fff;
-  box-shadow:none;
-}
-#statsView .stats-chart-card,
-#statsView .breakdown,
-#statsView .stat-card,
-#statsView .stat-mini{backdrop-filter:none;-webkit-backdrop-filter:none}
 .stat-label{font-size:12px;color:var(--muted);font-weight:400}
 .stat-value{margin-top:8px;font-size:25px;line-height:1.04;font-weight:600;letter-spacing:-.035em}
 .stat-note{margin-top:4px;font-size:12px;color:var(--muted)}
@@ -705,7 +756,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.41</div>
+<div class="app-version" aria-label="Версия">v0.3.42</div>
 
 <main class="shell">
   <header class="top">
@@ -746,35 +797,89 @@ body.sheet-open{
   </section>
 
   <section id="statsView" class="view">
-    <section class="stats-section" style="margin-top:44px">
-      <h2 class="stats-title">Статистика</h2>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Всего времени</div><div class="stat-value" id="allTotal">0 ч</div><div class="stat-note">за весь период</div></div>
-        <div class="stat-card"><div class="stat-label">Последние 30 дней</div><div class="stat-value" id="last30Total">0 ч</div><div class="stat-note" id="last30ActiveNote">0 активных дней</div></div>
-        <div class="stat-card"><div class="stat-label">Среднее занятие</div><div class="stat-value" id="avgSessionStats">0 мин</div><div class="stat-note" id="sessionCountNote">0 занятий</div></div>
-        <div class="stat-card"><div class="stat-label">Среднее в активный день</div><div class="stat-value" id="avgDay">0 мин</div><div class="stat-note">за весь период</div></div>
-      </div>
-      <div class="stat-extra-grid">
-        <div class="stat-mini"><div class="stat-mini-label">Активных дней</div><div class="stat-mini-value" id="activeDays">0</div><div class="stat-mini-note">за весь период</div></div>
-        <div class="stat-mini"><div class="stat-mini-label">Всего занятий</div><div class="stat-mini-value" id="allSessions">0</div><div class="stat-mini-note">за весь период</div></div>
-        <div class="stat-mini"><div class="stat-mini-label">Самый продуктивный день</div><div class="stat-mini-value" id="bestDayTime">0 мин</div><div class="stat-mini-note" id="bestDayDate">Нет данных</div></div>
-        <div class="stat-mini"><div class="stat-mini-label">Среднее занятие · 30 дней</div><div class="stat-mini-value" id="last30Avg">0 мин</div><div class="stat-mini-note" id="last30SessionNote">0 занятий</div></div>
-      </div>
-      <div class="stats-charts">
-        <div class="stats-chart-card">
-          <div class="stats-chart-title">Динамика по неделям</div>
-          <div class="stats-chart-note">Последние 8 календарных недель</div>
-          <div class="weekly-chart" id="weeklyStatsChart"></div>
-          <div class="weekly-labels" id="weeklyStatsLabels"></div>
+    <section class="stats-dashboard">
+      <div class="analytics-head">
+        <div>
+          <h2 class="analytics-title">Аналитика</h2>
+          <p class="analytics-subtitle">Как распределяется твое время и как меняется ритм занятий</p>
         </div>
-        <div class="stats-chart-card">
-          <div class="stats-chart-title">По типам</div>
-          <div class="stats-chart-note">Распределение времени</div>
-          <div class="type-donut-wrap"><div class="type-donut" id="statsTypeDonut"><div class="type-donut-total" id="statsTypeDonutTotal">0 ч</div></div></div>
-          <div class="type-mini-legend" id="statsTypeMiniLegend"></div>
+        <div class="analytics-period">Последние 12 недель</div>
+      </div>
+
+      <div class="analytics-top-grid">
+        <div class="analytics-panel heatmap-panel">
+          <div class="analytics-panel-head">
+            <div>
+              <div class="analytics-panel-title">Активность</div>
+              <div class="analytics-panel-note">Каждый кубик — один день. Чем насыщеннее цвет, тем больше времени.</div>
+            </div>
+            <div class="heatmap-legend">
+              <span><i class="heat-legend-dot heat-blue"></i> обучение</span>
+              <span><i class="heat-legend-dot heat-yellow"></i> чтение</span>
+            </div>
+          </div>
+          <div id="statsHeatmap" class="stats-heatmap"></div>
+          <div class="heatmap-scale"><span>меньше</span><div><i></i><i></i><i></i><i></i></div><span>больше</span></div>
+        </div>
+
+        <div class="analytics-kpi-stack">
+          <div class="analytics-kpi">
+            <div class="analytics-kpi-label">Всего времени</div>
+            <div class="analytics-kpi-value" id="allTotal">0 ч</div>
+            <div class="analytics-kpi-note">за весь период</div>
+          </div>
+          <div class="analytics-kpi">
+            <div class="analytics-kpi-label">Последние 30 дней</div>
+            <div class="analytics-kpi-value" id="last30Total">0 ч</div>
+            <div class="analytics-kpi-note" id="last30ActiveNote">0 активных дней</div>
+          </div>
+          <div class="analytics-kpi analytics-kpi-accent">
+            <div class="analytics-kpi-label">Регулярность</div>
+            <div class="analytics-kpi-value" id="regularityValue">0%</div>
+            <div class="analytics-kpi-note" id="regularityNote">0 активных дней из 30</div>
+          </div>
         </div>
       </div>
-      <div class="breakdown stats-habits-card" style="margin-top:12px"><div class="breakdown-head"><strong>Распределение по привычкам</strong><span>доля от общего времени</span></div><div class="habit-stats-table-head"><span>Привычка</span><span>Время</span><span>Доля</span></div><div id="statsBreakdown"></div></div>
+
+      <div class="analytics-bottom-grid">
+        <div class="analytics-panel analytics-bars-panel">
+          <div class="analytics-panel-head">
+            <div>
+              <div class="analytics-panel-title">Распределение по привычкам</div>
+              <div class="analytics-panel-note">Вклад каждой привычки в общее время</div>
+            </div>
+            <div class="analytics-total-note" id="habitTotalNote">0 ч</div>
+          </div>
+          <div id="statsHabitBars" class="analytics-bars"></div>
+        </div>
+
+        <div class="analytics-panel analytics-bars-panel">
+          <div class="analytics-panel-head">
+            <div>
+              <div class="analytics-panel-title">По типам занятий</div>
+              <div class="analytics-panel-note">Каким способом ты проводишь время</div>
+            </div>
+          </div>
+          <div id="statsTypeBars" class="analytics-bars"></div>
+        </div>
+      </div>
+
+      <div class="analytics-panel analytics-detail-panel">
+        <div class="analytics-panel-head">
+          <div>
+            <div class="analytics-panel-title">Ключевые показатели</div>
+            <div class="analytics-panel-note">Короткая выжимка по всему периоду</div>
+          </div>
+        </div>
+        <div class="analytics-detail-grid">
+          <div><span>Активных дней</span><b id="activeDays">0</b></div>
+          <div><span>Всего занятий</span><b id="allSessions">0</b></div>
+          <div><span>Среднее занятие</span><b id="avgSessionStats">0 мин</b></div>
+          <div><span>Среднее в активный день</span><b id="avgDay">0 мин</b></div>
+          <div><span>Лучший день</span><b id="bestDayTime">0 мин</b><small id="bestDayDate">Нет данных</small></div>
+          <div><span>Среднее за 30 дней</span><b id="last30Avg">0 мин</b><small id="last30SessionNote">0 занятий</small></div>
+        </div>
+      </div>
     </section>
   </section>
 
@@ -1617,45 +1722,93 @@ body.sheet-open{
     return {parts:parts,gradient:stops.length?'conic-gradient('+stops.join(',')+')':'conic-gradient(#d7dbe5 0deg 360deg)'};
   }
 
+  function hexToRgba(hex,alpha){
+    var h=String(hex||'').replace('#','');
+    if(h.length===3)h=h.split('').map(function(x){return x+x}).join('');
+    var n=parseInt(h,16);
+    if(!isFinite(n))return 'rgba(95,99,255,'+alpha+')';
+    return 'rgba('+(n>>16)+','+((n>>8)&255)+','+(n&255)+','+alpha+')';
+  }
+
+  function renderStatsHeatmap(stats){
+    var endKey=localDate(new Date()),end=dateObj(endKey),dow=(end.getDay()+6)%7;
+    end.setDate(end.getDate()-dow);
+    var start=new Date(end);start.setDate(start.getDate()-11*7);
+    var labels=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+    var maxDay=1;
+    for(var dk=0;dk<13;dk++){
+      for(var di=0;di<7;di++){
+        var dd=new Date(start);dd.setDate(start.getDate()+dk*7+di);
+        var key=localDate(dd),v=stats.byDate[key]||0;
+        if(v>maxDay)maxDay=v;
+      }
+    }
+    var html='<div class="heat-row-labels">';
+    for(var li=0;li<7;li++)html+='<div class="heat-row-label">'+labels[li]+'</div>';
+    html+='</div>';
+    var weekLabels='<span></span>';
+    for(var wi=0;wi<12;wi++){
+      var weekStart=new Date(start);weekStart.setDate(start.getDate()+wi*7);
+      var weekEnd=new Date(weekStart);weekEnd.setDate(weekStart.getDate()+6);
+      var col='<div class="heat-week">';
+      for(var ri=0;ri<7;ri++){
+        var cur=new Date(weekStart);cur.setDate(weekStart.getDate()+ri);
+        var date=localDate(cur),total=stats.byDate[date]||0,color='#5962dd';
+        var byColor=stats.byDateColor[date]||{},colorIds=Object.keys(byColor).sort(function(a,b){return byColor[b]-byColor[a]});
+        if(colorIds.length&&colorIds[0]==='yellow')color='#e3b83f';
+        var alpha=total?(.30+Math.min(.70,total/maxDay*.70)):1;
+        var title=total?formatFullDate(date)+' · '+fmt(total):formatFullDate(date)+' · нет записей';
+        col+='<div class="heat-cell'+(total?' filled':'')+'" title="'+clean(title)+'" style="'+(total?'background:'+color+';opacity:'+alpha.toFixed(2):'')+'"></div>';
+      }
+      col+='</div>';
+      html+=col;
+      weekLabels+='<span>'+String(weekStart.getDate()).padStart(2,'0')+'.'+String(weekStart.getMonth()+1).padStart(2,'0')+'</span>';
+    }
+    var endLabel=new Date(start);endLabel.setDate(start.getDate()+12*7);
+    var finalEnd= new Date(endLabel);finalEnd.setDate(endLabel.getDate()+6);
+    weekLabels+='';
+    $('statsHeatmap').innerHTML=html;
+    var oldLabels=$('statsHeatmap').nextElementSibling;
+    if(oldLabels&&oldLabels.classList.contains('heat-week-labels'))oldLabels.remove();
+    $('statsHeatmap').insertAdjacentHTML('afterend','<div class="heat-week-labels">'+weekLabels+'</div>');
+  }
+
+  function renderStatsBars(stats,total){
+    var habitTotals=stats.habitTotals.filter(function(x){return x.total>0}),habitMax=habitTotals.length?habitTotals[0].total:1;
+    $('habitTotalNote').textContent=fmt(total);
+    $('statsHabitBars').innerHTML=habitTotals.map(function(x){
+      var color=habitColor(x.habit),pct=total?Math.round(x.total/total*100):0;
+      return '<div class="analytics-bar-row"><div class="analytics-bar-name"><span class="color-dot" style="background:'+color+'"></span><span>'+clean(x.habit.name)+'</span></div><div class="analytics-bar-track"><i class="analytics-bar-fill" style="width:'+Math.max(2,Math.round(x.total/habitMax*100))+'%;background:'+color+'"></i></div><div class="analytics-bar-time">'+fmt(x.total)+'</div><div class="analytics-bar-share">'+pct+'%</div></div>';
+    }).join('')||'<div class="empty">Нет данных.</div>';
+
+    var typeRows=TYPE_OPTIONS.map(function(t){return {label:t.label,total:stats.byType[t.id]||0,color:COLOR_BY_ID[t.defaultColor]||'#5962dd'};}).filter(function(x){return x.total>0}).sort(function(a,b){return b.total-a.total});
+    var typeMax=typeRows.length?typeRows[0].total:1;
+    $('statsTypeBars').innerHTML=typeRows.map(function(x){
+      var pct=total?Math.round(x.total/total*100):0;
+      return '<div class="analytics-bar-row"><div class="analytics-bar-name"><span class="color-dot" style="background:'+x.color+'"></span><span>'+clean(x.label)+'</span></div><div class="analytics-bar-track"><i class="analytics-bar-fill" style="width:'+Math.max(2,Math.round(x.total/typeMax*100))+'%;background:'+x.color+'"></i></div><div class="analytics-bar-time">'+fmt(x.total)+'</div><div class="analytics-bar-share">'+pct+'%</div></div>';
+    }).join('')||'<div class="empty">Нет данных.</div>';
+  }
+
   function renderStats(){
     var stats=getStats(),total=stats.total,active=stats.activeDays;
     $('allTotal').textContent=fmt(total);
-    $('activeDays').textContent=active;
-    $('allSessions').textContent=stats.sessionCount;
-    $('avgDay').textContent=fmt(active?total/active:0);
-
-    var avgSession=stats.sessionCount?Math.round(total/stats.sessionCount):0;
-    $('avgSessionStats').textContent=fmt(avgSession);
-    $('sessionCountNote').textContent=stats.sessionCount+' '+(stats.sessionCount===1?'занятие':'занятий');
-
     $('last30Total').textContent=fmt(stats.last30Total||0);
     $('last30ActiveNote').textContent=(stats.last30ActiveDays||0)+' '+(stats.last30ActiveDays===1?'активный день':'активных дней');
+
+    $('regularityValue').textContent=Math.round((stats.last30ActiveDays||0)/30*100)+'%';
+    $('regularityNote').textContent=(stats.last30ActiveDays||0)+' активных дней из 30';
+
+    $('activeDays').textContent=active;
+    $('allSessions').textContent=stats.sessionCount;
+    $('avgSessionStats').textContent=fmt(stats.sessionCount?total/stats.sessionCount:0);
+    $('avgDay').textContent=fmt(active?total/active:0);
+    $('bestDayTime').textContent=fmt(stats.bestDayTotal||0);
+    $('bestDayDate').textContent=stats.bestDayDate?formatFullDate(stats.bestDayDate):'Нет данных';
     $('last30Avg').textContent=fmt(stats.last30Sessions?stats.last30Total/stats.last30Sessions:0);
     $('last30SessionNote').textContent=(stats.last30Sessions||0)+' '+(stats.last30Sessions===1?'занятие':'занятий');
 
-    $('bestDayTime').textContent=fmt(stats.bestDayTotal||0);
-    $('bestDayDate').textContent=stats.bestDayDate?formatFullDate(stats.bestDayDate):'Нет данных';
-
-    $('statsBreakdown').innerHTML=getStatsBreakdownHTML(allTotals());
-
-    var weeks=weeklyStatsTotals(),maxWeek=Math.max(60,Math.max.apply(Math,weeks.map(function(x){return x.total})));
-    $('weeklyStatsChart').innerHTML=weeks.map(function(x){
-      var pct=Math.max(4,Math.round(x.total/maxWeek*100));
-      return '<div class="weekly-bar-wrap"><div class="weekly-bar" style="height:'+pct+'%" title="'+fmt(x.total)+'"></div></div>';
-    }).join('');
-    $('weeklyStatsLabels').innerHTML=weeks.map(function(x){
-      var a=dateObj(x.start),b=dateObj(x.end);
-      var am=a.getDate()+'.'+String(a.getMonth()+1).padStart(2,'0');
-      var bm=b.getDate()+'.'+String(b.getMonth()+1).padStart(2,'0');
-      return '<div class="weekly-label">'+am+'–<br><span class="weekly-label-range">'+bm+'</span></div>';
-    }).join('');
-
-    var donut=typeDonutData(stats.byType,total);
-    $('statsTypeDonut').style.background=donut.gradient;
-    $('statsTypeDonutTotal').textContent=fmt(total);
-    $('statsTypeMiniLegend').innerHTML=donut.parts.slice(0,5).map(function(x){
-      return '<div class="type-mini-item"><div class="type-mini-left"><span class="type-mini-dot" style="background:'+x.color+'"></span><span>'+clean(x.label)+'</span></div><b>'+fmt(x.total)+'</b></div>';
-    }).join('')||'<div class="empty">Нет данных.</div>';
+    renderStatsHeatmap(stats);
+    renderStatsBars(stats,total);
   }
 
   function renderSettings(){
@@ -2439,8 +2592,9 @@ body.sheet-open{
     var d=dateObj(calendarViewDate);d.setDate(1);d.setMonth(d.getMonth()+1);calendarViewDate=localDate(d);renderCalendarView();
   };
   document.getElementById('calendarToday').onclick=function(){calendarViewDate=localDate(new Date());renderCalendarView();};
-  document.getElementById('calendarFilterButton').onclick=function(){showCalendarFilterMenu();};
-  document.getElementById('recordsHabitFilterButton').onclick=function(){showRecordsHabitFilterMenu();};
+  document.getElementById('calendarFilterButton').onclick=function(e){e.stopPropagation();showCalendarFilterMenu();};
+  document.getElementById('recordsHabitFilterButton').onclick=function(e){e.stopPropagation();showRecordsHabitFilterMenu();};
+  document.getElementById('menuPopover').addEventListener('click',function(e){e.stopPropagation();});
 
   document.getElementById('sheet').addEventListener('click',function(e){
     if(e.target===this)closeSheet();
