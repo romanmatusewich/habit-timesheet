@@ -205,7 +205,10 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   display:grid;grid-template-columns:repeat(7,1fr);gap:7px
 }
 .chart-label{font-size:10px;color:var(--muted);text-align:center;font-weight:400}
-.chart-mark{position:absolute;left:0;bottom:76px;font-size:10px;color:var(--muted)}
+.chart-mark{position:absolute;left:0;right:0;bottom:76px;height:14px;font-size:10px;color:var(--muted);pointer-events:none;z-index:2}
+.chart-mark::before{content:"";position:absolute;left:0;right:0;top:7px;border-top:1px dashed rgba(110,116,135,.24)}
+.chart-mark{padding-left:2px;box-sizing:border-box}
+.chart-mark::after{content:"";position:absolute;left:0;top:0;width:28px;height:14px;background:transparent}
 
 .stats-section{margin-top:28px}
 .stats-title{margin:0 2px 11px;font-size:20px;line-height:1.15;font-weight:600;letter-spacing:-.025em}
@@ -228,8 +231,8 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .weekly-bar-wrap{height:100%;flex:1;display:flex;align-items:flex-end;justify-content:center}
 .weekly-bar{width:100%;max-width:18px;min-height:4px;border-radius:7px 7px 4px 4px;background:linear-gradient(180deg,#747aff 0%,#626cf6 36%,#505fe9 68%,#45bff2 100%);box-shadow:0 5px 12px rgba(78,91,235,.12)}
 .weekly-labels{display:grid;grid-template-columns:repeat(8,1fr);gap:7px;margin-top:7px}
-.weekly-label{font-size:9px;color:var(--muted);text-align:center;line-height:1.2}
-.weekly-label-range{display:block;font-size:8px;color:#969aa8}
+.weekly-label{font-size:8.5px;color:var(--muted);text-align:center;line-height:1.15;white-space:nowrap}
+.weekly-label-range{display:inline;font-size:8.5px;color:#969aa8}
 .type-donut-wrap{display:grid;place-items:center;height:126px;margin-top:10px}
 .type-donut{width:94px;height:94px;border-radius:50%;background:conic-gradient(#d7dbe5 0deg 360deg);position:relative;box-shadow:0 8px 20px rgba(50,57,100,.10)}
 .type-donut::after{content:"";position:absolute;inset:14px;border-radius:50%;background:#f1f3f8;box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}
@@ -712,7 +715,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.52</div>
+<div class="app-version" aria-label="Версия">v0.3.53</div>
 
 <main class="shell">
   <header class="top">
@@ -1682,7 +1685,7 @@ body.sheet-open{
     $('todaySessions').textContent=todaySessions+' '+(todaySessions===1?'занятие':'занятий');
     $('avgSession').textContent=fmt(average);
 
-    $('breakdownRows').innerHTML=getHabitBreakdownHTML(totals);
+    $('breakdownRows').innerHTML=getHabitBreakdownHTML(totals.filter(function(x){return x.total>0}));
 
     var monthPrefix=currentDate.slice(0,7);
     var monthActive=stats.activeByMonth[monthPrefix]||0;
@@ -1750,7 +1753,7 @@ body.sheet-open{
       var a=dateObj(x.start),b=dateObj(x.end);
       var am=a.getDate()+'.'+String(a.getMonth()+1).padStart(2,'0');
       var bm=b.getDate()+'.'+String(b.getMonth()+1).padStart(2,'0');
-      return '<div class="weekly-label">'+am+'–<br><span class="weekly-label-range">'+bm+'</span></div>';
+      return '<div class="weekly-label"><span>'+am+'–</span><span class="weekly-label-range">'+bm+'</span></div>';
     }).join('');
 
     var donut=typeDonutData(stats.byType,total);
@@ -1823,7 +1826,7 @@ body.sheet-open{
     var lines=[formatFullDate(date)+' · '+fmt(stats.byDate[date]||0)],habitTotals=stats.byDateHabit[date]||{},habitMap={};
     for(var i=0;i<habits.length;i++)habitMap[habits[i].id]=habits[i];
     var ids=Object.keys(habitTotals).sort(function(a,b){return habitTotals[b]-habitTotals[a]});
-    for(var j=0;j<ids.length&&lines.length<6;j++)lines.push((habitMap[ids[j]]?habitMap[ids[j]].name:'Удаленная привычка')+': '+fmt(habitTotals[ids[j]]));
+    for(var j=0;j<ids.length;j++)lines.push((habitMap[ids[j]]?habitMap[ids[j]].name:'Удаленная привычка')+': '+fmt(habitTotals[ids[j]]));
     if(lines.length===1)lines.push('Нет записей');
     return lines.join('\n');
   }
@@ -1921,8 +1924,7 @@ body.sheet-open{
     chartHoverDay=day;
     chartHoverTimer=setTimeout(function(){
       if(chartHoverDay!==day)return;
-      var tipLines=calendarTooltip(date,stats).split('\n').slice(0,4);
-      $('chartDayHoverNote').textContent=tipLines.join('\n');
+      $('chartDayHoverNote').textContent=calendarTooltip(date,stats);
       positionChartHoverNote(day);
     },550);
   });
