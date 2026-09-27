@@ -269,20 +269,19 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 #statsView .heat-legend-dot{width:8px;height:8px;display:inline-block;border-radius:2px;margin-right:4px;vertical-align:-1px}
 #statsView .heat-blue{background:#5962dd}
 #statsView .heat-yellow{background:#e3b83f}
-#statsView .stats-heatmap{display:grid;grid-template-columns:26px repeat(12,minmax(0,1fr));gap:5px;margin-top:16px;align-items:center}
-#statsView .heat-row-labels{display:grid;gap:5px}
-#statsView .heat-row-label{height:12px;font-size:8px;line-height:12px;color:#a0a5ae;text-align:left}
-#statsView .heat-week{display:grid;grid-template-rows:repeat(7,12px);gap:5px}
-#statsView .heat-cell{width:100%;min-width:0;height:12px;border-radius:3px;background:#eef0f3;border:1px solid #eceef1}
+#statsView .stats-heatmap{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:7px;margin-top:15px;align-items:end}
+#statsView .heat-week{display:grid;grid-template-rows:repeat(12,9px);gap:4px;align-items:end;min-width:0}
+#statsView .heat-cell{width:100%;height:9px;border-radius:2px;background:#eef0f3;border:1px solid #e9ebef;box-shadow:none}
 #statsView .heat-cell.filled{border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.22)}
-#statsView .heat-week-labels{display:grid;grid-template-columns:26px repeat(12,minmax(0,1fr));gap:5px;margin-top:7px}
-#statsView .heat-week-labels span{font-size:7px;line-height:1.1;color:#9aa0aa;text-align:center}
-#statsView .heatmap-scale{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:9px;font-size:8px;color:#9aa0aa}
-#statsView .heatmap-scale>div{display:flex;gap:3px}
-#statsView .heatmap-scale i{width:10px;height:7px;border-radius:2px;background:#edf0f3}
-#statsView .heatmap-scale i:nth-child(2){background:#c6c9ef}
-#statsView .heatmap-scale i:nth-child(3){background:#7c83e6}
-#statsView .heatmap-scale i:nth-child(4){background:#4e57d2}
+#statsView .heat-cell.empty{visibility:hidden}
+#statsView .heat-week-total{height:14px;margin-bottom:6px;font-size:8px;line-height:14px;color:#555b66;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#statsView .heat-week-date{margin-top:7px;font-size:7px;line-height:1.1;color:#9aa0aa;text-align:center;white-space:nowrap}
+#statsView .heatmap-axis{display:flex;align-items:center;justify-content:space-between;margin-top:9px;font-size:8px;color:#9aa0aa}
+#statsView .heatmap-axis strong{font-size:8px;font-weight:600;color:#686e79}
+#statsView .heatmap-legend{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-top:2px;font-size:9px;color:#747a86;white-space:nowrap}
+#statsView .heat-legend-dot{width:8px;height:8px;display:inline-block;border-radius:2px;margin-right:4px;vertical-align:-1px}
+#statsView .heat-blue{background:#5962dd}
+#statsView .heat-yellow{background:#e3b83f}
 #statsView .analytics-kpi-stack{display:grid;gap:8px}
 #statsView .analytics-kpi{display:flex;flex-direction:column;justify-content:center;min-height:102px;padding:15px 16px;background:#fff;border:1px solid #e1e4e8;border-radius:17px;box-shadow:0 5px 16px rgba(27,33,46,.045)}
 #statsView .analytics-kpi-accent{background:#1e5f42;border-color:#1e5f42;color:#fff;box-shadow:none}
@@ -332,14 +331,18 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   #statsView .analytics-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   #statsView .analytics-detail-grid>div:nth-child(3){border-right:0}
   #statsView .heatmap-legend{width:100%}
+  #statsView .stats-heatmap{gap:5px}
+  #statsView .heat-week{grid-template-rows:repeat(12,8px);gap:3px}
+  #statsView .heat-cell{height:8px}
+  #statsView .heat-week-total{font-size:7px}
+  #statsView .heat-week-date{font-size:6.5px}
 }
 @media(max-width:380px){
-  #statsView .stats-heatmap{grid-template-columns:20px repeat(12,minmax(0,1fr));gap:3px}
-  #statsView .heat-week{gap:3px;grid-template-rows:repeat(7,10px)}
-  #statsView .heat-row-labels{gap:3px}
-  #statsView .heat-row-label{height:10px;line-height:10px;font-size:7px}
-  #statsView .heat-cell{height:10px}
-  #statsView .heat-week-labels{grid-template-columns:20px repeat(12,minmax(0,1fr));gap:3px}
+  #statsView .stats-heatmap{gap:4px}
+  #statsView .heat-week{gap:3px;grid-template-rows:repeat(12,7px)}
+  #statsView .heat-cell{height:7px}
+  #statsView .heat-week-total{font-size:6px}
+  #statsView .heat-week-date{font-size:6px}
 }
 .stat-label{font-size:12px;color:var(--muted);font-weight:400}
 .stat-value{margin-top:8px;font-size:25px;line-height:1.04;font-weight:600;letter-spacing:-.035em}
@@ -756,7 +759,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.42</div>
+<div class="app-version" aria-label="Версия">v0.3.43</div>
 
 <main class="shell">
   <header class="top">
@@ -811,7 +814,7 @@ body.sheet-open{
           <div class="analytics-panel-head">
             <div>
               <div class="analytics-panel-title">Активность</div>
-              <div class="analytics-panel-note">Каждый кубик — один день. Чем насыщеннее цвет, тем больше времени.</div>
+              <div class="analytics-panel-note">12 недель: каждый столбец — неделя, кубики показывают её объём времени.</div>
             </div>
             <div class="heatmap-legend">
               <span><i class="heat-legend-dot heat-blue"></i> обучение</span>
@@ -819,7 +822,7 @@ body.sheet-open{
             </div>
           </div>
           <div id="statsHeatmap" class="stats-heatmap"></div>
-          <div class="heatmap-scale"><span>меньше</span><div><i></i><i></i><i></i><i></i></div><span>больше</span></div>
+          <div class="heatmap-axis" id="statsHeatmapAxis"></div>
         </div>
 
         <div class="analytics-kpi-stack">
@@ -1731,46 +1734,52 @@ body.sheet-open{
   }
 
   function renderStatsHeatmap(stats){
-    var endKey=localDate(new Date()),end=dateObj(endKey),dow=(end.getDay()+6)%7;
-    end.setDate(end.getDate()-dow);
-    var start=new Date(end);start.setDate(start.getDate()-11*7);
-    var labels=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
-    var maxDay=1;
-    for(var dk=0;dk<13;dk++){
+    var weeks=[],today=dateObj(localDate(new Date())),dow=(today.getDay()+6)%7;
+    today.setDate(today.getDate()-dow);
+    for(var wi=11;wi>=0;wi--){
+      var monday=new Date(today);monday.setDate(today.getDate()-wi*7);
+      var sunday=new Date(monday);sunday.setDate(monday.getDate()+6);
+      var byColor={};var total=0;
       for(var di=0;di<7;di++){
-        var dd=new Date(start);dd.setDate(start.getDate()+dk*7+di);
-        var key=localDate(dd),v=stats.byDate[key]||0;
-        if(v>maxDay)maxDay=v;
+        var day=new Date(monday);day.setDate(monday.getDate()+di);
+        var key=localDate(day),minutes=stats.byDate[key]||0;
+        total+=minutes;
+        var colors=stats.byDateColor[key]||{};
+        Object.keys(colors).forEach(function(colorId){byColor[colorId]=(byColor[colorId]||0)+colors[colorId]});
       }
+      weeks.push({start:monday,end:sunday,total:total,byColor:byColor});
     }
-    var html='<div class="heat-row-labels">';
-    for(var li=0;li<7;li++)html+='<div class="heat-row-label">'+labels[li]+'</div>';
-    html+='</div>';
-    var weekLabels='<span></span>';
-    for(var wi=0;wi<12;wi++){
-      var weekStart=new Date(start);weekStart.setDate(start.getDate()+wi*7);
-      var weekEnd=new Date(weekStart);weekEnd.setDate(weekStart.getDate()+6);
-      var col='<div class="heat-week">';
-      for(var ri=0;ri<7;ri++){
-        var cur=new Date(weekStart);cur.setDate(weekStart.getDate()+ri);
-        var date=localDate(cur),total=stats.byDate[date]||0,color='#5962dd';
-        var byColor=stats.byDateColor[date]||{},colorIds=Object.keys(byColor).sort(function(a,b){return byColor[b]-byColor[a]});
-        if(colorIds.length&&colorIds[0]==='yellow')color='#e3b83f';
-        var alpha=total?(.30+Math.min(.70,total/maxDay*.70)):1;
-        var title=total?formatFullDate(date)+' · '+fmt(total):formatFullDate(date)+' · нет записей';
-        col+='<div class="heat-cell'+(total?' filled':'')+'" title="'+clean(title)+'" style="'+(total?'background:'+color+';opacity:'+alpha.toFixed(2):'')+'"></div>';
+
+    var maxWeek=1;
+    weeks.forEach(function(w){if(w.total>maxWeek)maxWeek=w.total;});
+    var rows=12,html='';
+    for(var wi=0;wi<weeks.length;wi++){
+      var week=weeks[wi],filled=Math.round((week.total/maxWeek)*rows);
+      if(week.total>0)filled=Math.max(1,filled);
+      var colorIds=Object.keys(week.byColor).sort(function(a,b){return week.byColor[b]-week.byColor[a]});
+      var primary=colorIds.length&&COLOR_BY_ID[colorIds[0]]?COLOR_BY_ID[colorIds[0]]:'#5962dd';
+      var secondary=colorIds.length>1&&COLOR_BY_ID[colorIds[1]]?COLOR_BY_ID[colorIds[1]]:primary;
+      var secondCount=colorIds.length>1?Math.round(filled*(week.byColor[colorIds[1]]/Math.max(week.total,1))):0;
+      var firstCount=filled-secondCount;
+      var dateLabel=String(week.start.getDate()).padStart(2,'0')+'.'+String(week.start.getMonth()+1).padStart(2,'0');
+
+      html+='<div class="heat-week" title="'+clean(week.total?formatFullDate(localDate(week.start))+' — '+formatFullDate(localDate(week.end))+' · '+fmt(week.total):'Нет записей')+'">';
+      html+='<div class="heat-week-total">'+(week.total?fmt(week.total):'—')+'</div>';
+      for(var row=rows-1;row>=0;row--){
+        var active=row<filled;
+        var color=active?(row>=firstCount?secondary:primary):'';
+        html+='<div class="heat-cell '+(active?'filled':'empty')+'"'+(active?' style="background:'+color+'"':'')+'></div>';
       }
-      col+='</div>';
-      html+=col;
-      weekLabels+='<span>'+String(weekStart.getDate()).padStart(2,'0')+'.'+String(weekStart.getMonth()+1).padStart(2,'0')+'</span>';
+      html+='<div class="heat-week-date">'+dateLabel+'</div></div>';
     }
-    var endLabel=new Date(start);endLabel.setDate(start.getDate()+12*7);
-    var finalEnd= new Date(endLabel);finalEnd.setDate(endLabel.getDate()+6);
-    weekLabels+='';
     $('statsHeatmap').innerHTML=html;
-    var oldLabels=$('statsHeatmap').nextElementSibling;
-    if(oldLabels&&oldLabels.classList.contains('heat-week-labels'))oldLabels.remove();
-    $('statsHeatmap').insertAdjacentHTML('afterend','<div class="heat-week-labels">'+weekLabels+'</div>');
+    var axis=$('statsHeatmap').nextElementSibling;
+    if(!axis||!axis.classList.contains('heatmap-axis')){
+      var oldAxis=document.createElement('div');oldAxis.className='heatmap-axis';
+      $('statsHeatmap').parentNode.insertBefore(oldAxis,$('statsHeatmap').nextSibling);
+      axis=oldAxis;
+    }
+    axis.innerHTML='<span>меньше активности</span><strong>12 недель · объём времени</strong><span>больше активности</span>';
   }
 
   function renderStatsBars(stats,total){
