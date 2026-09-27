@@ -598,9 +598,13 @@ body.sheet-open{
 .calendar-hover-note.below{top:calc(100% + 8px);bottom:auto}
 @media (hover:hover){.calendar-cell:hover{transform:translateY(-1px);background:rgba(255,255,255,.78)}}
 @media(max-width:760px){.calendar-view-head{align-items:stretch;flex-direction:column}.calendar-view-nav{width:100%;grid-template-columns:minmax(0,1fr) 72px 34px 34px}}
-@media(max-width:560px){.calendar-cell{min-height:66px;padding:7px 5px}.calendar-color-stack{margin-top:7px}.calendar-view-sub{font-size:10px}.records-habit-filter-button{width:min(210px,100%);flex:1 1 170px}.records-table-head{display:none}.record-row{grid-template-columns:18px 8px minmax(0,1fr) auto auto}.record-history-date{grid-column:3;grid-row:1}.record-info{grid-column:3;grid-row:2}.record-history-time{grid-column:4;grid-row:1 / span 2}.record-history-note{grid-column:3 / span 2;grid-row:3}.record-delete{grid-column:5;grid-row:1 / span 2}.history-foot{font-size:9px}}
+@media(max-width:560px){.calendar-cell{min-height:66px;padding:7px 5px}.calendar-color-stack{margin-top:7px}.calendar-view-sub{font-size:10px}.records-habit-filter-button{width:min(210px,100%);flex:1 1 170px}.records-table-head{display:none}.record-row{grid-template-columns:18px 8px minmax(0,1fr) auto auto}.record-history-date{grid-column:3;grid-row:1}.record-info{grid-column:3;grid-row:2}.record-history-time{grid-column:4;grid-row:1 / span 2}.record-history-note{grid-column:3 / span 2;grid-row:3}.record-actions{grid-column:5;grid-row:1 / span 2;flex-direction:column;align-items:stretch}
+.record-edit,.record-delete{width:64px;min-width:64px}
+.history-foot{font-size:9px}}
 @media(max-width:420px){.calendar-view-nav{grid-template-columns:minmax(0,1fr) 72px 34px 34px}.calendar-filter-button{grid-column:1 / -1}.records-toolbar{align-items:stretch}.records-habit-filter-button{width:100%;order:3}.records-selection-count{margin-left:auto}.history-foot{align-items:flex-start;flex-direction:column}}
 .secondary-action{border:1px solid rgba(255,255,255,.74);background:rgba(255,255,255,.50);border-radius:12px;padding:9px 12px;font-weight:500;color:var(--ink)}
+.toast-inner{display:flex;align-items:center;gap:12px}
+.toast-undo{border:0;background:#fff;color:#20233a;border-radius:8px;padding:6px 9px;font:inherit;font-size:11px;font-weight:600;white-space:nowrap}
 .data-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .data-transfer-scrim{position:fixed;inset:0;display:grid;place-items:center;padding:18px;background:rgba(255,255,255,.90);z-index:420}
 .data-dialog{width:min(520px,calc(100vw - 28px));max-height:min(680px,calc(100vh - 28px));overflow:auto;padding:23px;border-radius:24px;background:linear-gradient(150deg,rgba(255,255,255,.97),rgba(246,248,253,.92));border:1px solid rgba(255,255,255,.9);box-shadow:0 28px 80px rgba(25,32,66,.20)}
@@ -636,6 +640,7 @@ body.sheet-open{
 }
 .record-row:first-child{border-top:0;padding-top:0}
 #entriesRows .record-row{grid-template-columns:18px 8px 78px minmax(120px,1fr) 62px minmax(100px,1fr) auto}
+
 .record-select-spacer{width:18px;height:18px;display:block}
 .record-select{width:18px;height:18px;display:grid;place-items:center;margin:0}
 .record-select input{position:absolute;opacity:0;pointer-events:none}
@@ -652,8 +657,10 @@ body.sheet-open{
 .record-history-time{font-weight:550;text-align:right;white-space:nowrap}
 .record-history-note{color:#707482}
 
-.record-delete{width:58px;min-width:58px;padding:7px 8px;white-space:nowrap;font-size:11px}
+.record-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;white-space:nowrap}
+.record-edit,.record-delete{width:58px;min-width:58px;padding:7px 8px;white-space:nowrap;font-size:11px}
 .load-more{display:block;margin:9px auto 0}
+
 .empty{padding:8px 0;font-size:12px;color:var(--muted)}
 
 @media(max-width:520px){
@@ -705,7 +712,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.48</div>
+<div class="app-version" aria-label="Версия">v0.3.49</div>
 
 <main class="shell">
   <header class="top">
@@ -989,6 +996,8 @@ body.sheet-open{
   var chosenHabit=habits[0]?habits[0].id:'';
   var chosenType='active';
   var chosenColor='yellow';
+  var editingEntryId='';
+  var undoAction=null;
   var menusDirty=true;
   var statsCache=null;
   var menuHTMLCache={habit:null,type:null,color:null};
@@ -1208,6 +1217,8 @@ body.sheet-open{
   function persistAll(){
     localMutationEpoch++;
     if(storageMode==='indexeddb'){
+      backupToLocalStorage();
+      notifyDataChanged();
       queueIDBWrite(function(){return idbStoreAll(cloneData(habits),cloneData(entries))});
       scheduleLocalBackup();
       return true;
@@ -1513,17 +1524,37 @@ body.sheet-open{
     });
   }
 
-  function showToast(text){
+  function ensureToast(){
     var el=document.getElementById('toast');
     if(!el){
       el=document.createElement('div');
       el.id='toast';
-      el.style.cssText='position:fixed;left:50%;bottom:76px;transform:translateX(-50%);background:#161927;color:#fff;padding:10px 14px;border-radius:12px;font-size:13px;opacity:0;transition:.18s;z-index:200;pointer-events:none';
+      el.style.cssText='position:fixed;left:50%;bottom:76px;transform:translateX(-50%);background:#161927;color:#fff;padding:10px 14px;border-radius:12px;font-size:13px;opacity:0;transition:.18s;z-index:200;pointer-events:auto';
       document.body.appendChild(el);
     }
+    return el;
+  }
+  function showToast(text){
+    var el=ensureToast();
+    undoAction=null;
     el.textContent=text;el.style.opacity='1';
     clearTimeout(showToast.t);
+    clearTimeout(showUndoToast.t);
     showToast.t=setTimeout(function(){el.style.opacity='0'},1600);
+  }
+  function showUndoToast(text,action){
+    var el=ensureToast();
+    undoAction=action;
+    clearTimeout(showToast.t);
+    clearTimeout(showUndoToast.t);
+    el.innerHTML='<div class="toast-inner"><span>'+clean(text)+'</span><button type="button" class="toast-undo">Отменить</button></div>';
+    el.style.opacity='1';
+    el.querySelector('.toast-undo').onclick=function(){
+      var fn=undoAction;undoAction=null;
+      el.style.opacity='0';
+      if(fn)fn();
+    };
+    showUndoToast.t=setTimeout(function(){undoAction=null;el.style.opacity='0'},5000);
   }
 
   function updateHeader(){
@@ -1755,7 +1786,7 @@ body.sheet-open{
       var color=COLOR_BY_ID[e.color]||'#6e73ff';
       var checked=selectedEntryIds[e.id]?' checked':'';
       var selector=entrySelectionMode?'<label class="record-select"><input type="checkbox" data-entry-check="'+clean(e.id)+'"'+checked+' aria-label="Выбрать запись"><span></span></label>':'';
-      return '<div class="record-row">'+selector+'<span class="record-dot" style="background:'+color+'"></span><div class="record-history-date">'+formatFullDate(e.date||currentDate)+'</div><div class="record-info"><div class="record-name">'+clean(habit?habit.name:'Удаленная привычка')+'</div><div class="record-meta">'+(habit?'':'Удаленная привычка')+'</div></div><div class="record-history-time">'+fmt(e.minutes)+'</div><div class="record-history-note">'+(e.note?clean(e.note):'—')+'</div><button class="secondary-action record-delete" data-remove-entry="'+clean(e.id)+'">Удалить</button></div>';
+      return '<div class="record-row">'+selector+'<span class="record-dot" style="background:'+color+'"></span><div class="record-history-date">'+formatFullDate(e.date||currentDate)+'</div><div class="record-info"><div class="record-name">'+clean(habit?habit.name:'Удаленная привычка')+'</div><div class="record-meta">'+(habit?'':'Удаленная привычка')+'</div></div><div class="record-history-time">'+fmt(e.minutes)+'</div><div class="record-history-note">'+(e.note?clean(e.note):'—')+'</div><div class="record-actions">'+(habit?'<button class="secondary-action record-edit" data-edit-entry="'+clean(e.id)+'">Изменить</button>':'')+'<button class="secondary-action record-delete" data-remove-entry="'+clean(e.id)+'">Удалить</button></div></div>';
     }).join('')||'<div class="empty">Нет записей.</div>';
 
     var selectedCount=Object.keys(selectedEntryIds).filter(function(id){return selectedEntryIds[id]&&filteredEntries.some(function(e){return e.id===id})}).length;
@@ -2115,6 +2146,9 @@ body.sheet-open{
 
   function openSheet(){
     if(!habits.length){showToast('Сначала добавь привычку');return}
+    editingEntryId='';
+    $('sheetTitle').textContent='Записать данные';
+    $('saveEntry').textContent='Сохранить';
 
     renderVisibleCategories();
     chosenHabit=habits[0].id;
@@ -2132,6 +2166,9 @@ body.sheet-open{
   }
 
   function closeSheet(){
+    editingEntryId='';
+    $('sheetTitle').textContent='Записать данные';
+    $('saveEntry').textContent='Сохранить';
     $('sheet').hidden=true;
     document.body.classList.remove('sheet-open');
     closeMenus();
@@ -2191,16 +2228,70 @@ body.sheet-open{
     }
   }
 
+  function openSheetForEntry(entryId){
+    var entry=entries.find(function(e){return e.id===entryId});
+    if(!entry){showToast('Запись не найдена');return}
+    var habit=habits.find(function(h){return h.id===entry.habitId});
+    if(!habit){showToast('У этой записи больше нет привычки');return}
+    editingEntryId=entry.id;
+    renderVisibleCategories();
+    chosenHabit=entry.habitId;
+    chosenType=entry.type||'active';
+    chosenColor=entry.color||'yellow';
+    calendarDate=entry.date;
+    $('minutes').value=String(Math.round(Number(entry.minutes)||0));
+    $('note').value=entry.note||'';
+    applySelection(chosenHabit,chosenType,chosenColor);
+    $('dateButtonText').textContent=formatFullDate(calendarDate);
+    $('sheetTitle').textContent='Изменить запись';
+    $('saveEntry').textContent='Сохранить изменения';
+    closeMenus();
+    $('sheet').hidden=false;
+    document.body.classList.add('sheet-open');
+    requestAnimationFrame(function(){if(!$('sheet').hidden)$('minutes').focus()});
+  }
+
   function saveEntry(){
     var minutes=Math.max(0,parseInt($('minutes').value||'0',10)||0);
     if(!minutes){showToast('Укажи время больше 0 минут');return}
 
-    var targetDate=calendarDate||currentDate;
-    var todayKey=localDate(new Date());
+    var targetDate=calendarDate||currentDate,todayKey=localDate(new Date());
     if(!/^\d{4}-\d{2}-\d{2}$/.test(targetDate)||targetDate>todayKey){
       showToast('Нельзя добавить запись за будущую дату');
       return;
     }
+
+    if(editingEntryId){
+      var entryIndex=-1;
+      for(var ei=0;ei<entries.length;ei++)if(entries[ei].id===editingEntryId){entryIndex=ei;break}
+      if(entryIndex<0){showToast('Запись не найдена');return}
+      var previousEntry=cloneData(entries[entryIndex])[0];
+      entries[entryIndex]={
+        id:editingEntryId,
+        habitId:chosenHabit,
+        date:targetDate,
+        minutes:minutes,
+        note:$('note').value.trim(),
+        type:chosenType,
+        color:chosenColor
+      };
+      if(!persistEntries()){
+        entries[entryIndex]=previousEntry;
+        showToast('Не удалось сохранить изменения');
+        return;
+      }
+      currentDate=targetDate;
+      calendarViewDate=currentDate;
+      calendarDateSelectionActive=false;
+      editingEntryId='';
+      saveUIState();
+      invalidateDataCaches();
+      closeSheet();
+      scheduleActiveRender();
+      showToast('Запись изменена');
+      return;
+    }
+
     var entry={
       id:uid(),
       habitId:chosenHabit,
@@ -2612,6 +2703,7 @@ body.sheet-open{
       if(ids.indexOf(e.id)>=0){removed.push(e);return false}
       return true;
     });
+    var removedForUndo=cloneData(removed);
     if(!deleteEntriesFromStorage(ids)){
       entries=entries.concat(removed);
       showToast('Не удалось удалить выбранные записи');
@@ -2622,7 +2714,15 @@ body.sheet-open{
     invalidateDataCaches();
     renderSettings();
     scheduleActiveRender();
-    showToast('Удалено записей: '+ids.length);
+    showUndoToast('Удалено записей: '+ids.length,function(){
+      entries=entries.concat(removedForUndo);
+      if(!persistEntries()){showToast('Не удалось отменить удаление');return}
+      selectedEntryIds={};
+      invalidateDataCaches();
+      renderSettings();
+      scheduleActiveRender();
+      showToast('Удаление отменено');
+    });
   };
 
   document.addEventListener('click',function(e){
@@ -2646,6 +2746,12 @@ body.sheet-open{
       return;
     }
 
+    var editEntry=e.target.closest('[data-edit-entry]');
+    if(editEntry){
+      openSheetForEntry(editEntry.getAttribute('data-edit-entry'));
+      return;
+    }
+
     var removeEntry=e.target.closest('[data-remove-entry]');
     if(removeEntry){
       var entryId=removeEntry.getAttribute('data-remove-entry');
@@ -2658,6 +2764,7 @@ body.sheet-open{
         var entryHabit=habits.find(function(h){return h.id===removedEntry.habitId});
         if(confirm('Удалить запись «'+(entryHabit?entryHabit.name:'')+'» за '+formatFullDate(removedEntry.date||currentDate)+' ('+fmt(removedEntry.minutes)+')?')){
           entries.splice(entryIndex,1);
+          var removedForUndoSingle=cloneData([removedEntry])[0];
           if(!deleteEntryFromStorage(removedEntry.id)){
             entries.splice(entryIndex,0,removedEntry);
             showToast('Не удалось удалить запись');
@@ -2667,7 +2774,14 @@ body.sheet-open{
           invalidateDataCaches();
           renderSettings();
           scheduleActiveRender();
-          showToast('Запись удалена');
+          showUndoToast('Запись удалена',function(){
+            entries.splice(Math.min(entryIndex,entries.length),0,removedForUndoSingle);
+            if(!persistEntries()){showToast('Не удалось отменить удаление');return}
+            invalidateDataCaches();
+            renderSettings();
+            scheduleActiveRender();
+            showToast('Удаление отменено');
+          });
         }
       }
       return;
@@ -2678,8 +2792,8 @@ body.sheet-open{
       var id=remove.getAttribute('data-remove-habit');
       var habit=habits.find(function(h){return h.id===id});
       if(habit&&confirm('Удалить «'+habit.name+'» и все записи этой привычки?')){
-        var oldHabits=habits;
-        var oldEntries=entries;
+        var oldHabits=habits.slice();
+        var oldEntries=entries.slice();
         habits=habits.filter(function(h){return h.id!==id});
         entries=entries.filter(function(x){return x.habitId!==id});
         for(var sid in selectedEntryIds)if(!entries.some(function(x){return x.id===sid}))delete selectedEntryIds[sid];
@@ -2694,7 +2808,16 @@ body.sheet-open{
         entryRenderLimit=Math.min(entryRenderLimit,Math.max(60,entries.length));
         invalidateDataCaches();
         scheduleActiveRender();
-        showToast('Привычка удалена');
+        showUndoToast('Привычка удалена',function(){
+          habits=oldHabits;
+          entries=oldEntries;
+          if(!persistAll()){showToast('Не удалось отменить удаление');return}
+          menusDirty=true;
+          resetInvalidFilters();
+          invalidateDataCaches();
+          renderActiveView();
+          showToast('Удаление отменено');
+        });
       }
     }
   });
