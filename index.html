@@ -705,7 +705,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.43</div>
+<div class="app-version" aria-label="Версия">v0.3.44</div>
 
 <main class="shell">
   <header class="top">
@@ -921,7 +921,7 @@ body.sheet-open{
   var ENTRIES_KEY='habit-timesheet-entries';
   var PERF_MODE=window.__PERF_MODE===true||window.location.search.indexOf('perf=1')>=0;
   var IDB_NAME='habit-timesheet-db'+(PERF_MODE?'-perf':'')+(window.__PERF_DB_SUFFIX||'');
-  var IDB_VERSION=1;
+  var IDB_VERSION=2;
   var IDB_HABITS='habits';
   var IDB_ENTRIES='entries';
   var IDB_META='meta';
@@ -1031,6 +1031,28 @@ body.sheet-open{
   }
 
   function cloneData(value){return JSON.parse(JSON.stringify(value))}
+  function notifyDataChanged(){
+    try{if(dataChannel)dataChannel.postMessage({type:'data-changed'})}catch(e){}
+  }
+
+  function syncFromLocalStorage(){
+    try{
+      var nextHabits=normalizeStoredHabits(JSON.parse(localStorage.getItem(HABITS_KEY)||'[]'));
+      var nextEntries=normalizeStoredEntries(JSON.parse(localStorage.getItem(ENTRIES_KEY)||'[]'));
+      if(!Array.isArray(nextHabits)||!Array.isArray(nextEntries))return;
+      habits=nextHabits;
+      entries=nextEntries;
+      if(!habits.some(function(h){return h.id===calendarFilterHabitId}))calendarFilterHabitId='*';
+      if(!habits.some(function(h){return h.id===recordsFilterHabitId}))recordsFilterHabitId='*';
+      selectedEntryIds={};
+      entrySelectionMode=false;
+      entryRenderLimit=Math.min(entryRenderLimit,Math.max(60,entries.length));
+      menusDirty=true;
+      invalidateDataCaches();
+      renderActiveView();
+    }catch(e){}
+  }
+
 
   function backupToLocalStorage(){
     try{
@@ -1065,12 +1087,22 @@ body.sheet-open{
       if(!window.indexedDB){reject(new Error('IndexedDB unavailable'));return}
       var request=indexedDB.open(IDB_NAME,IDB_VERSION);
       request.onupgradeneeded=function(event){
-        var database=event.target.result;
-        if(!database.objectStoreNames.contains(IDB_HABITS))database.createObjectStore(IDB_HABITS,{keyPath:'id'});
-        if(!database.objectStoreNames.contains(IDB_ENTRIES))database.createObjectStore(IDB_ENTRIES,{keyPath:'id'});
-        if(!database.objectStoreNames.contains(IDB_META))database.createObjectStore(IDB_META,{keyPath:'key'});
+        var database=event.target.result,transaction=event.target.transaction,oldVersion=event.oldVersion||0;
+        if(oldVersion<1){
+          if(!database.objectStoreNames.contains(IDB_HABITS))database.createObjectStore(IDB_HABITS,{keyPath:'id'});
+          if(!database.objectStoreNames.contains(IDB_ENTRIES))database.createObjectStore(IDB_ENTRIES,{keyPath:'id'});
+          if(!database.objectStoreNames.contains(IDB_META))database.createObjectStore(IDB_META,{keyPath:'key'});
+        }
+        if(oldVersion<2){
+          var meta=transaction.objectStore(IDB_META);
+          meta.put({key:'schemaVersion',value:2});
+        }
       };
-      request.onsuccess=function(){resolve(request.result)};
+      request.onsuccess=function(){
+        var opened=request.result;
+        opened.onversionchange=function(){opened.close();if(db===opened)db=null;};
+        resolve(opened);
+      };
       request.onerror=function(){reject(request.error||new Error('IndexedDB open failed'))};
     });
   }
@@ -1101,7 +1133,7 @@ body.sheet-open{
     storageWriteChain=storageWriteChain.then(operation).catch(function(){
       storageMode='local';
       backupToLocalStorage();
-      showToast('Сохранение переключено на резервный режим');
+      showToast('Резервная копия данных сохранена локально');
     });
     return storageWriteChain;
   }
@@ -1121,6 +1153,8 @@ body.sheet-open{
           tx.onabort=function(){reject(tx.error||new Error('IndexedDB habits save aborted'))};
         });
       });
+      backupToLocalStorage();
+      notifyDataChanged();
       scheduleLocalBackup();
       return true;
     }
@@ -1130,15 +1164,22 @@ body.sheet-open{
   function persistEntries(){
     localMutationEpoch++;
     if(storageMode==='indexeddb'){
-      var lastEntry=entries.length?cloneData(entries[entries.length-1]):null;
-      if(lastEntry){
-        queueIDBWrite(function(){
-          return idbRequest(db.transaction(IDB_ENTRIES,'readwrite').objectStore(IDB_ENTRIES).put(lastEntry));
+      var batch=cloneData(entries);
+      backupToLocalStorage();
+      notifyDataChanged();
+      queueIDBWrite(function(){
+        return new Promise(function(resolve,reject){
+          var tx=db.transaction(IDB_ENTRIES,'readwrite');
+          var store=tx.objectStore(IDB_ENTRIES);
+          for(var i=0;i<batch.length;i++)store.put(batch[i]);
+          tx.oncomplete=function(){resolve()};
+          tx.onerror=function(){reject(tx.error||new Error('IndexedDB entries save failed'))};
+          tx.onabort=function(){reject(tx.error||new Error('IndexedDB entries save aborted'))};
         });
-      }
-      scheduleLocalBackup();
+      });
       return true;
     }
+    notifyDataChanged();
     return backupToLocalStorage();
   }
 
@@ -1173,9 +1214,12 @@ body.sheet-open{
           tx.onabort=function(){reject(tx.error||new Error('IndexedDB batch delete aborted'))};
         });
       });
+      notifyDataChanged();
+      backupToLocalStorage();
       scheduleLocalBackup();
       return true;
     }
+    notifyDataChanged();
     return backupToLocalStorage();
   }
 
@@ -1185,9 +1229,12 @@ body.sheet-open{
       queueIDBWrite(function(){
         return idbRequest(db.transaction(IDB_ENTRIES,'readwrite').objectStore(IDB_ENTRIES).delete(id));
       });
+      notifyDataChanged();
+      backupToLocalStorage();
       scheduleLocalBackup();
       return true;
     }
+    notifyDataChanged();
     return backupToLocalStorage();
   }
 
@@ -1210,9 +1257,12 @@ body.sheet-open{
           tx.onabort=function(){reject(tx.error||new Error('IndexedDB delete aborted'))};
         });
       });
+      notifyDataChanged();
+      backupToLocalStorage();
       scheduleLocalBackup();
       return true;
     }
+    notifyDataChanged();
     return backupToLocalStorage();
   }
 
@@ -1264,6 +1314,10 @@ body.sheet-open{
     try{
       db=await openIndexedDB();
       var marker=await idbGetMeta('migrated');
+      var schema=await idbGetMeta('schemaVersion');
+      if(!schema||schema.value!==2){
+        try{await idbRequest(db.transaction(IDB_META,'readwrite').objectStore(IDB_META).put({key:'schemaVersion',value:2}))}catch(e){}
+      }
 
       if(!marker||marker.value!==true){
         var epoch=localMutationEpoch;
@@ -2026,6 +2080,17 @@ body.sheet-open{
     if(wrap)wrap.hidden=!visible;
   }
 
+  window.addEventListener('storage',function(e){
+    if(e.storageArea===localStorage&&(e.key===HABITS_KEY||e.key===ENTRIES_KEY))syncFromLocalStorage();
+  });
+  var dataChannel=null;
+  try{
+    if('BroadcastChannel' in window){
+      dataChannel=new BroadcastChannel('habit-timesheet-sync');
+      dataChannel.onmessage=function(e){if(e.data&&e.data.type==='data-changed')syncFromLocalStorage();};
+    }
+  }catch(e){dataChannel=null}
+
   function openSheet(){
     if(!habits.length){showToast('Сначала добавь привычку');return}
 
@@ -2254,6 +2319,7 @@ body.sheet-open{
           tx.onabort=function(){reject(tx.error||new Error('IndexedDB batch write aborted'))};
         });
       });
+      backupToLocalStorage();
       scheduleLocalBackup();
       return true;
     }
