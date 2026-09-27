@@ -232,8 +232,8 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .weekly-label-range{display:block;font-size:8px;color:#969aa8}
 .type-donut-wrap{display:grid;place-items:center;height:126px;margin-top:10px}
 .type-donut{width:94px;height:94px;border-radius:50%;background:conic-gradient(#d7dbe5 0deg 360deg);position:relative;box-shadow:0 8px 20px rgba(50,57,100,.10)}
-.type-donut::after{content:"";position:absolute;inset:18px;border-radius:50%;background:#f1f3f8;box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}
-.type-donut-total{position:absolute;inset:18px;display:grid;place-items:center;text-align:center;font-size:10px;line-height:1.2;font-weight:600;z-index:1;white-space:normal;padding:0 2px}
+.type-donut::after{content:"";position:absolute;inset:14px;border-radius:50%;background:#f1f3f8;box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}
+.type-donut-total{position:absolute;inset:15px;display:grid;place-items:center;text-align:center;font-size:9.5px;line-height:1.12;font-weight:600;z-index:1;white-space:normal;padding:0 2px}
 .type-mini-legend{display:grid;gap:5px;margin-top:4px}
 .type-mini-item{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px}
 .type-mini-left{display:flex;align-items:center;gap:5px;min-width:0}
@@ -546,7 +546,7 @@ body.sheet-open{
 .calendar-hover-note.below{top:calc(100% + 8px);bottom:auto}
 @media (hover:hover){.calendar-cell:hover{transform:translateY(-1px);background:rgba(255,255,255,.78)}}
 @media(max-width:760px){.calendar-view-head{align-items:stretch;flex-direction:column}.calendar-view-nav{width:100%;grid-template-columns:minmax(0,1fr) 72px 34px 34px}}
-@media(max-width:560px){.calendar-cell{min-height:66px;padding:7px 5px}.calendar-color-stack{margin-top:7px}.calendar-view-sub{font-size:10px}.records-habit-filter-button{width:min(210px,100%);flex:1 1 170px}.records-table-head{display:none}.history-foot{font-size:9px}}
+@media(max-width:560px){.calendar-cell{min-height:66px;padding:7px 5px}.calendar-color-stack{margin-top:7px}.calendar-view-sub{font-size:10px}.records-habit-filter-button{width:min(210px,100%);flex:1 1 170px}.records-table-head{display:none}.record-row{grid-template-columns:18px 8px minmax(0,1fr) auto auto}.record-history-date{grid-column:3;grid-row:1}.record-info{grid-column:3;grid-row:2}.record-history-time{grid-column:4;grid-row:1 / span 2}.record-history-note{grid-column:3 / span 2;grid-row:3}.record-delete{grid-column:5;grid-row:1 / span 2}.history-foot{font-size:9px}}
 @media(max-width:420px){.calendar-view-nav{grid-template-columns:minmax(0,1fr) 72px 34px 34px}.calendar-filter-button{grid-column:1 / -1}.records-toolbar{align-items:stretch}.records-habit-filter-button{width:100%;order:3}.records-selection-count{margin-left:auto}.history-foot{align-items:flex-start;flex-direction:column}}
 .secondary-action{border:1px solid rgba(255,255,255,.74);background:rgba(255,255,255,.50);border-radius:12px;padding:9px 12px;font-weight:500;color:var(--ink)}
 .data-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
@@ -565,8 +565,8 @@ body.sheet-open{
 .records-section{contain:layout paint;content-visibility:auto;contain-intrinsic-size:520px}
 .records-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:2px;margin-bottom:8px}
 .records-habit-filter-button{width:min(210px,100%);height:34px;box-sizing:border-box}
-.records-table-head{display:grid;grid-template-columns:86px minmax(140px,1fr) 72px minmax(110px,1fr) 68px;gap:10px;align-items:center;padding:7px 0 6px;border-bottom:1px solid rgba(30,34,50,.08);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.records-table-head span:nth-child(3){text-align:right}
+.records-table-head{display:grid;grid-template-columns:18px 8px 78px minmax(120px,1fr) 62px minmax(100px,1fr) auto;gap:10px;align-items:center;padding:7px 0 6px;border-bottom:1px solid rgba(30,34,50,.08);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.records-table-head span:nth-child(5){text-align:right}
 .history-foot{display:flex;justify-content:space-between;gap:10px;margin-top:9px;font-size:9px;color:var(--muted)}
 
 .records-select-actions{display:flex;gap:6px;flex-wrap:wrap}
@@ -582,8 +582,8 @@ body.sheet-open{
   border-top:1px solid rgba(30,34,50,.07)
 }
 .record-row:first-child{border-top:0;padding-top:0}
-#entriesRows:not(.selection-mode) .record-row{grid-template-columns:auto 78px minmax(120px,1fr) 62px minmax(100px,1fr) auto}
-#entriesRows.selection-mode .record-row{grid-template-columns:auto auto 78px minmax(120px,1fr) 62px minmax(100px,1fr) auto}
+#entriesRows .record-row{grid-template-columns:18px 8px 78px minmax(120px,1fr) 62px minmax(100px,1fr) auto}
+.record-select-spacer{width:18px;height:18px;display:block}
 .record-select{width:18px;height:18px;display:grid;place-items:center;margin:0}
 .record-select input{position:absolute;opacity:0;pointer-events:none}
 .record-select span{width:18px;height:18px;border-radius:6px;border:1.5px solid rgba(104,109,128,.34);background:rgba(255,255,255,.52);box-shadow:inset 0 1px 0 rgba(255,255,255,.85);transition:background-color .12s ease,border-color .12s ease,transform .12s ease}
@@ -652,7 +652,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.39</div>
+<div class="app-version" aria-label="Версия">v0.3.40</div>
 
 <main class="shell">
   <header class="top">
@@ -756,7 +756,7 @@ body.sheet-open{
       </div>
       <div class="breakdown" style="margin-top:12px"><div id="settingsRows"></div></div>
       <div class="breakdown records-section" style="margin-top:12px">
-        <div class="breakdown-head"><strong>Записи</strong><span id="recordsSummary">0 записей</span></div>
+        <div class="breakdown-head"><strong>История записей</strong><span id="recordsSummary">0 записей</span></div>
         <div class="records-toolbar">
           <div class="records-select-actions">
             <button class="records-action" id="toggleEntrySelection" type="button">Выделить</button>
@@ -767,7 +767,7 @@ body.sheet-open{
           <button class="calendar-filter-button records-habit-filter-button" id="recordsHabitFilterButton" type="button" aria-haspopup="listbox" aria-expanded="false"><span id="recordsHabitFilterButtonText">Все привычки</span><span class="filter-chevron" aria-hidden="true"></span></button>
           <span class="records-selection-count" id="recordsSelectionCount"></span>
         </div>
-        <div class="records-table-head"><span>Дата</span><span>Привычка</span><span>Время</span><span>Заметка</span><span></span></div>
+        <div class="records-table-head"><span></span><span></span><span>Дата</span><span>Привычка</span><span>Время</span><span>Заметка</span><span></span></div>
         <div id="entriesRows"></div>
         <div class="history-foot"><span>Показаны последние записи</span><span id="historyCountLabel"></span></div>
         <button class="secondary-action load-more" id="showMoreEntries" hidden>Показать ещё</button>
