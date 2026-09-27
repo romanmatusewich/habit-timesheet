@@ -611,97 +611,25 @@ body.sheet-open{
 .calendar-hover-note.below{top:calc(100% + 8px);bottom:auto}
 @media (hover:hover){.calendar-cell:hover{transform:translateY(-1px);background:rgba(255,255,255,.78)}}
 @media(max-width:760px){.calendar-view-head{align-items:stretch;flex-direction:column}.calendar-view-nav{width:100%;grid-template-columns:minmax(0,1fr) 72px 34px 34px}}
-@media(max-width:560px){.calendar-cell{min-height:66px;padding:7px 5px}.calendar-color-stack{margin-top:7px}.calendar-view-sub{font-size:10px}.records-habit-filter-button{width:min(210px,100%);flex:1 1 170px}.records-table-head{display:none}.record-row{grid-template-columns:18px 8px minmax(0,1fr) auto minmax(0,1fr) auto}.record-info{grid-column:3;grid-row:1}.record-history-time{grid-column:4;grid-row:1}.record-history-note{grid-column:3 / span 3;grid-row:2}.record-actions{grid-column:6;grid-row:1 / span 2;flex-direction:column;align-items:stretch}
-.record-edit,.record-delete{width:64px;min-width:64px}
-.history-foot{font-size:9px}}
-@media(max-width:420px){.calendar-hover-note{width:min(280px,calc(100vw - 28px))}
-.calendar-view-nav{grid-template-columns:minmax(0,1fr) 72px 34px 34px}.calendar-filter-button{grid-column:1 / -1}.records-toolbar{align-items:stretch}.records-habit-filter-button{width:100%;order:3}.records-selection-count{margin-left:auto}.history-foot{align-items:flex-start;flex-direction:column}}
-.secondary-action{border:1px solid rgba(255,255,255,.74);background:rgba(255,255,255,.50);border-radius:12px;padding:9px 12px;font-weight:500;color:var(--ink)}
-.toast-inner{display:flex;align-items:center;gap:12px}
-.toast-undo{border:0;background:#fff;color:#20233a;border-radius:8px;padding:6px 9px;font:inherit;font-size:11px;font-weight:600;white-space:nowrap}
-.data-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.data-transfer-scrim{position:fixed;inset:0;display:grid;place-items:center;padding:18px;background:rgba(255,255,255,.90);z-index:420}
-.data-dialog{width:min(520px,calc(100vw - 28px));max-height:min(680px,calc(100vh - 28px));overflow:auto;padding:23px;border-radius:24px;background:linear-gradient(150deg,rgba(255,255,255,.97),rgba(246,248,253,.92));border:1px solid rgba(255,255,255,.9);box-shadow:0 28px 80px rgba(25,32,66,.20)}
-.data-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.data-dialog-title{margin:0;font-size:24px;line-height:1.08;font-weight:600;letter-spacing:-.03em}
-.data-dialog-close{position:relative;width:34px;height:34px;flex:none;padding:0;border:0;border-radius:50%;background:rgba(120,125,140,.10);color:#777b87}
-.data-dialog-close::before,.data-dialog-close::after{content:"";position:absolute;left:50%;top:50%;width:14px;height:1.6px;border-radius:2px;background:currentColor;transform:translate(-50%,-50%) rotate(45deg)}
-.data-dialog-close::after{transform:translate(-50%,-50%) rotate(-45deg)}
-.data-help{margin:10px 0 14px;font-size:11px;line-height:1.5;color:var(--muted)}
-.data-select{width:100%;padding:10px 11px;border:1px solid rgba(120,125,140,.18);border-radius:11px;background:rgba(250,251,254,.9);color:var(--ink);font:inherit}
-.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
-.import-area{width:100%;min-height:230px;resize:vertical;padding:12px;border:1px solid rgba(120,125,140,.18);border-radius:14px;outline:none;background:rgba(250,251,254,.82);color:var(--ink);font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
-.import-area:focus{border-color:rgba(95,99,255,.45);box-shadow:0 0 0 3px rgba(95,99,255,.08)}
-.data-dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
-.records-section{contain:layout paint;content-visibility:auto;contain-intrinsic-size:520px}
-.records-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-.records-title{display:block;font-size:14px;font-weight:600;line-height:1.2}
-.records-subtitle{margin-top:4px;font-size:10px;color:var(--muted)}
-.records-total{padding-top:2px;font-size:10px;color:var(--muted);white-space:nowrap}
-.records-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:13px;margin-bottom:10px}
-.records-select-actions{display:flex;gap:6px;flex-wrap:wrap}
-.records-action{border:1px solid rgba(120,125,140,.16);background:rgba(246,247,251,.78);border-radius:10px;padding:7px 9px;font-size:11px;color:var(--ink)}
-.records-action.danger{color:#b43c52;background:rgba(255,240,243,.78);border-color:rgba(200,90,112,.18)}
-.records-filter-wrap{display:flex;align-items:center;gap:8px;min-width:0;margin-left:auto}
-.records-habit-filter-button{width:min(210px,100%);height:34px;box-sizing:border-box}
-.records-selection-count{font-size:10px;color:var(--muted);white-space:nowrap}
-.records-list{display:grid;gap:8px}
-.record-row{
-  display:flex;
-  align-items:flex-start;
-  gap:10px;
-  min-width:0;
-  padding:13px 12px;
-  border:1px solid rgba(30,34,50,.07);
-  border-radius:15px;
-  background:rgba(255,255,255,.46);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.78);
-}
-.record-select{width:18px;height:18px;display:grid;place-items:center;flex:none;margin-top:1px}
-.record-select input{position:absolute;opacity:0;pointer-events:none}
-.record-select span{width:18px;height:18px;border-radius:6px;border:1.5px solid rgba(104,109,128,.34);background:rgba(255,255,255,.60);box-shadow:inset 0 1px 0 rgba(255,255,255,.85);transition:background-color .12s ease,border-color .12s ease,transform .12s ease}
-.record-select input:checked+span{border-color:var(--blue);background:var(--blue);transform:scale(1.02)}
-.record-select input:checked+span::after{content:"✓";display:block;color:#fff;font-size:11px;line-height:16px;text-align:center;font-weight:700}
-.record-dot{width:8px;height:8px;margin-top:5px;border-radius:50%;display:block;flex:none;box-shadow:0 2px 5px rgba(35,42,77,.14)}
-.record-info{min-width:0;flex:1 1 auto}
-.record-name{
-  font-size:13px;
-  font-weight:600;
-  line-height:1.28;
-  color:var(--ink);
-  overflow-wrap:anywhere;
-}
-.record-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:5px;font-size:10px;color:var(--muted)}
-.record-meta-sep{opacity:.45}
-.record-type{display:inline-flex;align-items:center;gap:5px}
-.record-type-dot{width:5px;height:5px;border-radius:50%;display:inline-block;flex:none}
-.record-history-note{
-  margin-top:7px;
-  min-width:0;
-  font-size:11px;
-  line-height:1.42;
-  color:#707482;
-  overflow-wrap:anywhere;
-}
-.record-history-time{
+@media(max-width:560px){.calendar-cell{min-height:66px;padding:7px 5px}.calendar-color-stack{margin-top:7px}.calendar-view-sub{font-size:10px}.records-habit-filter-button{width:min(210px,100%);flex:1 1 170px}.records-table-head{display:none}.record-row{grid-template-columns:18px 8px minmax(0,1fr) auto minmax(0,1fr) auto}.record-info{grid-column:3;grid-row:1}.record-history-time{grid-column:4;grid-row:1}.record-history-note{grid-column:3 / span 3;grid-row:2}.record-menu-trigger{
+  width:62px;
+  height:56px;
+  padding:0;
   flex:none;
-  width:70px;
-  padding-top:1px;
-  font-size:13px;
-  font-weight:600;
-  line-height:1.2;
-  text-align:right;
-  white-space:nowrap;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(255,255,255,.90);
+  border-radius:18px;
+  background:rgba(255,255,255,.78);
+  color:#5a5e6a;
+  box-shadow:0 5px 14px rgba(36,42,71,.055),inset 0 1px 0 rgba(255,255,255,.95);
+  transition:background-color .12s ease,box-shadow .12s ease,transform .12s ease,border-color .12s ease;
 }
-.record-history-time-label{display:block;margin-top:3px;font-size:9px;font-weight:400;color:var(--muted);text-align:right}
-.record-actions{
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  gap:6px;
-  flex:none;
-}
-.record-edit,.record-delete{width:62px;min-width:62px;padding:7px 8px;white-space:nowrap;font-size:11px}
+.record-menu-trigger:hover{background:#fff}
+.record-menu-trigger:focus-visible{outline:2px solid rgba(95,99,255,.5);outline-offset:2px}
+.record-menu-trigger.open{border-color:rgba(95,99,255,.30);box-shadow:0 0 0 3px rgba(95,99,255,.07),inset 0 1px 0 rgba(255,255,255,.95)}
+.record-menu-icon{display:grid;gap:5px;width:28px}
+.record-menu-icon i{display:block;height:2px;width:28px;border-radius:99px;background:currentColor}
 .history-foot{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:9px;color:var(--muted)}
 .load-more{display:block;margin:10px auto 0}
 @media(max-width:560px){
@@ -713,21 +641,24 @@ body.sheet-open{
   .records-filter-wrap{width:100%;margin-left:0}
   .records-habit-filter-button{width:100%;flex:1 1 auto}
   .records-list{gap:7px}
-  .record-row{display:grid;grid-template-columns:18px 8px minmax(0,1fr) auto;gap:8px;padding:12px 10px}
+  .record-row{display:grid;grid-template-columns:18px 8px minmax(0,1fr) 64px 56px;gap:8px;padding:12px 10px}
   .record-select{grid-column:1;grid-row:1 / span 3}
   .record-dot{grid-column:2;grid-row:1}
   .record-info{grid-column:3;grid-row:1}
-  .record-history-time{grid-column:4;grid-row:1;width:auto;min-width:56px;font-size:12px}
+  .record-history-time{grid-column:4;grid-row:1;width:auto;min-width:0;font-size:12px}
   .record-history-note{grid-column:3 / span 2;grid-row:2;margin-top:6px}
-  .record-actions{grid-column:3 / span 2;grid-row:3;justify-content:flex-start;padding-top:3px}
-  .record-edit,.record-delete{width:auto;min-width:0}
-  .record-history-time-label{text-align:right}
+  .record-menu-trigger{grid-column:5;grid-row:1;width:56px;height:52px;border-radius:17px}
+  .record-menu-icon{width:25px}
+  .record-menu-icon i{width:25px}
   .history-foot{align-items:flex-start;flex-direction:column}
 }
 @media(max-width:420px){
   .records-select-actions{gap:5px}
   .records-action{padding:7px 8px}
-  .record-row{grid-template-columns:18px 8px minmax(0,1fr) auto}
+  .record-row{grid-template-columns:18px 8px minmax(0,1fr) 58px 52px}
+  .record-menu-trigger{width:52px;height:50px}
+  .record-menu-icon{width:23px}
+  .record-menu-icon i{width:23px}
 }
 .empty{padding:8px 0;font-size:12px;color:var(--muted)}
 
@@ -780,7 +711,7 @@ body.sheet-open{
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.59</div>
+<div class="app-version" aria-label="Версия">v0.3.60</div>
 
 <main class="shell">
   <header class="top">
@@ -1078,6 +1009,8 @@ body.sheet-open{
   var chosenColor='yellow';
   var editingEntryId='';
   var undoAction=null;
+  var activeRecordActionEntryId='';
+  var activeRecordActionButton=null;
   var menusDirty=true;
   var statsCache=null;
   var menuHTMLCache={habit:null,type:null,color:null};
@@ -1881,10 +1814,9 @@ body.sheet-open{
           noteHtml+
         '</div>'+
         '<div class="record-history-time">'+fmt(e.minutes)+'<span class="record-history-time-label">время</span></div>'+
-        '<div class="record-actions">'+
-          (habit?'<button class="secondary-action record-edit" data-edit-entry="'+clean(e.id)+'" aria-label="Изменить запись">Изменить</button>':'')+
-          '<button class="secondary-action record-delete" data-remove-entry="'+clean(e.id)+'" aria-label="Удалить запись">Удалить</button>'+
-        '</div>'+
+        '<button class="record-menu-trigger" type="button" data-record-menu="'+clean(e.id)+'" aria-haspopup="menu" aria-expanded="false" aria-label="Действия: '+clean(displayName)+'" title="Действия">'+
+          '<span class="record-menu-icon" aria-hidden="true"><i></i><i></i><i></i></span>'+
+        '</button>'+
       '</div>';
     }).join('')||'<div class="empty">Нет записей.</div>';
 
@@ -2197,6 +2129,45 @@ body.sheet-open{
     button.setAttribute('aria-expanded','true');
     var selectedOption=menu.querySelector('[data-import-habit-option][aria-selected="true"]')||menu.querySelector('[data-import-habit-option]');
     if(selectedOption)setTimeout(function(){selectedOption.focus()},0);
+  }
+
+  function showRecordActionsMenu(entryId,button){
+    var menu=$('menuPopover'),same=activeMenuKind==='recordActions'&&activeRecordActionEntryId===entryId&&menu.classList.contains('active');
+    closeMenus();
+    if(same)return;
+    var entry=entries.find(function(e){return e.id===entryId});
+    if(!entry)return;
+    var habit=habits.find(function(h){return h.id===entry.habitId});
+    activeMenuKind='recordActions';
+    activeRecordActionEntryId=entryId;
+    activeRecordActionButton=button;
+    menu.innerHTML=(habit?'<button class="option record-action-option" role="menuitem" data-record-action="edit" data-record-entry="'+clean(entryId)+'">Изменить</button>':'')+
+      '<button class="option record-action-option" role="menuitem" data-record-action="delete" data-record-entry="'+clean(entryId)+'">Удалить</button>';
+    menu.setAttribute('role','menu');
+    menu.removeAttribute('aria-labelledby');
+    menu.setAttribute('aria-label','Действия с записью');
+    var options=menu.querySelectorAll('.option');
+    for(var i=0;i<options.length;i++)options[i].setAttribute('tabindex',i===0?'0':'-1');
+    positionRecordActionMenu(button);
+    button.classList.add('open');
+    button.setAttribute('aria-expanded','true');
+    if(options.length)setTimeout(function(){options[0].focus()},0);
+  }
+
+  function positionRecordActionMenu(button){
+    var menu=$('menuPopover');if(!button||!menu)return;
+    var rect=button.getBoundingClientRect(),edge=14,gap=8,width=Math.min(170,window.innerWidth-edge*2);
+    var left=Math.min(Math.max(edge,rect.right-width),window.innerWidth-edge-width);
+    var spaceBelow=window.innerHeight-rect.bottom-gap-edge,spaceAbove=rect.top-gap-edge;
+    var openBelow=spaceBelow>=100||spaceBelow>=spaceAbove;
+    var maxHeight=Math.min(180,Math.max(100,openBelow?spaceBelow:spaceAbove));
+    var top=openBelow?rect.bottom+gap:Math.max(edge,rect.top-gap-maxHeight);
+    menu.style.left=Math.round(left)+'px';
+    menu.style.top=Math.round(top)+'px';
+    menu.style.width=Math.round(width)+'px';
+    menu.style.maxHeight=Math.round(maxHeight)+'px';
+    $('menuLayer').classList.add('active');
+    menu.classList.add('active');
   }
 
   function showRecordsHabitFilterMenu(){
@@ -2723,6 +2694,15 @@ body.sheet-open{
   });
 
   document.getElementById('menuPopover').onclick=function(e){
+    var recordAction=e.target.closest('[data-record-action]');
+    if(recordAction){
+      var recordEntryId=recordAction.getAttribute('data-record-entry')||'';
+      var action=recordAction.getAttribute('data-record-action')||'';
+      closeMenus();
+      if(action==='edit'){openSheetForEntry(recordEntryId);return}
+      if(action==='delete'){deleteHistoryEntry(recordEntryId);return}
+      return;
+    }
     var importHabitOption=e.target.closest('[data-import-habit-option]');
     if(importHabitOption){
       var importId=importHabitOption.getAttribute('data-import-habit-option')||'';
@@ -2904,12 +2884,16 @@ body.sheet-open{
     return !$('dataTransfer').hidden?$('dataTransfer').querySelector('.data-dialog'):(!$('sheet').hidden?$('sheet'):null);
   }
   function activeMenuTrigger(){
-    var buttonId=activeMenuKind==='habit'?'habitButton':activeMenuKind==='type'?'typeButton':activeMenuKind==='color'?'colorButton':activeMenuKind==='calendarHabit'?'calendarFilterButton':activeMenuKind==='recordsHabit'?'recordsHabitFilterButton':'importHabitButton';
+    var buttonId=activeMenuKind==='habit'?'habitButton':activeMenuKind==='type'?'typeButton':activeMenuKind==='color'?'colorButton':activeMenuKind==='calendarHabit'?'calendarFilterButton':activeMenuKind==='recordsHabit'?'recordsHabitFilterButton':activeMenuKind==='importHabit'?'importHabitButton':'recordActionButton';
     return $(buttonId);
   }
   function moveTabFromMenu(e){
-    var dialog=activeModalDialog(),trigger=activeMenuTrigger();
-    if(!dialog||!trigger)return false;
+    var dialog=activeModalDialog(),trigger=activeMenuKind==='recordActions'?activeRecordActionButton:activeMenuTrigger();
+    if(!trigger)return false;
+    if(!dialog){
+      if(e.key==='Tab'){e.preventDefault();closeMenus();trigger.focus();return true}
+      return false;
+    }
     var focusables=modalFocusable(dialog),idx=focusables.indexOf(trigger);
     if(idx<0)return false;
     e.preventDefault();
@@ -3001,7 +2985,44 @@ body.sheet-open{
     });
   };
 
+  function deleteHistoryEntry(entryId){
+    var entryIndex=-1;
+    for(var ei=0;ei<entries.length;ei++){
+      if(entries[ei].id===entryId){entryIndex=ei;break}
+    }
+    if(entryIndex<0)return;
+    var removedEntry=entries[entryIndex];
+    var entryHabit=habits.find(function(h){return h.id===removedEntry.habitId});
+    if(!confirm('Удалить запись «'+(entryHabit?entryHabit.name:'')+'» за '+formatFullDate(removedEntry.date||currentDate)+' ('+fmt(removedEntry.minutes)+')?'))return;
+    entries.splice(entryIndex,1);
+    var removedForUndoSingle=cloneData([removedEntry])[0];
+    if(!deleteEntryFromStorage(removedEntry.id)){
+      entries.splice(entryIndex,0,removedEntry);
+      showToast('Не удалось удалить запись');
+      return;
+    }
+    delete selectedEntryIds[removedEntry.id];
+    invalidateDataCaches();
+    renderSettings();
+    scheduleActiveRender();
+    var undoEpochSingle=localMutationEpoch;
+    showUndoToast('Запись удалена',function(){
+      if(localMutationEpoch!==undoEpochSingle){showToast('Отмена недоступна: данные уже изменились');return}
+      entries.splice(Math.min(entryIndex,entries.length),0,removedForUndoSingle);
+      if(!persistEntries()){showToast('Не удалось отменить удаление');return}
+      invalidateDataCaches();
+      renderSettings();
+      scheduleActiveRender();
+      showToast('Удаление отменено');
+    });
+  }
+
   document.addEventListener('click',function(e){
+    var recordMenuButton=e.target.closest('[data-record-menu]');
+    if(recordMenuButton){
+      showRecordActionsMenu(recordMenuButton.getAttribute('data-record-menu')||'',recordMenuButton);
+      return;
+    }
     var calendarCell=e.target.closest('[data-calendar-date]');
     if(calendarCell&&currentView==='calendar'){
       currentDate=calendarCell.getAttribute('data-calendar-date');
@@ -3012,7 +3033,7 @@ body.sheet-open{
       renderActiveView();
       return;
     }
-    if(activeMenuKind&&!e.target.closest('#menuPopover')&&!e.target.closest('.custom-select')&&!e.target.closest('#calendarFilterButton')&&!e.target.closest('#recordsHabitFilterButton'))closeMenus();
+    if(activeMenuKind&&!e.target.closest('#menuPopover')&&!e.target.closest('.custom-select')&&!e.target.closest('#calendarFilterButton')&&!e.target.closest('#recordsHabitFilterButton')&&!e.target.closest('[data-record-menu]'))closeMenus();
     if(!$('calendar').hidden&&!e.target.closest('#calendar')&&!e.target.closest('#dateButton'))$('calendar').hidden=true;
 
     var more=e.target.closest('#showMoreEntries');
@@ -3030,38 +3051,7 @@ body.sheet-open{
 
     var removeEntry=e.target.closest('[data-remove-entry]');
     if(removeEntry){
-      var entryId=removeEntry.getAttribute('data-remove-entry');
-      var entryIndex=-1;
-      for(var ei=0;ei<entries.length;ei++){
-        if(entries[ei].id===entryId){entryIndex=ei;break}
-      }
-      if(entryIndex>=0){
-        var removedEntry=entries[entryIndex];
-        var entryHabit=habits.find(function(h){return h.id===removedEntry.habitId});
-        if(confirm('Удалить запись «'+(entryHabit?entryHabit.name:'')+'» за '+formatFullDate(removedEntry.date||currentDate)+' ('+fmt(removedEntry.minutes)+')?')){
-          entries.splice(entryIndex,1);
-          var removedForUndoSingle=cloneData([removedEntry])[0];
-          if(!deleteEntryFromStorage(removedEntry.id)){
-            entries.splice(entryIndex,0,removedEntry);
-            showToast('Не удалось удалить запись');
-            return;
-          }
-          delete selectedEntryIds[removedEntry.id];
-          invalidateDataCaches();
-          renderSettings();
-          scheduleActiveRender();
-          var undoEpochSingle=localMutationEpoch;
-          showUndoToast('Запись удалена',function(){
-            if(localMutationEpoch!==undoEpochSingle){showToast('Отмена недоступна: данные уже изменились');return}
-            entries.splice(Math.min(entryIndex,entries.length),0,removedForUndoSingle);
-            if(!persistEntries()){showToast('Не удалось отменить удаление');return}
-            invalidateDataCaches();
-            renderSettings();
-            scheduleActiveRender();
-            showToast('Удаление отменено');
-          });
-        }
-      }
+      deleteHistoryEntry(removeEntry.getAttribute('data-remove-entry')||'');
       return;
     }
 
