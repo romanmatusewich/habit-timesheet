@@ -864,6 +864,10 @@
 
   var calendarModule=null;
 
+  function calendarTooltip(date,stats){
+    return calendarModule?calendarModule.calendarTooltip(date,stats):'';
+  }
+
   function renderCalendarView(){
     if(calendarModule)calendarModule.renderCalendarView();
   }
