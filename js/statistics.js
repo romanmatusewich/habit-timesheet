@@ -14,10 +14,12 @@
     var habitColor=options.habitColor;
     var habitColorEnd=options.habitColorEnd;
     var cache=null;
+    var sortedEntriesCache=null;
     var renderCache={habitBreakdownHTML:null,statsBreakdownHTML:null,habitBreakdownMax:0};
 
     function invalidate(){
       cache=null;
+      sortedEntriesCache=null;
       renderCache.habitBreakdownHTML=null;
       renderCache.statsBreakdownHTML=null;
       renderCache.habitBreakdownMax=0;
@@ -94,11 +96,13 @@
     }
 
     function getSortedEntries(){
-      return getEntries().slice().sort(function(a,b){
+      if(sortedEntriesCache)return sortedEntriesCache;
+      sortedEntriesCache=getEntries().slice().sort(function(a,b){
         var dateCompare=String(b.date||'').localeCompare(String(a.date||''));
         if(dateCompare)return dateCompare;
         return String(b.id||'').localeCompare(String(a.id||''));
       });
+      return sortedEntriesCache;
     }
 
     function weekDates(end){
