@@ -397,6 +397,7 @@
         await idbRequest(db.transaction(IDB_META,'readwrite').objectStore(IDB_META).delete('habit-timesheet-august-allocation-v1'));
       }catch(e){}
       backupToLocalStorage();
+      invalidateDataCaches();
       renderActiveView();
 
       scheduleLocalBackup();
