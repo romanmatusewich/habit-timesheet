@@ -704,7 +704,7 @@
         '<span class="record-dot" style="background:'+color+'"></span>'+
         '<div class="record-info">'+
           '<div class="record-name" title="'+clean(displayName)+'">'+clean(displayName)+'</div>'+
-          '<div class="record-meta"><span>'+dateText+'</span><span class="record-meta-sep">·</span><span class="record-type"><i class="record-type-dot" style="background:'+typeColor+'"></i>'+clean(typeLabel)+'</span></div>'+
+          '<div class="record-meta"><span>'+dateText+'</span><span class="record-meta-sep">·</span><span class="record-type"><i class="record-type-dot" style="background:'+typeColor+'"></i>'+clean(typeLabel)+'</span>'+sportDetail+'</div>'+
           noteHtml+
         '</div>'+
         '<div class="record-history-time">'+fmt(e.minutes)+'<span class="record-history-time-label">время</span></div>'+
@@ -1041,6 +1041,34 @@
     $('colorButtonText').textContent=color.label;
     $('colorDot').style.background=color.color;
     syncMenuSelection();
+    updateSportInterface();
+  }
+
+  function isSportHabitId(habitId){
+    if(habitId==='sport')return true;
+    var habit=habits.find(function(h){return h.id===habitId});
+    return !!habit&&((habit.name||'').toLowerCase().indexOf('спорт')>=0);
+  }
+
+  function updateSportSpeed(){
+    if(!isSportHabitId(chosenHabit)||chosenSportType!=='run')return;
+    var minutes=Math.max(0,parseInt($('minutes').value||'0',10)||0);
+    var kilometers=Math.max(0,parseFloat(String($('sportKilometers').value||'').replace(',','.'))||0);
+    if(minutes>0&&kilometers>0)$('sportAvgSpeed').value=(kilometers/(minutes/60)).toFixed(1);
+  }
+
+  function updateSportInterface(){
+    var sport=isSportHabitId(chosenHabit);
+    $('typeField').hidden=sport;
+    $('colorField').hidden=sport;
+    $('sportEntryField').hidden=!sport;
+    $('sportRunFields').hidden=!sport||chosenSportType!=='run';
+    if(sport){
+      chosenType='sport';
+      var options=document.querySelectorAll('[data-sport-type]');
+      for(var i=0;i<options.length;i++)options[i].classList.toggle('selected',options[i].getAttribute('data-sport-type')===chosenSportType);
+      if(chosenSportType==='run')updateSportSpeed();
+    }
   }
 
   function renderVisibleCategories(){
@@ -1077,8 +1105,11 @@
     chosenType='active';
     chosenColor='blue';
     $('minutes').value='30';
+    $('sportKilometers').value='';
+    $('sportAvgSpeed').value='';
     $('note').value='';
     calendarDate=currentDate;
+    chosenSportType='strength';
     applySelection(chosenHabit,chosenType,chosenColor);
     $('dateButtonText').textContent=formatFullDate(currentDate);
     closeMenus();
@@ -1165,6 +1196,9 @@
     calendarDate=entry.date;
     $('minutes').value=String(Math.round(Number(entry.minutes)||0));
     $('note').value=entry.note||'';
+    chosenSportType=entry.sportType||'strength';
+    $('sportKilometers').value=entry.kilometers?String(entry.kilometers):'';
+    $('sportAvgSpeed').value=entry.avgSpeed?String(entry.avgSpeed):'';
     applySelection(chosenHabit,chosenType,chosenColor);
     $('dateButtonText').textContent=formatFullDate(calendarDate);
     $('sheetTitle').textContent='Изменить запись';
@@ -1178,7 +1212,13 @@
 
   function saveEntry(){
     var minutes=Math.max(0,parseInt($('minutes').value||'0',10)||0);
+    var sport=isSportHabitId(chosenHabit);
+    var sportType=sport?(chosenSportType||'strength'):'';
+    var kilometers=sport&&sportType==='run'?Math.max(0,parseFloat(String($('sportKilometers').value||'').replace(',','.'))||0):0;
+    var avgSpeed=sport&&sportType==='run'?Math.max(0,parseFloat(String($('sportAvgSpeed').value||'').replace(',','.'))||0):0;
     if(!minutes){showToast('Укажи время больше 0 минут');return}
+    if(sport&&sportType==='run'&&kilometers<=0){showToast('Укажи дистанцию в километрах');return}
+    if(sport&&sportType==='run'&&avgSpeed<=0&&minutes>0&&kilometers>0)avgSpeed=kilometers/(minutes/60);
 
     var targetDate=calendarDate||currentDate,todayKey=localDate(new Date());
     if(!/^\d{4}-\d{2}-\d{2}$/.test(targetDate)||targetDate>todayKey){
@@ -1198,7 +1238,10 @@
         minutes:minutes,
         note:$('note').value.trim(),
         type:chosenType,
-        color:chosenColor
+        color:chosenColor,
+        sportType:sportType,
+        kilometers:kilometers,
+        avgSpeed:avgSpeed
       };
       if(!persistEntries()){
         entries[entryIndex]=previousEntry;
@@ -1224,7 +1267,10 @@
       minutes:minutes,
       note:$('note').value.trim(),
       type:chosenType,
-      color:chosenColor
+      color:chosenColor,
+      sportType:sportType,
+      kilometers:kilometers,
+      avgSpeed:avgSpeed
     };
     entries.push(entry);
 
@@ -1269,7 +1315,7 @@
       exportedAt:new Date().toISOString(),
       filter:recordsFilterHabitId==='*'?'Все привычки':(habits.find(function(h){return h.id===recordsFilterHabitId})||{}).name||'',
       habits:exportHabits.map(function(h){return {id:h.id,name:h.name}}),
-      entries:exportEntries.map(function(e){return {id:e.id,habitId:e.habitId,date:e.date,minutes:e.minutes,note:e.note,type:e.type,color:e.color}})
+      entries:exportEntries.map(function(e){return {id:e.id,habitId:e.habitId,date:e.date,minutes:e.minutes,note:e.note,type:e.type,color:e.color,sportType:e.sportType||'',kilometers:e.kilometers||0,avgSpeed:e.avgSpeed||0}})
     };
     var suffix=recordsFilterHabitId==='*'?'all':recordsFilterHabitId;
     downloadBlob(new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'}),'habit-timesheet-'+suffix+'-'+localDate()+'.json','JSON экспортирован');
@@ -1281,10 +1327,10 @@
   function exportCsvData(){
     var exportEntries=getExportEntries(),habitMap={};
     for(var i=0;i<habits.length;i++)habitMap[habits[i].id]=habits[i];
-    var rows=[['Дата','Привычка','Минуты','Тип','Цвет','Описание']];
+    var rows=[['Дата','Привычка','Минуты','Тип','Цвет','Описание','Вид спорта','Км','Средняя скорость, км/ч']];
     for(var j=0;j<exportEntries.length;j++){
       var e=exportEntries[j],type=TYPE_OPTIONS.find(function(t){return t.id===e.type});
-      rows.push([e.date,habitMap[e.habitId]?habitMap[e.habitId].name:'Удаленная привычка',Math.round(Number(e.minutes)||0),type?type.label:e.type||'',e.color||'',e.note||'']);
+      rows.push([e.date,habitMap[e.habitId]?habitMap[e.habitId].name:'Удаленная привычка',Math.round(Number(e.minutes)||0),type?type.label:e.type||'',e.color||'',e.note||'',e.sportType==='run'?'Бег':e.sportType==='strength'?'Силовая':'',e.kilometers||'',e.avgSpeed||'']);
     }
     var csv='\ufeff'+rows.map(function(row){return row.map(csvCell).join(';')}).join('\r\n');
     var suffix=recordsFilterHabitId==='*'?'all':recordsFilterHabitId;
@@ -1472,6 +1518,8 @@
   document.getElementById('closeSheet').onclick=closeSheet;
   document.getElementById('cancelSheet').onclick=closeSheet;
   document.getElementById('saveEntry').onclick=saveEntry;
+  document.getElementById('minutes').addEventListener('input',function(){updateSportSpeed()});
+  document.getElementById('sportKilometers').addEventListener('input',function(){updateSportSpeed()});
   document.getElementById('addHabit').onclick=addHabit;
 
   document.getElementById('habitButton').onclick=function(){showMenu('habit','habitButton')};
@@ -1537,6 +1585,14 @@
       var h=habits.find(function(x){return x.id===id});
       var preset=presetForHabit(h?h.name:'')||{};
       applySelection(id,preset.type||chosenType,preset.color||chosenColor);
+      closeMenus();
+      return;
+    }
+
+    var sportOption=e.target.closest('[data-sport-type]');
+    if(sportOption){
+      chosenSportType=sportOption.getAttribute('data-sport-type')||'strength';
+      updateSportInterface();
       closeMenus();
       return;
     }
