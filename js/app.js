@@ -185,60 +185,12 @@
     },750);
   }
 
-  function idbRequest(request){
-    return new Promise(function(resolve,reject){
-      request.onsuccess=function(){resolve(request.result)};
-      request.onerror=function(){reject(request.error||new Error('IndexedDB error'))};
-    });
-  }
-
-  function openIndexedDB(){
-    return new Promise(function(resolve,reject){
-      if(!window.indexedDB){reject(new Error('IndexedDB unavailable'));return}
-      var request=indexedDB.open(IDB_NAME,IDB_VERSION);
-      request.onupgradeneeded=function(event){
-        var database=event.target.result,transaction=event.target.transaction,oldVersion=event.oldVersion||0;
-        if(oldVersion<1){
-          if(!database.objectStoreNames.contains(IDB_HABITS))database.createObjectStore(IDB_HABITS,{keyPath:'id'});
-          if(!database.objectStoreNames.contains(IDB_ENTRIES))database.createObjectStore(IDB_ENTRIES,{keyPath:'id'});
-          if(!database.objectStoreNames.contains(IDB_META))database.createObjectStore(IDB_META,{keyPath:'key'});
-        }
-        if(oldVersion<2){
-          var meta=transaction.objectStore(IDB_META);
-          meta.put({key:'schemaVersion',value:2});
-        }
-      };
-      request.onsuccess=function(){
-        var opened=request.result;
-        opened.onversionchange=function(){opened.close();if(db===opened)db=null;};
-        resolve(opened);
-      };
-      request.onerror=function(){reject(request.error||new Error('IndexedDB open failed'))};
-    });
-  }
-
-  function idbGetAll(storeName){
-    return idbRequest(db.transaction(storeName,'readonly').objectStore(storeName).getAll());
-  }
-
-  function idbGetMeta(key){
-    return idbRequest(db.transaction(IDB_META,'readonly').objectStore(IDB_META).get(key));
-  }
-
-  function idbStoreAll(habitData,entryData){
-    return new Promise(function(resolve,reject){
-      var tx=db.transaction([IDB_HABITS,IDB_ENTRIES,IDB_META],'readwrite');
-      tx.objectStore(IDB_HABITS).clear();
-      tx.objectStore(IDB_ENTRIES).clear();
-      for(var i=0;i<habitData.length;i++)tx.objectStore(IDB_HABITS).put(habitData[i]);
-      for(var j=0;j<entryData.length;j++)tx.objectStore(IDB_ENTRIES).put(entryData[j]);
-      tx.objectStore(IDB_META).put({key:'migrated',value:true});
-      tx.oncomplete=function(){resolve()};
-      tx.onerror=function(){reject(tx.error||new Error('IndexedDB migration failed'))};
-      tx.onabort=function(){reject(tx.error||new Error('IndexedDB migration aborted'))};
-    });
-  }
-
+  var storagePrimitives=window.HabitTimesheetStorage;
+  var idbRequest=storagePrimitives.idbRequest;
+  var idbGetAll=function(storeName){return storagePrimitives.idbGetAll(db,storeName)};
+  var idbGetMeta=function(key){return storagePrimitives.idbGetMeta(db,key)};
+  var idbStoreAll=function(habitData,entryData){return storagePrimitives.idbStoreAll(db,habitData,entryData)};
+  var openIndexedDB=function(){return storagePrimitives.openIndexedDB(IDB_NAME)};
   function queueIDBWrite(operation){
     storageWriteChain=storageWriteChain.then(operation).catch(function(){
       storageMode='local';
