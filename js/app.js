@@ -928,7 +928,7 @@
 
   function positionRecordActionMenu(button){
     var menu=$('menuPopover');if(!button||!menu)return;
-    var rect=button.getBoundingClientRect(),edge=14,gap=8,width=Math.min(170,window.innerWidth-edge*2);
+    var rect=button.getBoundingClientRect(),edge=14,gap=6,width=Math.min(136,window.innerWidth-edge*2);
     var left=Math.min(Math.max(edge,rect.right-width),window.innerWidth-edge-width);
     var spaceBelow=window.innerHeight-rect.bottom-gap-edge,spaceAbove=rect.top-gap-edge;
     var openBelow=spaceBelow>=100||spaceBelow>=spaceAbove;
