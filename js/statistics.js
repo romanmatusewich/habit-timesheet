@@ -28,7 +28,7 @@
     function getStats(){
       if(cache)return cache;
       var entries=getEntries(),habits=getHabits(),colorById=getColorById();
-      var byHabit={},byDate={},byDateHabit={},byDateColor={},habitColorById={},countByDate={},byType={},activeByMonth={},total=0,sessionCount=0,longest=0;
+      var byHabit={},byDate={},byDateHabit={},byDateColor={},habitColorById={},countByDate={},byType={},activeByMonth={},sportByDate={},total=0,sessionCount=0,longest=0;
       var todayKey=localDate(new Date());
       for(var i=0;i<entries.length;i++){
         var e=entries[i],minutes=Number(e.minutes)||0;
@@ -46,6 +46,10 @@
         byDateColor[e.date][entryColor]=(byDateColor[e.date][entryColor]||0)+minutes;
         if(colorById[entryColor]&&e.habitId)habitColorById[e.habitId]=entryColor;
         byType[e.type||'active']=(byType[e.type||'active']||0)+minutes;
+        if(e.habitId==='sport'){
+          if(!sportByDate[e.date])sportByDate[e.date]=[];
+          sportByDate[e.date].push({sportType:e.sportType||'strength',kilometers:Math.max(0,Number(e.kilometers)||0),avgSpeed:Math.max(0,Number(e.avgSpeed)||0),minutes:minutes});
+        }
       }
 
       var activeDays=Object.keys(byDate).length;
@@ -80,6 +84,7 @@
         habitColorById:habitColorById,
         countByDate:countByDate,
         byType:byType,
+        sportByDate:sportByDate,
         activeByMonth:activeByMonth,
         habitTotals:habitTotals,
         total:total,
