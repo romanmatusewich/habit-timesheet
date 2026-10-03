@@ -78,7 +78,6 @@
   var activeRecordActionEntryId='';
   var activeRecordActionButton=null;
   var menusDirty=true;
-  var statsCache=null;
   var menuHTMLCache={habit:null,type:null,color:null};
   var menuOptionCache={habit:[],type:[],color:[]};
   var activeMenuKind='';
@@ -89,7 +88,6 @@
   var entrySelectionMode=false;
   var renderFrame=0;
   var nodeCache={};
-  var renderCache={habitBreakdownHTML:null,statsBreakdownHTML:null,habitBreakdownMax:0};
   var calendarViewDate=/^\d{4}-\d{2}-\d{2}$/.test(savedUIState.calendarViewDate||'')?savedUIState.calendarViewDate:currentDate;
   var calendarFilterHabitId=String(savedUIState.calendarFilterHabitId||'*');
   var recordsFilterHabitId=String(savedUIState.recordsFilterHabitId||'*');
@@ -442,95 +440,23 @@
     return (Math.round((minutes/60)*10)/10)+' ч';
   }
 
-  var sortedEntriesCache=null;
+  var statisticsModule=null;
 
   function invalidateDataCaches(){
-    statsCache=null;
-    sortedEntriesCache=null;
-    renderCache.habitBreakdownHTML=null;
-    renderCache.statsBreakdownHTML=null;
-    renderCache.habitBreakdownMax=0;
+    if(statisticsModule)statisticsModule.invalidate();
     menuHTMLCache.habit=null;
     menuHTMLCache.type=null;
     menuHTMLCache.color=null;
   }
 
-  function getSortedEntries(){
-    if(sortedEntriesCache)return sortedEntriesCache;
-    sortedEntriesCache=entries.slice().sort(function(a,b){
-      var dateCompare=String(b.date||'').localeCompare(String(a.date||''));
-      if(dateCompare)return dateCompare;
-      return String(b.id||'').localeCompare(String(a.id||''));
-    });
-    return sortedEntriesCache;
-  }
-
-  function getStats(){
-    if(statsCache)return statsCache;
-    var byHabit={},byDate={},byDateHabit={},byDateColor={},habitColorById={},countByDate={},byType={},activeByMonth={},total=0,sessionCount=0,longest=0;
-    var todayKey=localDate(new Date());
-    for(var i=0;i<entries.length;i++){
-      var e=entries[i],minutes=Number(e.minutes)||0;
-      if(!e.date||e.date>todayKey||minutes<=0)continue;
-      total+=minutes;
-      sessionCount++;
-      if(minutes>longest)longest=minutes;
-      byDate[e.date]=(byDate[e.date]||0)+minutes;
-      countByDate[e.date]=(countByDate[e.date]||0)+1;
-      byHabit[e.habitId]=(byHabit[e.habitId]||0)+minutes;
-      if(!byDateHabit[e.date])byDateHabit[e.date]={};
-      byDateHabit[e.date][e.habitId]=(byDateHabit[e.date][e.habitId]||0)+minutes;
-      var entryColor=e.color||'yellow';
-      if(!byDateColor[e.date])byDateColor[e.date]={};
-      byDateColor[e.date][entryColor]=(byDateColor[e.date][entryColor]||0)+minutes;
-      if(COLOR_BY_ID[entryColor]&&e.habitId)habitColorById[e.habitId]=entryColor;
-      byType[e.type||'active']=(byType[e.type||'active']||0)+minutes;
-    }
-    var activeDays=Object.keys(byDate).length;
-    var dateKeys=Object.keys(byDate);
-    activeByMonth={};
-    for(var di=0;di<dateKeys.length;di++){
-      var monthKey=dateKeys[di].slice(0,7);
-      activeByMonth[monthKey]=(activeByMonth[monthKey]||0)+1;
-    }
-    var cutoffObj=dateObj(todayKey);cutoffObj.setDate(cutoffObj.getDate()-29);
-    var cutoffKey=localDate(cutoffObj);
-    var last30Total=0,last30Sessions=0,last30ActiveDays=0,bestDayDate='',bestDayTotal=0;
-    for(var dki=0;dki<dateKeys.length;dki++){
-      var dk=dateKeys[dki],dayValue=byDate[dk]||0;
-      if(dk>=cutoffKey&&dk<=todayKey){
-        last30Total+=dayValue;
-        last30Sessions+=countByDate[dk]||0;
-        last30ActiveDays++;
-      }
-      if(dayValue>bestDayTotal){bestDayTotal=dayValue;bestDayDate=dk}
-    }
-
-    var habitTotals=habits.map(function(h){
-      return {habit:h,total:byHabit[h.id]||0};
-    }).sort(function(a,b){return b.total-a.total});
-    statsCache={
-      byHabit:byHabit,
-      byDate:byDate,
-      byDateHabit:byDateHabit,
-      byDateColor:byDateColor,
-      habitColorById:habitColorById,
-      countByDate:countByDate,
-      byType:byType,
-      activeByMonth:activeByMonth,
-      habitTotals:habitTotals,
-      total:total,
-      sessionCount:sessionCount,
-      activeDays:activeDays,
-      longest:longest,
-      last30Total:last30Total,
-      last30Sessions:last30Sessions,
-      last30ActiveDays:last30ActiveDays,
-      bestDayDate:bestDayDate,
-      bestDayTotal:bestDayTotal
-    };
-    return statsCache;
-  }
+  function getSortedEntries(){return statisticsModule.getSortedEntries()}
+  function getStats(){return statisticsModule.getStats()}
+  function weekDates(end){return statisticsModule.weekDates(end)}
+  function allTotals(){return statisticsModule.allTotals()}
+  function getHabitBreakdownHTML(totals){return statisticsModule.getHabitBreakdownHTML(totals)}
+  function getStatsBreakdownHTML(totals){return statisticsModule.getStatsBreakdownHTML(totals)}
+  function weeklyStatsTotals(){return statisticsModule.weeklyStatsTotals()}
+  function typeDonutData(byType,total){return statisticsModule.typeDonutData(byType,total)}
 
   function dayTotal(date){
     return getStats().byDate[date]||0;
@@ -861,6 +787,19 @@
       b.classList.toggle('active',b.getAttribute('data-view')===currentView);
     }
   }
+
+  statisticsModule=window.HabitTimesheetStatistics.create({
+    getEntries:function(){return entries},
+    getHabits:function(){return habits},
+    getColorById:function(){return COLOR_BY_ID},
+    typeOptions:TYPE_OPTIONS,
+    localDate:localDate,
+    dateObj:dateObj,
+    fmt:fmt,
+    clean:clean,
+    habitColor:habitColor,
+    habitColorEnd:habitColorEnd
+  });
 
   var calendarModule=null;
 
