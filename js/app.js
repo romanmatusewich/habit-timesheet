@@ -699,6 +699,10 @@
       var type=TYPE_OPTIONS.find(function(t){return t.id===e.type});
       var typeLabel=type?type.label:(e.type||'Запись');
       var typeColor=type?(type.chartColor||COLOR_BY_ID[type.defaultColor]||'#6e73ff'):color;
+      var sportEntry=isSportHabitId(e.habitId);
+      var typeLabelSport=sportEntry?(e.sportType==='run'?'Бег':'Силовая'):'';
+      if(sportEntry)typeLabel=typeLabelSport;
+      var sportDetail=sportEntry&&e.sportType==='run'&&Number(e.kilometers)>0?'<span class="record-sport-detail">'+Number(e.kilometers).toFixed(1)+' км · '+(Number(e.avgSpeed)||0).toFixed(1)+' км/ч</span>':'';
       var noteHtml=displayNote?'<div class="record-history-note" title="'+clean(displayNote)+'">'+clean(displayNote)+'</div>':'';
       return '<div class="record-row">'+selector+
         '<span class="record-dot" style="background:'+color+'"></span>'+
