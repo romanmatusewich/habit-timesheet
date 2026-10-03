@@ -362,6 +362,7 @@
 
   async function reconcileFromIndexedDB(){
     var epoch=localMutationEpoch;
+    var localHabitsSnapshot=cloneData(habits);
     var idbHabits=await idbGetAll(IDB_HABITS);
     var idbEntries=await idbGetAll(IDB_ENTRIES);
     if(localMutationEpoch!==epoch){
@@ -369,6 +370,9 @@
       return;
     }
     habits=normalizeStoredHabits(idbHabits);
+    var localSportHabit=localHabitsSnapshot.find(function(h){return h.id==='sport'||(h.name||'').toLowerCase().indexOf('спорт')>=0});
+    var idbHasSport=habits.some(function(h){return h.id==='sport'||(h.name||'').toLowerCase().indexOf('спорт')>=0});
+    if(localSportHabit&&!idbHasSport)habits.push(localSportHabit);
     entries=normalizeStoredEntries(idbEntries);
     storageMode='indexeddb';
     if(cleanLegacyImportedData())await idbStoreAll(cloneData(habits),cloneData(entries));
