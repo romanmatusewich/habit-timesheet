@@ -32,6 +32,7 @@
     }
 
     function calendarTooltip(date,stats,filteredHabitId){
+      filteredHabitId=filteredHabitId||'*';
       var total=stats.byDate[date]||0,habitTotals=stats.byDateHabit[date]||{},habitMap={},habits=getHabits();
       for(var i=0;i<habits.length;i++)habitMap[habits[i].id]=habits[i];
       var ids=Object.keys(habitTotals).filter(function(id){
