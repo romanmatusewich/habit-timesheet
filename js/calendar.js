@@ -13,9 +13,18 @@
     var localDate=options.localDate;
     var formatFullDate=options.formatFullDate;
     var clean=options.clean;
-    var habitColorId=options.habitColorId;
+    var getPresetForHabit=options.getPresetForHabit;
     var colorById=options.colorById;
-    var tooltipColorText=options.tooltipColorText;
+
+    function habitColorId(habit){
+      if(habit&&habit.color&&colorById[habit.color])return habit.color;
+      var preset=getPresetForHabit(habit?habit.name:'')||{};
+      return preset.color&&colorById[preset.color]?preset.color:'blue';
+    }
+
+    function tooltipColorText(colorId){
+      return colorId==='yellow'?'#2f2b1a':'#fff';
+    }
 
     function monthLabel(date){
       var d=dateObj(date),names=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
