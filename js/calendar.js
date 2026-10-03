@@ -143,6 +143,7 @@
 
     return {
       renderCalendarView:renderCalendarView,
+      calendarTooltip:calendarTooltip,
       initHover:initHover
     };
   }
