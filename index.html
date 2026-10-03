@@ -7,11 +7,11 @@
 <meta name="color-scheme" content="light">
 <link rel="manifest" href="manifest.webmanifest">
 <title>Habit Timesheet</title>
-<link rel="stylesheet" href="css/app.css?v=0.3.63">
+<link rel="stylesheet" href="css/app.css?v=0.3.64">
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.63</div>
+<div class="app-version" aria-label="Версия">v0.3.64</div>
 
 <main class="shell">
   <header class="top">
@@ -172,9 +172,17 @@
         <button class="custom-select" id="habitButton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="menuPopover"><span id="habitButtonText">Бухгалтерия</span><span class="chevron">⌄</span></button>
       </div>
 
-      <div class="field">
+      <div class="field" id="typeField">
         <span class="field-label">Тип записи</span>
         <button class="custom-select" id="typeButton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="menuPopover"><span id="typeButtonText">Активное обучение</span><span class="chevron">⌄</span></button>
+      </div>
+
+      <div class="field sport-entry-field" id="sportEntryField" hidden>
+        <span class="field-label">Вид тренировки</span>
+        <div class="sport-type-switch" role="group" aria-label="Вид тренировки">
+          <button class="sport-type-option selected" type="button" data-sport-type="strength">Силовая</button>
+          <button class="sport-type-option" type="button" data-sport-type="run">Бег</button>
+        </div>
       </div>
 
       <label class="field">
@@ -182,12 +190,23 @@
         <input class="field-control" id="minutes" value="30" inputmode="numeric" min="0" placeholder="Например, 45">
       </label>
 
+      <div class="sport-run-fields" id="sportRunFields" hidden>
+        <label class="field">
+          <span class="field-label">Километры</span>
+          <input class="field-control" id="sportKilometers" inputmode="decimal" min="0" step="0.1" placeholder="Например, 5,0">
+        </label>
+        <label class="field">
+          <span class="field-label">Средняя скорость, км/ч</span>
+          <input class="field-control" id="sportAvgSpeed" inputmode="decimal" min="0" step="0.1" placeholder="Например, 10,5">
+        </label>
+      </div>
+
       <label class="field">
         <span class="field-label">Описание</span>
         <input class="field-control text-input" id="note" maxlength="160" placeholder="Например, пассивное обучение">
       </label>
 
-      <div class="field">
+      <div class="field" id="colorField">
         <span class="field-label">Цвет</span>
         <button class="custom-select" id="colorButton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="menuPopover">
           <span class="color-row"><span class="color-dot" id="colorDot"></span><span id="colorButtonText">Желтый</span></span>
@@ -231,9 +250,9 @@
   </section>
 </div>
 
-<script src="js/storage.js?v=0.3.63"></script>
-<script src="js/calendar.js?v=0.3.63"></script>
-<script src="js/statistics.js?v=0.3.63"></script>
-<script src="js/app.js?v=0.3.63"></script>
+<script src="js/storage.js?v=0.3.64"></script>
+<script src="js/calendar.js?v=0.3.64"></script>
+<script src="js/statistics.js?v=0.3.64"></script>
+<script src="js/app.js?v=0.3.64"></script>
 </body>
 </html>
