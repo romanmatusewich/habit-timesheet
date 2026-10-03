@@ -452,6 +452,12 @@
 
   function getSortedEntries(){return statisticsModule.getSortedEntries()}
   function getStats(){return statisticsModule.getStats()}
+  function weekDates(end){return statisticsModule.weekDates(end)}
+  function allTotals(){return statisticsModule.allTotals()}
+  function getHabitBreakdownHTML(totals){return statisticsModule.getHabitBreakdownHTML(totals)}
+  function getStatsBreakdownHTML(totals){return statisticsModule.getStatsBreakdownHTML(totals)}
+  function weeklyStatsTotals(){return statisticsModule.weeklyStatsTotals()}
+  function typeDonutData(byType,total){return statisticsModule.typeDonutData(byType,total)}
   function clean(value){
     return String(value).replace(/[&<>\"']/g,function(c){
       return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c];
