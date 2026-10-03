@@ -451,30 +451,6 @@
 
   function getSortedEntries(){return statisticsModule.getSortedEntries()}
   function getStats(){return statisticsModule.getStats()}
-  function weekDates(end){return statisticsModule.weekDates(end)}
-  function allTotals(){return statisticsModule.allTotals()}
-  function getHabitBreakdownHTML(totals){return statisticsModule.getHabitBreakdownHTML(totals)}
-  function getStatsBreakdownHTML(totals){return statisticsModule.getStatsBreakdownHTML(totals)}
-  function weeklyStatsTotals(){return statisticsModule.weeklyStatsTotals()}
-  function typeDonutData(byType,total){return statisticsModule.typeDonutData(byType,total)}
-
-  function dayTotal(date){
-    return getStats().byDate[date]||0;
-  }
-
-  function weekDates(end){
-    var base=dateObj(end),dow=(base.getDay()+6)%7;
-    base.setDate(base.getDate()-dow);
-    var out=[];
-    for(var i=0;i<7;i++){var d=new Date(base);d.setDate(base.getDate()+i);out.push(localDate(d))}
-    return out;
-  }
-
-  function allTotals(){
-    var totals=getStats().habitTotals.slice(),stats=getStats();
-    return totals;
-  }
-
   function clean(value){
     return String(value).replace(/[&<>\"']/g,function(c){
       return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c];
@@ -596,36 +572,6 @@
     $('chartMark').textContent=Math.round(max*.55);
   }
 
-  function getHabitBreakdownHTML(totals){
-    if(renderCache.habitBreakdownHTML!==null)return renderCache.habitBreakdownHTML;
-
-    var max=60;
-    for(var i=0;i<totals.length;i++)if(totals[i].total>max)max=totals[i].total;
-    renderCache.habitBreakdownMax=max;
-
-    renderCache.habitBreakdownHTML=totals.map(function(x){
-      var pct=Math.round(x.total/max*100);
-      var color=habitColor(x.habit),end=habitColorEnd(color);
-      return '<div class="break-row"><div class="break-left"><div class="break-name"><span class="color-dot" style="background:'+color+';margin-right:7px;vertical-align:1px"></span>'+clean(x.habit.name)+'</div><div class="mini-progress"><i style="--row-color:'+color+';--row-color-end:'+end+';width:'+pct+'%"></i></div></div><div class="break-value">'+fmt(x.total)+'</div></div>';
-    }).join('')||'<div class="break-row"><div class="break-name">Нет привычек</div><div class="break-value">—</div></div>';
-
-    return renderCache.habitBreakdownHTML;
-  }
-
-  function getStatsBreakdownHTML(totals){
-    if(renderCache.statsBreakdownHTML!==null)return renderCache.statsBreakdownHTML;
-    var grand=totals.reduce(function(sum,x){return sum+x.total},0);
-
-    renderCache.statsBreakdownHTML=totals.map(function(x){
-      var color=habitColor(x.habit),end=habitColorEnd(color);
-      var pct=grand?Math.round(x.total/grand*100):0;
-      var bar=x.total?Math.max(4,pct):0;
-      return '<div class="habit-stats-row"><div class="habit-stats-main"><div class="habit-stats-name"><span class="color-dot" style="background:'+color+'"></span><span>'+clean(x.habit.name)+'</span></div><div class="habit-stats-bar"><i style="--row-color:'+color+';--row-color-end:'+end+';width:'+bar+'%"></i></div></div><div class="habit-stats-time">'+fmt(x.total)+'</div><div class="habit-stats-share">'+pct+'%</div></div>';
-    }).join('')||'<div class="empty">Нет данных.</div>';
-
-    return renderCache.statsBreakdownHTML;
-  }
-
   function renderMainStats(){
     var stats=getStats();
     var today=stats.byDate[currentDate]||0;
@@ -651,29 +597,6 @@
       insights.push('Самое длинное занятие — <b>'+fmt(longest)+'</b>.');
     }
     $('insights').innerHTML=insights.map(function(t){return '<div class="insight"><span class="insight-mark"></span><div class="insight-text">'+t+'</div></div>'}).join('');
-  }
-
-  function weeklyStatsTotals(){
-    var stats=getStats(),today=dateObj(localDate(new Date())),out=[];
-    for(var w=7;w>=0;w--){
-      var end=new Date(today);end.setDate(today.getDate()-w*7);
-      var start=new Date(end);start.setDate(end.getDate()-6);
-      var total=0;
-      for(var d=new Date(start);d<=end;d.setDate(d.getDate()+1))total+=stats.byDate[localDate(d)]||0;
-      out.push({start:localDate(start),end:localDate(end),total:total});
-    }
-    return out;
-  }
-
-  function typeDonutData(byType,total){
-    var parts=TYPE_OPTIONS.map(function(t){return {label:t.label,total:byType[t.id]||0,color:t.chartColor||COLOR_BY_ID[t.defaultColor]||'#6e73ff'};}).filter(function(x){return x.total>0});
-    var stops=[],cursor=0;
-    for(var i=0;i<parts.length;i++){
-      var end=cursor+(parts[i].total/Math.max(total,1))*360;
-      stops.push(parts[i].color+' '+cursor.toFixed(1)+'deg '+end.toFixed(1)+'deg');
-      cursor=end;
-    }
-    return {parts:parts,gradient:stops.length?'conic-gradient('+stops.join(',')+')':'conic-gradient(#d7dbe5 0deg 360deg)'};
   }
 
   function renderStats(){
