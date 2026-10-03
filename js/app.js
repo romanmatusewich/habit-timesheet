@@ -2023,9 +2023,8 @@
     localDate:localDate,
     formatFullDate:formatFullDate,
     clean:clean,
-    habitColorId:habitColorId,
-    colorById:COLOR_BY_ID,
-    tooltipColorText:tooltipColorText
+    getPresetForHabit:presetForHabit,
+    colorById:COLOR_BY_ID
   });
   calendarModule.initHover();
 
