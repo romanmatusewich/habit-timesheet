@@ -602,16 +602,16 @@ body.sheet-open{
 @media (hover:hover){.calendar-cell:hover{transform:translateY(-1px);background:rgba(255,255,255,.78)}}
 @media(max-width:760px){.calendar-view-head{align-items:stretch;flex-direction:column}.calendar-view-nav{width:100%;grid-template-columns:minmax(0,1fr) 72px 34px 34px}}
 .record-menu-trigger{
-  width:62px;height:56px;padding:0;flex:none;display:grid;place-items:center;
-  border:1px solid rgba(255,255,255,.90);border-radius:18px;background:rgba(255,255,255,.78);
+  width:44px;height:40px;padding:0;flex:none;display:grid;place-items:center;
+  border:1px solid rgba(255,255,255,.90);border-radius:12px;background:rgba(255,255,255,.78);
   color:#5a5e6a;box-shadow:0 5px 14px rgba(36,42,71,.055),inset 0 1px 0 rgba(255,255,255,.95);
   transition:background-color .12s ease,box-shadow .12s ease,transform .12s ease,border-color .12s ease;
 }
 .record-menu-trigger:hover{background:#fff}
 .record-menu-trigger:focus-visible{outline:2px solid rgba(95,99,255,.5);outline-offset:2px}
 .record-menu-trigger.open{border-color:rgba(95,99,255,.30);box-shadow:0 0 0 3px rgba(95,99,255,.07),inset 0 1px 0 rgba(255,255,255,.95)}
-.record-menu-icon{display:grid;gap:5px;width:28px}
-.record-menu-icon i{display:block;height:2px;width:28px;border-radius:99px;background:currentColor}
+.record-menu-icon{display:grid;gap:4px;width:19px}
+.record-menu-icon i{display:block;height:2px;width:19px;border-radius:99px;background:currentColor}
 .history-foot{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:9px;color:var(--muted)}
 .load-more{display:block;margin:10px auto 0}
 
@@ -736,3 +736,4 @@ body.sheet-open{
   .record-button{margin-top:70px}
   .hero{margin-top:92px}
 }
+.record-action-option{padding:9px 11px;font-size:13px;line-height:1.2}
