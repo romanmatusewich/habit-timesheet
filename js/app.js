@@ -51,6 +51,22 @@
     return {id:h.id,name:String(h.name||'Привычка'),goal:Number(h.goal)||30,color:COLOR_BY_ID[h.color]?h.color:null};
   });
 
+  var SPORT_HABIT_SETUP_KEY='habit-timesheet-sport-setup-v1';
+  function ensureSportHabit(){
+    var exists=habits.some(function(h){return h.id==='sport'||(h.name||'').toLowerCase().indexOf('спорт')>=0});
+    try{
+      if(localStorage.getItem(SPORT_HABIT_SETUP_KEY)==='1')return;
+      if(!exists){
+        habits.push({id:'sport',name:'Спорт',goal:45,color:'green'});
+        localStorage.setItem(HABITS_KEY,JSON.stringify(habits));
+      }
+      localStorage.setItem(SPORT_HABIT_SETUP_KEY,'1');
+    }catch(e){
+      if(!exists)habits.push({id:'sport',name:'Спорт',goal:45,color:'green'});
+    }
+  }
+  ensureSportHabit();
+
   var entries=read(ENTRIES_KEY,[]).map(function(e){
     return {
       id:e.id||uid(),
@@ -59,7 +75,10 @@
       minutes:Math.max(0,Number(e.minutes)||0),
       note:e.note||'',
       type:e.type||'active',
-      color:e.color||'yellow'
+      color:e.color||'yellow',
+      sportType:e.sportType||(e.habitId==='sport'?'strength':''),
+      kilometers:Math.max(0,Number(e.kilometers)||0),
+      avgSpeed:Math.max(0,Number(e.avgSpeed)||0)
     };
   });
   cleanLegacyImportedData();
@@ -73,6 +92,7 @@
   var chosenHabit=habits[0]?habits[0].id:'';
   var chosenType='active';
   var chosenColor='yellow';
+  var chosenSportType='strength';
   var editingEntryId='';
   var undoAction=null;
   var activeRecordActionEntryId='';
@@ -336,7 +356,7 @@
 
   function normalizeStoredEntries(list){
     return list.map(function(e){
-      return {id:e.id||uid(),habitId:e.habitId,date:e.date,minutes:Math.max(0,Number(e.minutes)||0),note:e.note||'',type:e.type||'active',color:e.color||'yellow'};
+      return {id:e.id||uid(),habitId:e.habitId,date:e.date,minutes:Math.max(0,Number(e.minutes)||0),note:e.note||'',type:e.type||'active',color:e.color||'yellow',sportType:e.sportType||(e.habitId==='sport'?'strength':''),kilometers:Math.max(0,Number(e.kilometers)||0),avgSpeed:Math.max(0,Number(e.avgSpeed)||0)};
     });
   }
 
