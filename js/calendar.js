@@ -44,7 +44,9 @@
       html+='<div class="tooltip-list">';
       for(var j=0;j<ids.length;j++){
         var id=ids[j],habit=habitMap[id],minutes=habitTotals[id]||0,colorId=habit?habitColorId(habit):'blue';
-        html+='<div class="tooltip-row"><span class="tooltip-habit" title="'+clean(habit?habit.name:'Удаленная привычка')+'">'+clean(habit?habit.name:'Удаленная привычка')+'</span><span class="tooltip-minutes" style="background:'+colorById[colorId]+';color:'+tooltipColorText(colorId)+'">'+Math.round(minutes)+'</span></div>';
+        var sportDetails=stats.sportByDate&&stats.sportByDate[date]&&id==='sport'?stats.sportByDate[date]:[];
+        var sportDetailHtml=sportDetails.length?'<div class="tooltip-sport-detail">'+sportDetails.map(function(item){return item.sportType==='run'&&item.kilometers>0?('Бег · '+item.kilometers.toFixed(1)+' км · '+item.avgSpeed.toFixed(1)+' км/ч'):'Силовая'}).join('<br>')+'</div>':'';
+        html+='<div class="tooltip-row"><span class="tooltip-habit" title="'+clean(habit?habit.name:'Удаленная привычка')+'">'+clean(habit?habit.name:'Удаленная привычка')+sportDetailHtml+'</span><span class="tooltip-minutes" style="background:'+colorById[colorId]+';color:'+tooltipColorText(colorId)+'">'+Math.round(minutes)+'</span></div>';
       }
       html+='</div>';
       return html;
@@ -97,15 +99,16 @@
         if(i<firstDay){day=prevDays-firstDay+i+1;muted=true;date=localDate(new Date(year,month-1,day))}
         else if(i<firstDay+daysInMonth){day=i-firstDay+1;muted=false;date=localDate(new Date(year,month,day))}
         else{day=i-firstDay-daysInMonth+1;muted=true;date=localDate(new Date(year,month+1,day))}
-        var data=calendarDateData(date,stats),total=data.total,colorTotals=data.colorTotals;
+        var data=calendarDateData(date,stats),total=data.total,colorTotals=data.colorTotals,sportDay=!!(stats.sportByDate&&stats.sportByDate[date]&&stats.sportByDate[date].length);
         var colors=Object.keys(colorTotals).filter(function(id){return colorTotals[id]>0&&colorById[id]}).sort(function(a,b){return colorTotals[b]-colorTotals[a]});
         var stack='';
         for(var c=0;c<colors.length&&c<5;c++){
           var colorId=colors[c],ratio=colorTotals[colorId]/Math.max(total,1);
           stack+='<span class="calendar-color-segment" style="background:'+colorById[colorId]+';flex:'+Math.max(.15,ratio)+'"></span>';
         }
-        var cls='calendar-cell'+(muted?' muted':'')+(total?' has-data':'')+(date===today?' today':'');
-        html+='<div class="'+cls+'" data-calendar-date="'+date+'"><div class="calendar-day-number">'+day+'</div><div class="calendar-day-total">'+(total?fmt(total):'')+'</div><div class="calendar-color-stack">'+stack+'</div></div>';
+        var cls='calendar-cell'+(muted?' muted':'')+(total?' has-data':'')+(sportDay?' sport-day':'')+(date===today?' today':'');
+        var sportBadge=sportDay?'<span class="calendar-sport-badge" aria-label="Спорт">С</span>':'';
+        html+='<div class="'+cls+'" data-calendar-date="'+date+'">'+sportBadge+'<div class="calendar-day-number">'+day+'</div><div class="calendar-day-total">'+(total?fmt(total):'')+'</div><div class="calendar-color-stack">'+stack+'</div></div>';
       }
       $('monthCalendar').innerHTML=html;
       if(note){
