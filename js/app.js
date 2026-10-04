@@ -456,9 +456,11 @@
   function russianHours(minutes){
     var value=Math.round((Number(minutes)||0)/60*10)/10;
     var whole=Math.floor(value);
-    if(value>=2&&value<=4)return (value===whole?whole:value)+' часа';
+    var label=value===whole?String(whole):value.toFixed(1).replace('.',',');
+    if(value!==whole)return label+' часа';
     if(value===1)return '1 час';
-    return (value===whole?whole:value)+' часов';
+    if(value>=2&&value<=4)return label+' часа';
+    return label+' часов';
   }
 
   function shortHours(minutes){
@@ -615,7 +617,7 @@
     $('todaySessions').textContent=todaySessions+' '+(todaySessions===1?'занятие':'занятий');
     $('avgSession').textContent=fmt(average);
 
-    $('breakdownRows').innerHTML=getHabitBreakdownHTML(totals.filter(function(x){return x.total>0}));
+    $('breakdownRows').innerHTML=getHabitBreakdownHTML(totals.filter(function(x){return x.total>0}).slice(0,5));
 
     var monthPrefix=currentDate.slice(0,7);
     var monthActive=stats.activeByMonth[monthPrefix]||0;
@@ -654,13 +656,13 @@
     var weeks=weeklyStatsTotals(),maxWeek=Math.max(60,Math.max.apply(Math,weeks.map(function(x){return x.total})));
     $('weeklyStatsChart').innerHTML=weeks.map(function(x){
       var pct=Math.max(4,Math.round(x.total/maxWeek*100));
-      return '<div class="weekly-bar-wrap"><div class="weekly-bar" style="height:'+pct+'%" title="'+fmt(x.total)+'"></div></div>';
+      return '<div class="weekly-bar-wrap" data-week-start="'+x.start+'" data-week-end="'+x.end+'" data-week-total="'+x.total+'"><div class="weekly-bar" style="height:'+pct+'%"></div></div>';
     }).join('');
     $('weeklyStatsLabels').innerHTML=weeks.map(function(x){
       var a=dateObj(x.start),b=dateObj(x.end);
       var am=a.getDate()+'.'+String(a.getMonth()+1).padStart(2,'0');
       var bm=b.getDate()+'.'+String(b.getMonth()+1).padStart(2,'0');
-      return '<div class="weekly-label"><span>'+am+'–</span><span class="weekly-label-range">'+bm+'</span></div>';
+      return '<div class="weekly-label">'+am+'–'+bm+'</div>';
     }).join('');
 
     var donut=typeDonutData(stats.byType,total);
@@ -669,6 +671,32 @@
     $('statsTypeMiniLegend').innerHTML=donut.parts.slice(0,5).map(function(x){
       return '<div class="type-mini-item"><div class="type-mini-left"><span class="type-mini-dot" style="background:'+x.color+'"></span><span>'+clean(x.label)+'</span></div><b>'+fmt(x.total)+'</b></div>';
     }).join('')||'<div class="empty">Нет данных.</div>';
+  }
+
+  var weeklyHoverWrap=null,weeklyHoverTimer=0;
+
+  function clearWeeklyHover(){
+    clearTimeout(weeklyHoverTimer);
+    weeklyHoverWrap=null;
+    var note=$('weeklyStatsHoverNote');
+    if(note)note.classList.remove('active','below');
+  }
+
+  function positionWeeklyHoverNote(wrap){
+    var note=$('weeklyStatsHoverNote');if(!note||!wrap)return;
+    if(note.parentNode!==document.body)document.body.appendChild(note);
+    var rect=wrap.getBoundingClientRect(),pad=10,gap=8;
+    note.classList.remove('below');
+    var nr=note.getBoundingClientRect();
+    var left=Math.max(pad,Math.min(window.innerWidth-pad-nr.width,rect.left+(rect.width-nr.width)/2));
+    var top=rect.top-gap-nr.height;
+    if(top<pad){
+      top=rect.bottom+gap;
+      note.classList.add('below');
+    }
+    note.style.left=Math.round(left)+'px';
+    note.style.top=Math.round(Math.max(pad,top))+'px';
+    note.classList.add('active');
   }
 
   function renderSettings(){
@@ -1526,6 +1554,25 @@
   document.getElementById('closeSheet').onclick=closeSheet;
   document.getElementById('cancelSheet').onclick=closeSheet;
   document.getElementById('saveEntry').onclick=saveEntry;
+  document.getElementById('weeklyStatsChart').addEventListener('mouseover',function(e){
+    var wrap=e.target.closest('[data-week-start]');
+    if(!wrap||wrap===weeklyHoverWrap)return;
+    clearTimeout(weeklyHoverTimer);
+    weeklyHoverWrap=wrap;
+    weeklyHoverTimer=setTimeout(function(){
+      if(weeklyHoverWrap!==wrap)return;
+      var start=wrap.getAttribute('data-week-start'),end=wrap.getAttribute('data-week-end'),total=Number(wrap.getAttribute('data-week-total'))||0;
+      $('weeklyStatsHoverNote').innerHTML='<div class="weekly-tooltip-range">'+start.split('-').reverse().slice(0,2).join('.')+'–'+end.split('-').reverse().slice(0,2).join('.')+'</div><div class="weekly-tooltip-total">'+fmt(total)+'</div>';
+      positionWeeklyHoverNote(wrap);
+    },350);
+  });
+  document.getElementById('weeklyStatsChart').addEventListener('mouseout',function(e){
+    var next=e.relatedTarget&&e.relatedTarget.closest?e.relatedTarget.closest('[data-week-start]'):null;
+    if(next===weeklyHoverWrap)return;
+    clearWeeklyHover();
+  });
+  window.addEventListener('resize',function(){if(weeklyHoverWrap)positionWeeklyHoverNote(weeklyHoverWrap)});
+
   document.getElementById('minutes').addEventListener('input',function(){updateSportSpeed()});
   document.getElementById('sportKilometers').addEventListener('input',function(){updateSportSpeed()});
   document.getElementById('addHabit').onclick=addHabit;
