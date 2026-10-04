@@ -70,16 +70,19 @@
 
     function positionCalendarHoverNote(cell){
       var note=$('calendarHoverNote');if(!note||!cell)return;
-      if(note.parentNode!==cell)cell.appendChild(note);
-      var rect=cell.getBoundingClientRect(),pad=12;
+      if(note.parentNode!==document.body)document.body.appendChild(note);
+      var rect=cell.getBoundingClientRect(),pad=10,gap=8;
       note.classList.remove('below');
-      note.style.setProperty('--tip-shift','0px');
-      note.classList.add('active');
       var nr=note.getBoundingClientRect();
-      var center=rect.left+rect.width/2,minCenter=pad+nr.width/2,maxCenter=window.innerWidth-pad-nr.width/2;
-      var shift=Math.max(-rect.width/2,Math.min(rect.width/2,Math.max(minCenter,Math.min(maxCenter,center))-center));
-      note.style.setProperty('--tip-shift',Math.round(shift)+'px');
-      if(rect.top<nr.height+24)note.classList.add('below');
+      var left=Math.max(pad,Math.min(window.innerWidth-pad-nr.width,rect.left+(rect.width-nr.width)/2));
+      var top=rect.top-gap-nr.height;
+      if(top<pad){
+        top=rect.bottom+gap;
+        note.classList.add('below');
+      }
+      note.style.left=Math.round(left)+'px';
+      note.style.top=Math.round(Math.max(pad,top))+'px';
+      note.classList.add('active');
     }
 
     function renderCalendarView(){
@@ -112,7 +115,9 @@
       }
       $('monthCalendar').innerHTML=html;
       if(note){
-        $('monthCalendar').appendChild(note);
+        if(note.parentNode!==document.body)document.body.appendChild(note);
+        note.style.left='-9999px';
+        note.style.top='-9999px';
         note.classList.remove('active','below');
       }
     }
@@ -141,7 +146,7 @@
         clearTimeout(calendarHoverTimer);
         calendarHoverCell=null;
         var note=$('calendarHoverNote');
-        if(note)note.classList.remove('active');
+        if(note){note.classList.remove('active','below');note.style.left='-9999px';note.style.top='-9999px'}
       });
     }
 
