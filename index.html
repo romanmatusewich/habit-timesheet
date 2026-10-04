@@ -7,11 +7,11 @@
 <meta name="color-scheme" content="light">
 <link rel="manifest" href="manifest.webmanifest">
 <title>Habit Timesheet</title>
-<link rel="stylesheet" href="css/app.css?v=0.3.67">
+<link rel="stylesheet" href="css/app.css?v=0.3.68">
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.67</div>
+<div class="app-version" aria-label="Версия">v0.3.68</div>
 
 <main class="shell">
   <header class="top">
@@ -52,20 +52,55 @@
   </section>
 
   <section id="statsView" class="view">
-    <section class="stats-section" style="margin-top:44px">
+    <section class="stats-section stats-reference" style="margin-top:44px">
       <h2 class="stats-title">Статистика</h2>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Всего времени</div><div class="stat-value" id="allTotal">0 ч</div><div class="stat-note">за весь период</div></div>
-        <div class="stat-card"><div class="stat-label">Последние 30 дней</div><div class="stat-value" id="last30Total">0 ч</div><div class="stat-note" id="last30ActiveNote">0 активных дней</div></div>
-        <div class="stat-card"><div class="stat-label">Среднее занятие</div><div class="stat-value" id="avgSessionStats">0 мин</div><div class="stat-note" id="sessionCountNote">0 занятий</div></div>
-        <div class="stat-card"><div class="stat-label">Среднее в активный день</div><div class="stat-value" id="avgDay">0 мин</div><div class="stat-note">за весь период</div></div>
+
+      <div class="stats-reference-stack">
+        <article class="stats-hero-card">
+          <div class="stats-hero-main">
+            <div class="stats-card-label">Всего времени</div>
+            <div class="stats-hero-value" id="allTotal">0 ч</div>
+            <div class="stats-hero-sub" id="activeMonthsLabel">0 месяцев</div>
+          </div>
+          <div class="stats-hero-side">
+            <div class="stats-hero-side-label">активность</div>
+            <div class="stats-hero-spark" id="statsHeroSpark"></div>
+            <div class="stats-hero-axis"><span>н</span><span>в</span><span>с</span><span>ч</span><span>п</span><span>с</span><span>в</span><span>т</span></div>
+          </div>
+        </article>
+
+        <div class="stats-accent-grid">
+          <article class="stats-accent-card stats-accent-red">
+            <div class="stats-card-label">Активных дней</div>
+            <div class="stats-accent-value" id="activeDays">0</div>
+            <div class="stats-accent-sub">за весь период</div>
+          </article>
+          <article class="stats-accent-card stats-accent-coral">
+            <div class="stats-card-label">Всего занятий</div>
+            <div class="stats-accent-value" id="allSessions">0</div>
+            <div class="stats-accent-sub">за весь период</div>
+          </article>
+          <article class="stats-accent-card stats-accent-blue">
+            <div class="stats-card-label">Последние 30 дней</div>
+            <div class="stats-accent-value" id="last30Total">0 ч</div>
+            <div class="stats-accent-sub">объём активности</div>
+          </article>
+          <article class="stats-accent-card stats-accent-violet">
+            <div class="stats-card-label">Лучший день</div>
+            <div class="stats-accent-value" id="bestDayTime">0 мин</div>
+            <div class="stats-accent-sub" id="bestDayDate">Нет данных</div>
+          </article>
+        </div>
+
+        <div class="stats-metric-grid">
+          <article class="stats-metric-card"><div class="stats-card-label">Среднее в активный день</div><div class="stats-metric-value" id="avgDay">0 мин</div><div class="stats-metric-sub">за весь период</div></article>
+          <article class="stats-metric-card"><div class="stats-card-label">Среднее занятие</div><div class="stats-metric-value" id="avgSessionStats">0 мин</div><div class="stats-metric-sub" id="sessionCountNote">0 занятий</div></article>
+          <article class="stats-metric-card"><div class="stats-card-label">Активных дней · 30 дней</div><div class="stats-metric-value" id="last30ActiveDaysValue">0</div><div class="stats-metric-sub">из последних 30</div></article>
+          <article class="stats-metric-card"><div class="stats-card-label">Среднее занятие · 30 дней</div><div class="stats-metric-value" id="last30Avg">0 мин</div><div class="stats-metric-sub" id="last30SessionNote">0 занятий</div></article>
+          <article class="stats-metric-card"><div class="stats-card-label">Самое длинное занятие</div><div class="stats-metric-value" id="longestSession">0 мин</div><div class="stats-metric-sub">за весь период</div></article>
+        </div>
       </div>
-      <div class="stat-extra-grid">
-        <div class="stat-mini"><div class="stat-mini-label">Активных дней</div><div class="stat-mini-value" id="activeDays">0</div><div class="stat-mini-note">за весь период</div></div>
-        <div class="stat-mini"><div class="stat-mini-label">Всего занятий</div><div class="stat-mini-value" id="allSessions">0</div><div class="stat-mini-note">за весь период</div></div>
-        <div class="stat-mini"><div class="stat-mini-label">Самый продуктивный день</div><div class="stat-mini-value" id="bestDayTime">0 мин</div><div class="stat-mini-note" id="bestDayDate">Нет данных</div></div>
-        <div class="stat-mini"><div class="stat-mini-label">Среднее занятие · 30 дней</div><div class="stat-mini-value" id="last30Avg">0 мин</div><div class="stat-mini-note" id="last30SessionNote">0 занятий</div></div>
-      </div>
+
       <div class="stats-charts">
         <div class="stats-chart-card">
           <div class="stats-chart-title">Динамика по неделям</div>
@@ -83,26 +118,6 @@
       </div>
       <div class="breakdown stats-habits-card" style="margin-top:12px"><div class="breakdown-head"><strong>Распределение по привычкам</strong><span>доля от общего времени</span></div><div class="habit-stats-table-head"><span>Привычка</span><span>Время</span><span>Доля</span></div><div id="statsBreakdown"></div></div>
     </section>
-  </section>
-
-  <section id="calendarView" class="view">
-    <section class="stats-section calendar-section">
-      <div class="calendar-view-head">
-        <div>
-          <h2 class="stats-title">Календарь</h2>
-          <div class="calendar-view-sub" id="calendarRangeLabel"></div>
-        </div>
-        <div class="calendar-view-nav">
-          <button class="calendar-filter-button" id="calendarFilterButton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="menuPopover"><span id="calendarFilterButtonText">Все привычки</span><span class="filter-chevron" aria-hidden="true"></span></button>
-          <button class="calendar-nav-btn calendar-today-btn" id="calendarToday" type="button">Сегодня</button>
-          <button class="calendar-nav-btn" id="calendarPrevMonth" type="button" aria-label="Предыдущий месяц">‹</button>
-          <button class="calendar-nav-btn" id="calendarNextMonth" type="button" aria-label="Следующий месяц">›</button>
-        </div>
-      </div>
-      <div class="month-calendar" id="monthCalendar"></div>
-      <div class="calendar-hover-note" id="calendarHoverNote"></div>
-    </section>
-  </section>
 
   <section id="settingsView" class="view">
     <section class="stats-section" style="margin-top:44px">
@@ -251,9 +266,9 @@
   </section>
 </div>
 
-<script src="js/storage.js?v=0.3.67"></script>
-<script src="js/calendar.js?v=0.3.67"></script>
-<script src="js/statistics.js?v=0.3.67"></script>
-<script src="js/app.js?v=0.3.67"></script>
+<script src="js/storage.js?v=0.3.68"></script>
+<script src="js/calendar.js?v=0.3.68"></script>
+<script src="js/statistics.js?v=0.3.68"></script>
+<script src="js/app.js?v=0.3.68"></script>
 </body>
 </html>
