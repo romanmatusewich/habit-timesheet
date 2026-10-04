@@ -634,7 +634,9 @@
 
   function renderStats(){
     var stats=getStats(),total=stats.total,active=stats.activeDays;
+    var activeMonths=Object.keys(stats.activeByMonth||{}).length;
     $('allTotal').textContent=fmt(total);
+    $('activeMonthsLabel').textContent=activeMonths+' '+(activeMonths===1?'месяц':activeMonths>=2&&activeMonths<=4?'месяца':'месяцев');
     $('activeDays').textContent=active;
     $('allSessions').textContent=stats.sessionCount;
     $('avgDay').textContent=fmt(active?total/active:0);
@@ -644,16 +646,22 @@
     $('sessionCountNote').textContent=stats.sessionCount+' '+(stats.sessionCount===1?'занятие':'занятий');
 
     $('last30Total').textContent=fmt(stats.last30Total||0);
-    $('last30ActiveNote').textContent=(stats.last30ActiveDays||0)+' '+(stats.last30ActiveDays===1?'активный день':'активных дней');
+    $('last30ActiveDaysValue').textContent=stats.last30ActiveDays||0;
     $('last30Avg').textContent=fmt(stats.last30Sessions?stats.last30Total/stats.last30Sessions:0);
     $('last30SessionNote').textContent=(stats.last30Sessions||0)+' '+(stats.last30Sessions===1?'занятие':'занятий');
 
     $('bestDayTime').textContent=fmt(stats.bestDayTotal||0);
     $('bestDayDate').textContent=stats.bestDayDate?formatFullDate(stats.bestDayDate):'Нет данных';
+    $('longestSession').textContent=fmt(stats.longest||0);
+
+    var weeks=weeklyStatsTotals(),maxWeek=Math.max(60,Math.max.apply(Math,weeks.map(function(x){return x.total})));
+    $('statsHeroSpark').innerHTML=weeks.map(function(x){
+      var pct=x.total?Math.max(8,Math.round(x.total/maxWeek*100)):3;
+      return '<span class="stats-hero-spark-bar" style="height:'+pct+'%"></span>';
+    }).join('');
 
     $('statsBreakdown').innerHTML=getStatsBreakdownHTML(allTotals().filter(function(x){return x.total>0}));
 
-    var weeks=weeklyStatsTotals(),maxWeek=Math.max(60,Math.max.apply(Math,weeks.map(function(x){return x.total})));
     $('weeklyStatsChart').innerHTML=weeks.map(function(x){
       var pct=Math.max(4,Math.round(x.total/maxWeek*100));
       return '<div class="weekly-bar-wrap" data-week-start="'+x.start+'" data-week-end="'+x.end+'" data-week-total="'+x.total+'"><div class="weekly-bar" style="height:'+pct+'%"></div></div>';
@@ -671,32 +679,6 @@
     $('statsTypeMiniLegend').innerHTML=donut.parts.slice(0,5).map(function(x){
       return '<div class="type-mini-item"><div class="type-mini-left"><span class="type-mini-dot" style="background:'+x.color+'"></span><span>'+clean(x.label)+'</span></div><b>'+fmt(x.total)+'</b></div>';
     }).join('')||'<div class="empty">Нет данных.</div>';
-  }
-
-  var weeklyHoverWrap=null,weeklyHoverTimer=0;
-
-  function clearWeeklyHover(){
-    clearTimeout(weeklyHoverTimer);
-    weeklyHoverWrap=null;
-    var note=$('weeklyStatsHoverNote');
-    if(note)note.classList.remove('active','below');
-  }
-
-  function positionWeeklyHoverNote(wrap){
-    var note=$('weeklyStatsHoverNote');if(!note||!wrap)return;
-    if(note.parentNode!==document.body)document.body.appendChild(note);
-    var rect=wrap.getBoundingClientRect(),pad=10,gap=8;
-    note.classList.remove('below');
-    var nr=note.getBoundingClientRect();
-    var left=Math.max(pad,Math.min(window.innerWidth-pad-nr.width,rect.left+(rect.width-nr.width)/2));
-    var top=rect.top-gap-nr.height;
-    if(top<pad){
-      top=rect.bottom+gap;
-      note.classList.add('below');
-    }
-    note.style.left=Math.round(left)+'px';
-    note.style.top=Math.round(Math.max(pad,top))+'px';
-    note.classList.add('active');
   }
 
   function renderSettings(){
