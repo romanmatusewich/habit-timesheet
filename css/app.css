@@ -569,16 +569,16 @@ body.sheet-open{
 .calendar-color-stack{display:flex;gap:3px;align-items:center;margin-top:9px;min-height:5px}
 .calendar-color-segment{height:5px;border-radius:999px;min-width:4px;flex:1}
 .calendar-hover-note{
-  position:absolute;
-  z-index:520;
-  left:50%;
-  bottom:calc(100% + 8px);
+  position:fixed;
+  z-index:900;
+  left:0;
+  top:0;
   width:min(310px,calc(100vw - 28px));
   max-height:min(420px,calc(100vh - 40px));
   overflow:auto;
   padding:13px;
-  border-radius:20px;
-  background:rgba(25,28,42,.97);
+  border-radius:16px;
+  background:#191c2a;
   color:#fff;
   box-shadow:0 16px 38px rgba(18,22,42,.24),inset 0 1px 0 rgba(255,255,255,.08);
   font-size:11px;
@@ -586,8 +586,10 @@ body.sheet-open{
   pointer-events:none;
   opacity:0;
   visibility:hidden;
-  transform:translateX(calc(-50% + var(--tip-shift,0px))) translateY(7px) scale(.985);
-  transition:opacity .16s ease,transform .16s ease
+  transform:translateY(7px) scale(.985);
+  transition:opacity .14s ease,transform .14s ease;
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
 }
 .tooltip-head{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;font-weight:600}
 .tooltip-head-total{font-weight:500;color:rgba(255,255,255,.68);white-space:nowrap}
@@ -596,7 +598,7 @@ body.sheet-open{
 .tooltip-habit{min-width:0;flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(255,255,255,.94)}
 .tooltip-minutes{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:23px;padding:0 8px;box-sizing:border-box;border-radius:999px;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;flex:none}
 .tooltip-empty{margin-top:8px;color:rgba(255,255,255,.64)}
-.calendar-hover-note.active{opacity:1;visibility:visible;transform:translateX(calc(-50% + var(--tip-shift,0px))) translateY(0) scale(1)}
+.calendar-hover-note.active{opacity:1;visibility:visible;transform:translateY(0) scale(1)}
 @media (hover:hover){.calendar-cell:hover{transform:translateY(-1px);background:rgba(255,255,255,.78)}}
 @media(max-width:760px){.calendar-view-head{align-items:stretch;flex-direction:column}.calendar-view-nav{width:100%;grid-template-columns:minmax(0,1fr) 72px 34px 34px}}
 .record-menu-trigger{
