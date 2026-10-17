@@ -104,60 +104,29 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 }
  .record-button:active{transform:scale(.985)}
 
-.hero{margin-top:124px}
-.chart-card{
-  position:relative;
-  overflow:hidden;
-  border-radius:28px;
-  padding:20px 18px 17px;
-  background:linear-gradient(150deg,rgba(255,255,255,.66),rgba(255,255,255,.35));
-  border:1px solid var(--glass-border);
-  box-shadow:
-    inset 1px 0 0 rgba(255,80,150,.10),
-    inset -1px 0 0 rgba(80,198,255,.12),
-    inset 0 1px 0 rgba(255,255,255,.96),
-    0 20px 55px rgba(38,47,87,.12);
-  /* Glass appearance is simulated with translucency/highlights here.
-     The full-page blur is intentionally reserved for the modal scrim. */
-}
-.chart-card::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background:
-    linear-gradient(110deg,rgba(255,107,163,.08),transparent 24%,transparent 72%,rgba(74,201,255,.10)),
-    radial-gradient(circle at 15% 0%,rgba(255,255,255,.85),transparent 32%);
-}
+.hero{width:min(1120px,calc(100vw - 40px));margin:48px 0 0;position:relative;left:50%;transform:translateX(-50%)}
+.chart-card{position:relative;overflow:hidden;width:100%;box-sizing:border-box;border-radius:24px;padding:23px 26px 18px;background:linear-gradient(155deg,rgba(255,255,255,.92),rgba(250,251,254,.84));border:1px solid rgba(36,40,54,.10);box-shadow:0 8px 24px rgba(38,47,87,.055),inset 0 1px 0 rgba(255,255,255,.98)}
+.chart-card::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 9% 0%,rgba(255,255,255,.72),transparent 32%)}
 .chart-card>*{position:relative;z-index:1}
-.chart-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin:0 8px 14px}
-.chart-title{margin:0;font-size:17px;line-height:1.2;font-weight:550;letter-spacing:-.02em}
-.chart-unit{color:var(--muted);font-size:11px;padding-top:3px}
-.chart-wrap{height:190px;position:relative}
-.chart{
-  position:absolute;
-  left:4px;right:4px;top:2px;bottom:24px;
-  display:flex;
-  align-items:flex-end;
-  justify-content:space-between;
-  gap:7px;
-}
-.chart::after{
-  content:"";
-  position:absolute;
-  left:0;right:0;bottom:0;
-  height:1.5px;
-  background:rgba(38,42,57,.26)
-}
-.day{height:100%;flex:1;display:flex;align-items:flex-end;justify-content:center;position:relative}
-.bar{
-  width:22px;
-  min-height:0;
-  border-radius:11px 11px 5px 5px;
-  background:linear-gradient(180deg,#858aff 0%,#737bf7 58%,#626dee 100%);
-  box-shadow:0 6px 13px rgba(76,83,230,.11);
-  transition:transform .14s ease,filter .14s ease
-}
+.chart-head{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;margin:0 2px 20px}
+.chart-metric{min-width:0}
+.chart-eyebrow{font-size:13px;line-height:1.3;color:#717681;font-weight:500}
+.chart-title{margin:7px 0 0;font-size:clamp(30px,3vw,40px);line-height:1.02;font-weight:650;letter-spacing:-.05em;color:#17181b;font-variant-numeric:tabular-nums}
+.chart-comparison{margin-top:8px;font-size:12px;line-height:1.35;color:#838791}
+.chart-comparison.positive{color:#18883e}.chart-comparison.negative{color:#777b84}.chart-comparison.neutral{color:#858992}
+.chart-legend{display:flex;align-items:center;justify-content:flex-end;gap:18px;flex-wrap:wrap;padding-bottom:4px;color:#777b84;font-size:11px}
+.chart-legend span{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.chart-legend i{display:inline-block;width:9px;height:9px;border-radius:3px}
+.chart-legend-current{background:linear-gradient(135deg,#747aff,#45bff2);box-shadow:0 1px 3px rgba(76,83,230,.16)}
+.chart-legend-previous{background:#d8dae2}
+.chart-wrap{height:238px;position:relative}
+.chart{position:absolute;left:4px;right:4px;top:3px;bottom:27px;display:flex;align-items:flex-end;justify-content:space-between;gap:clamp(4px,1.1vw,12px);background:repeating-linear-gradient(to top,transparent 0,transparent calc(25% - 1px),rgba(38,42,57,.045) calc(25% - 1px),rgba(38,42,57,.045) 25%)}
+.chart::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:rgba(38,42,57,.20)}
+.day{height:100%;flex:1;min-width:0;display:flex;align-items:flex-end;justify-content:center;position:relative}
+.day-bars{height:100%;width:100%;display:flex;align-items:flex-end;justify-content:center;gap:clamp(2px,.45vw,6px)}
+.bar{display:block;width:clamp(8px,2.25vw,30px);min-height:0;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,#858aff 0%,#737bf7 58%,#626dee 100%);box-shadow:0 4px 9px rgba(76,83,230,.10);transition:height .28s cubic-bezier(.2,.8,.2,1),transform .14s ease,filter .14s ease}
+.bar.previous-bar{background:linear-gradient(180deg,#e7e8ed,#d7d9e1);box-shadow:none;opacity:.98}
+#todayView .bar.today{box-shadow:0 5px 11px rgba(44,50,80,.14)}
 .bar.today{
   background:linear-gradient(180deg,#8e92ff 0%,#7a82f8 58%,#6873ee 100%);
 }
@@ -195,7 +164,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   display:grid;grid-template-columns:repeat(7,1fr);gap:7px
 }
 .chart-label{font-size:10px;color:var(--muted);text-align:center;font-weight:400}
-.chart-mark{position:absolute;left:0;right:0;bottom:76px;height:14px;font-size:10px;color:var(--muted);pointer-events:none;z-index:2}
+#todayView .chart-mark{display:none}
 .chart-mark::before{content:"";position:absolute;left:0;right:0;top:7px;border-top:1px dashed rgba(110,116,135,.24)}
 .chart-mark{padding-left:2px;box-sizing:border-box}
 .chart-mark::after{content:"";position:absolute;left:0;top:0;width:28px;height:14px;background:transparent}
@@ -1049,3 +1018,23 @@ body.sheet-open{
   .stats-kpi-value{font-size:27px}
   .stats-kpi-spark,.stats-kpi-spark-svg{height:36px}
 }
+
+@media(max-width:760px){
+  #todayView .hero{width:calc(100vw - 24px);margin-top:38px}
+  #todayView .chart-card{padding:19px 15px 14px;border-radius:20px}
+  #todayView .chart-head{align-items:flex-start;flex-direction:column;gap:14px;margin-bottom:14px}
+  #todayView .chart-legend{justify-content:flex-start;gap:14px}
+  #todayView .chart-title{font-size:31px}
+  #todayView .chart-wrap{height:205px}
+  #todayView .chart{left:0;right:0;gap:3px}
+  #todayView .day-bars{gap:2px}
+  #todayView .bar{width:clamp(8px,2.5vw,20px);border-radius:5px 5px 2px 2px}
+}
+@media(max-width:360px){
+  #todayView .hero{width:calc(100vw - 18px)}
+  #todayView .chart-card{padding:17px 12px 13px}
+  #todayView .chart-wrap{height:188px}
+  #todayView .chart-legend{font-size:10px;gap:11px}
+}
+@media(prefers-reduced-motion:reduce){#todayView .bar{transition:none}}
+
