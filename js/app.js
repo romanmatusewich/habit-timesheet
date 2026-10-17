@@ -84,7 +84,7 @@
   cleanLegacyImportedData();
 
   var savedUIState=read(UI_STATE_KEY,{});
-  var savedCurrentDate=/^\d{4}-\d{2}-\d{2}$/.test(savedUIState.currentDate||'')?savedUIState.currentDate:localDate();
+  var savedCurrentDate=localDate();
   var currentDate=savedCurrentDate;
   var currentView='today';
   var calendarDateSelectionActive=false;
@@ -108,7 +108,7 @@
   var entrySelectionMode=false;
   var renderFrame=0;
   var nodeCache={};
-  var calendarViewDate=/^\d{4}-\d{2}-\d{2}$/.test(savedUIState.calendarViewDate||'')?savedUIState.calendarViewDate:currentDate;
+  var calendarViewDate=currentDate;
   var calendarFilterHabitId=String(savedUIState.calendarFilterHabitId||'*');
   var recordsFilterHabitId=String(savedUIState.recordsFilterHabitId||'*');
 
