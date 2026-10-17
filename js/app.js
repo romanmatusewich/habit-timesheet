@@ -544,6 +544,7 @@
     labels.textContent='';
     for(var i=0;i<7;i++){
       var day=document.createElement('div');day.className='day';
+      day.setAttribute('tabindex','0');day.setAttribute('role','group');
       var pair=document.createElement('div');pair.className='day-bars';
       var previousBar=document.createElement('div');previousBar.className='bar previous-bar';
       var bar=document.createElement('div');bar.className='bar current-bar';
@@ -609,6 +610,7 @@
     for(var i=0;i<7;i++){
       var date=dates[i],total=totals[i],previousTotal=previousTotals[i],bar=chartNodes.bars[i],previousBar=chartNodes.previousBars[i],day=chartNodes.days[i];
       day.setAttribute('data-chart-date',date);day.setAttribute('data-chart-previous-date',previousDates[i]);
+      day.setAttribute('aria-label',names[i]+': '+fmt(total)+' на этой неделе, '+fmt(previousTotal)+' на прошлой неделе');
       bar.className='bar current-bar'+(date===currentDate?' today':'');
       bar.style.height=total?Math.max(4,Math.round(total/max*100))+'%':'0%';bar.style.display=total?'block':'none';
       bar.style.background=gradientForDay(date,total)||'linear-gradient(180deg,#747aff 0%,#626cf6 36%,#505fe9 68%,#45bff2 100%)';
@@ -617,7 +619,6 @@
       previousBar.setAttribute('role','img');previousBar.setAttribute('aria-label',names[i]+', прошлая неделя: '+fmt(previousTotal));
       chartNodes.labels[i].textContent=names[i];
     }
-    $('chartMark').textContent=Math.round(max*.55);
   }
 
   function renderMainStats(){
@@ -863,29 +864,58 @@
     note.style.top=Math.round(Math.max(pad,top))+'px';
   }
 
-  var chartHoverDay=null,chartHoverTimer=0;
+  var chartHoverDay=null,chartHoverTimer=0,chartTouchTimer=0,chartTouchPinned=false;
   function clearChartHover(){
-    clearTimeout(chartHoverTimer);
-    chartHoverDay=null;
-    var note=$('chartDayHoverNote');
-    if(note)note.classList.remove('active','below');
+    clearTimeout(chartHoverTimer);clearTimeout(chartTouchTimer);
+    chartHoverTimer=0;chartTouchTimer=0;chartHoverDay=null;chartTouchPinned=false;
+    var note=$('chartDayHoverNote');if(note)note.classList.remove('active','below');
+  }
+
+  function showChartDayTooltip(day,delayed,pinned){
+    if(!day)return;
+    var date=day.getAttribute('data-chart-date'),previousDate=day.getAttribute('data-chart-previous-date');
+    if(!date||!previousDate)return;
+    var stats=getStats(),currentTotal=stats.byDate[date]||0,previousTotal=stats.byDate[previousDate]||0;
+    if(!currentTotal&&!previousTotal){clearChartHover();return}
+    clearTimeout(chartHoverTimer);clearTimeout(chartTouchTimer);
+    chartHoverTimer=0;chartTouchTimer=0;chartHoverDay=day;chartTouchPinned=!!pinned;
+    var renderTooltip=function(){
+      if(chartHoverDay!==day)return;
+      var previousLine='<div class="chart-tooltip-previous"><span>Прошлая неделя · '+clean(formatFullDate(previousDate))+'</span><b>'+clean(fmt(previousTotal))+'</b></div>';
+      $('chartDayHoverNote').innerHTML=calendarTooltip(date,stats)+previousLine;
+      positionChartHoverNote(day);
+    };
+    if(delayed)chartHoverTimer=setTimeout(renderTooltip,450);else renderTooltip();
   }
 
   $('weekChart').addEventListener('mouseover',function(e){
+    if(chartTouchPinned)return;
     var day=e.target.closest('[data-chart-date]');
-    if(!day||day===chartHoverDay||!day.querySelector('.current-bar:not([style*="display: none"])'))return;
-    var date=day.getAttribute('data-chart-date'),stats=getStats();
-    if(!(stats.byDate[date]||0))return;
-    clearTimeout(chartHoverTimer);
-    chartHoverDay=day;
-    chartHoverTimer=setTimeout(function(){
-      if(chartHoverDay!==day)return;
-      $('chartDayHoverNote').innerHTML=calendarTooltip(date,stats);
-      positionChartHoverNote(day);
-    },550);
+    if(!day||day===chartHoverDay)return;
+    showChartDayTooltip(day,true,false);
   });
-  $('weekChart').addEventListener('wheel',function(){clearChartHover();},{passive:true});
+  $('weekChart').addEventListener('focusin',function(e){
+    var day=e.target.closest('[data-chart-date]');
+    if(day)showChartDayTooltip(day,false,false);
+  });
+  $('weekChart').addEventListener('focusout',function(e){
+    var from=e.target.closest('[data-chart-date]'),to=e.relatedTarget&&e.relatedTarget.closest?e.relatedTarget.closest('[data-chart-date]'):null;
+    if(from&&to===from)return;
+    if(!chartTouchPinned)clearChartHover();
+  });
+  $('weekChart').addEventListener('click',function(e){
+    var isTouch=e.pointerType==='touch'||(window.matchMedia&&window.matchMedia('(hover: none)').matches);
+    if(!isTouch)return;
+    var day=e.target.closest('[data-chart-date]');
+    if(!day)return;
+    if(chartTouchPinned&&chartHoverDay===day){clearChartHover();return}
+    showChartDayTooltip(day,false,true);
+    chartTouchTimer=setTimeout(clearChartHover,2800);
+  });
+  $('weekChart').addEventListener('keydown',function(e){if(e.key==='Escape')clearChartHover()});
+  $('weekChart').addEventListener('wheel',function(){clearChartHover()},{passive:true});
   $('weekChart').addEventListener('mouseout',function(e){
+    if(chartTouchPinned)return;
     var next=e.relatedTarget&&e.relatedTarget.closest?e.relatedTarget.closest('[data-chart-date]'):null;
     if(next===chartHoverDay)return;
     clearChartHover();
@@ -900,6 +930,7 @@
   }
 
   function renderActiveView(){
+    if(currentView!=='today')clearChartHover();
     updateViewVisibility();
     if(currentView==='today')renderToday();
     else if(currentView==='calendar')renderCalendarView();
@@ -1794,6 +1825,7 @@
   }
 
   window.addEventListener('resize',function(){
+    clearChartHover();
     repositionOpenMenu();
     positionCalendar();
   },{passive:true});
