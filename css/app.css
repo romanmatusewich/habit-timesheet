@@ -104,7 +104,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 }
  .record-button:active{transform:scale(.985)}
 
-.hero{width:min(1120px,calc(100vw - 40px));margin:48px 0 0;position:relative;left:50%;transform:translateX(-50%)}
+#todayView .hero{width:100%;max-width:100%;margin:44px 0 0;position:relative;left:auto;transform:none;box-sizing:border-box}
 .chart-card{position:relative;overflow:hidden;width:100%;box-sizing:border-box;border-radius:24px;padding:23px 26px 18px;background:linear-gradient(155deg,rgba(255,255,255,.92),rgba(250,251,254,.84));border:1px solid rgba(36,40,54,.10);box-shadow:0 8px 24px rgba(38,47,87,.055),inset 0 1px 0 rgba(255,255,255,.98)}
 .chart-card::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 9% 0%,rgba(255,255,255,.72),transparent 32%)}
 .chart-card>*{position:relative;z-index:1}
@@ -124,7 +124,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .chart::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:rgba(38,42,57,.20)}
 .day{height:100%;flex:1;min-width:0;display:flex;align-items:flex-end;justify-content:center;position:relative}
 .day-bars{height:100%;width:100%;display:flex;align-items:flex-end;justify-content:center;gap:clamp(2px,.45vw,6px)}
-.bar{display:block;width:clamp(8px,2.25vw,30px);min-height:0;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,#858aff 0%,#737bf7 58%,#626dee 100%);box-shadow:0 4px 9px rgba(76,83,230,.10);transition:height .28s cubic-bezier(.2,.8,.2,1),transform .14s ease,filter .14s ease}
+.bar{display:block;flex:0 1 14px;width:clamp(8px,2.7vw,14px);min-width:0;min-height:0;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,#858aff 0%,#737bf7 58%,#626dee 100%);box-shadow:0 4px 9px rgba(76,83,230,.10);transition:height .28s cubic-bezier(.2,.8,.2,1),transform .14s ease,filter .14s ease}
 .bar.previous-bar{background:linear-gradient(180deg,#e7e8ed,#d7d9e1);box-shadow:none;opacity:.98}
 #todayView .bar.today{box-shadow:0 5px 11px rgba(44,50,80,.14)}
 .bar.today{
@@ -134,7 +134,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   position:fixed;
   z-index:560;
   width:min(190px,calc(100vw - 24px));
-  max-height:92px;
+  max-height:min(220px,calc(100vh - 24px));
   overflow:hidden;
   padding:8px 10px;
   border-radius:11px;
@@ -164,10 +164,6 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   display:grid;grid-template-columns:repeat(7,1fr);gap:7px
 }
 .chart-label{font-size:10px;color:var(--muted);text-align:center;font-weight:400}
-#todayView .chart-mark{display:none}
-.chart-mark::before{content:"";position:absolute;left:0;right:0;top:7px;border-top:1px dashed rgba(110,116,135,.24)}
-.chart-mark{padding-left:2px;box-sizing:border-box}
-.chart-mark::after{content:"";position:absolute;left:0;top:0;width:28px;height:14px;background:transparent}
 
 .stats-section{margin-top:28px}
 .stats-title{margin:0 2px 13px;font-size:18px;line-height:1.15;font-weight:650;letter-spacing:-.02em;color:var(--ink)}
@@ -1020,21 +1016,24 @@ body.sheet-open{
 }
 
 @media(max-width:760px){
-  #todayView .hero{width:calc(100vw - 24px);margin-top:38px}
+  #todayView .hero{width:100%;max-width:100%;margin-top:34px}
   #todayView .chart-card{padding:19px 15px 14px;border-radius:20px}
-  #todayView .chart-head{align-items:flex-start;flex-direction:column;gap:14px;margin-bottom:14px}
+  #todayView .chart-head{align-items:flex-start;flex-direction:column;gap:13px;margin-bottom:14px}
   #todayView .chart-legend{justify-content:flex-start;gap:14px}
   #todayView .chart-title{font-size:31px}
+  #todayView .chart-comparison{max-width:100%;overflow-wrap:anywhere}
   #todayView .chart-wrap{height:205px}
   #todayView .chart{left:0;right:0;gap:3px}
   #todayView .day-bars{gap:2px}
-  #todayView .bar{width:clamp(8px,2.5vw,20px);border-radius:5px 5px 2px 2px}
+  #todayView .bar{width:clamp(8px,2.7vw,12px);flex-basis:12px;border-radius:5px 5px 2px 2px}
 }
 @media(max-width:360px){
-  #todayView .hero{width:calc(100vw - 18px)}
   #todayView .chart-card{padding:17px 12px 13px}
   #todayView .chart-wrap{height:188px}
   #todayView .chart-legend{font-size:10px;gap:11px}
+  #todayView .bar{width:9px;flex-basis:9px}
 }
 @media(prefers-reduced-motion:reduce){#todayView .bar{transition:none}}
+.chart-tooltip-previous{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.78);font-size:9px;line-height:1.3}
+.chart-tooltip-previous b{flex:none;color:#fff;font-size:10px;font-weight:650}
 
