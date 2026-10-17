@@ -7,17 +7,17 @@
 <meta name="color-scheme" content="light">
 <link rel="manifest" href="manifest.webmanifest">
 <title>Habit Timesheet</title>
-<link rel="stylesheet" href="css/app.css?v=0.3.72">
+<link rel="stylesheet" href="css/app.css?v=0.3.73">
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.72</div>
+<div class="app-version" aria-label="Версия">v0.3.73</div>
 
 <main class="shell">
   <header class="top">
     <div class="date-title" id="dateDay">26 сентября</div>
     <div class="date-title date-weekday" id="dateWeekday">Суббота</div>
-    <button class="record-button" id="openSheet">Записать данные</button>
+    <button class="record-button ui-button ui-button--primary ui-button--lg" id="openSheet">Записать данные</button>
   </header>
 
   <section id="todayView" class="view active">
@@ -129,9 +129,9 @@
         </div>
         <div class="calendar-view-nav">
           <button class="calendar-filter-button" id="calendarFilterButton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="menuPopover"><span id="calendarFilterButtonText">Все привычки</span><span class="filter-chevron" aria-hidden="true"></span></button>
-          <button class="calendar-nav-btn calendar-today-btn" id="calendarToday" type="button">Сегодня</button>
-          <button class="calendar-nav-btn" id="calendarPrevMonth" type="button" aria-label="Предыдущий месяц">‹</button>
-          <button class="calendar-nav-btn" id="calendarNextMonth" type="button" aria-label="Следующий месяц">›</button>
+          <button class="calendar-nav-btn calendar-today-btn ui-button ui-button--secondary ui-button--sm" id="calendarToday" type="button">Сегодня</button>
+          <button class="calendar-nav-btn ui-button ui-button--secondary ui-button--icon" id="calendarPrevMonth" type="button" aria-label="Предыдущий месяц">‹</button>
+          <button class="calendar-nav-btn ui-button ui-button--secondary ui-button--icon" id="calendarNextMonth" type="button" aria-label="Следующий месяц">›</button>
         </div>
       </div>
       <div class="month-calendar" id="monthCalendar"></div>
@@ -143,12 +143,12 @@
     <section class="stats-section" style="margin-top:44px">
       <div class="breakdown-head">
         <h2 class="stats-title" style="margin:0">Привычки</h2>
-        <button class="secondary-action" id="addHabit">+ Добавить</button>
+        <button class="secondary-action ui-button ui-button--secondary ui-button--md" id="addHabit">+ Добавить</button>
       </div>
       <div class="data-tools">
-        <button class="secondary-action" id="exportData">Экспорт JSON</button>
-        <button class="secondary-action" id="exportCsvData">Экспорт CSV</button>
-        <button class="secondary-action" id="importData">Импорт из таблицы</button>
+        <button class="secondary-action ui-button ui-button--secondary ui-button--md" id="exportData">Экспорт JSON</button>
+        <button class="secondary-action ui-button ui-button--secondary ui-button--md" id="exportCsvData">Экспорт CSV</button>
+        <button class="secondary-action ui-button ui-button--secondary ui-button--md" id="importData">Импорт из таблицы</button>
       </div>
       <div class="breakdown" style="margin-top:12px"><div id="settingsRows"></div></div>
       <div class="breakdown records-section" style="margin-top:12px">
@@ -161,10 +161,10 @@
         </div>
         <div class="records-toolbar">
           <div class="records-select-actions">
-            <button class="records-action" id="toggleEntrySelection" type="button">Выделить</button>
-            <button class="records-action" id="selectAllEntries" type="button" hidden>Все</button>
-            <button class="records-action" id="clearEntrySelection" type="button" hidden>Снять</button>
-            <button class="records-action danger" id="deleteSelectedEntries" type="button" hidden>Удалить выбранные</button>
+            <button class="records-action ui-button ui-button--secondary ui-button--sm" id="toggleEntrySelection" type="button">Выделить</button>
+            <button class="records-action ui-button ui-button--secondary ui-button--sm" id="selectAllEntries" type="button" hidden>Все</button>
+            <button class="records-action ui-button ui-button--secondary ui-button--sm" id="clearEntrySelection" type="button" hidden>Снять</button>
+            <button class="records-action danger ui-button ui-button--danger ui-button--sm" id="deleteSelectedEntries" type="button" hidden>Удалить выбранные</button>
           </div>
           <div class="records-filter-wrap">
             <button class="calendar-filter-button records-habit-filter-button" id="recordsHabitFilterButton" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="menuPopover"><span id="recordsHabitFilterButtonText">Все привычки</span><span class="filter-chevron" aria-hidden="true"></span></button>
@@ -173,7 +173,7 @@
         </div>
         <div id="entriesRows" class="records-list"></div>
         <div class="history-foot"><span>Показаны последние записи</span><span id="historyCountLabel"></span></div>
-        <button class="secondary-action load-more" id="showMoreEntries" hidden>Показать ещё</button>
+        <button class="secondary-action load-more ui-button ui-button--secondary ui-button--md" id="showMoreEntries" hidden>Показать ещё</button>
       </div>
     </section>
   </section>
@@ -192,7 +192,7 @@
   <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
     <div class="sheet-head">
       <h2 class="sheet-title" id="sheetTitle">Записать данные</h2>
-      <button class="sheet-close" id="closeSheet" aria-label="Закрыть">×</button>
+      <button class="sheet-close ui-button ui-button--ghost ui-button--icon" id="closeSheet" aria-label="Закрыть">×</button>
     </div>
 
     <div class="form">
@@ -257,8 +257,8 @@
       </div>
 
       <div class="sheet-actions">
-        <button class="sheet-btn sheet-cancel" id="cancelSheet">Отмена</button>
-        <button class="sheet-btn sheet-save" id="saveEntry">Сохранить</button>
+        <button class="sheet-btn sheet-cancel ui-button ui-button--secondary ui-button--md" id="cancelSheet">Отмена</button>
+        <button class="sheet-btn sheet-save ui-button ui-button--primary ui-button--md" id="saveEntry">Сохранить</button>
       </div>
       <div class="sheet-hint">Можно записывать любое количество минут одним занятием.</div>
     </div>
@@ -269,7 +269,7 @@
   <section class="data-dialog" role="dialog" aria-modal="true" aria-labelledby="dataDialogTitle">
     <div class="data-dialog-head">
       <h2 class="data-dialog-title" id="dataDialogTitle">Импорт из таблицы</h2>
-      <button class="data-dialog-close" id="dataDialogClose" aria-label="Закрыть">×</button>
+      <button class="data-dialog-close ui-button ui-button--ghost ui-button--icon" id="dataDialogClose" aria-label="Закрыть">×</button>
     </div>
     <div class="data-help">Скопируй сюда два столбика из Google Таблиц или другой таблицы: <b>день</b> и <b>количество минут</b>. Поддерживаются полные даты, даты без года и числовые даты Google Таблиц. Это вставка данных из таблицы, а не прямое подключение к Google Sheets. Если в первом столбце указан только номер дня, ниже выбери нужный месяц.<br><br>Пример:<br><code>26.09.2026&nbsp;&nbsp;&nbsp;&nbsp;45</code><br><code>27.09.2026&nbsp;&nbsp;&nbsp;&nbsp;60</code></div>
     <div class="field">
@@ -280,15 +280,15 @@
     <label class="field" style="margin-top:12px"><span class="field-label">Месяц для строк только с номером дня</span><input class="data-select" id="importMonth" type="month"></label>
     <label class="field" style="margin-top:12px"><span class="field-label">Данные из таблицы</span><textarea class="import-area" id="importText" placeholder="26.09.2026&#9;45&#10;27.09.2026&#9;60"></textarea></label>
     <div class="data-dialog-actions">
-      <button class="secondary-action" id="dataDialogCancel">Отмена</button>
-      <button class="secondary-action" id="dataImportConfirm">Импортировать</button>
+      <button class="secondary-action ui-button ui-button--secondary ui-button--md" id="dataDialogCancel">Отмена</button>
+      <button class="secondary-action ui-button ui-button--primary ui-button--md" id="dataImportConfirm">Импортировать</button>
     </div>
   </section>
 </div>
 
-<script src="js/storage.js?v=0.3.72"></script>
-<script src="js/calendar.js?v=0.3.72"></script>
-<script src="js/statistics.js?v=0.3.72"></script>
-<script src="js/app.js?v=0.3.72"></script>
+<script src="js/storage.js?v=0.3.73"></script>
+<script src="js/calendar.js?v=0.3.73"></script>
+<script src="js/statistics.js?v=0.3.73"></script>
+<script src="js/app.js?v=0.3.73"></script>
 </body>
 </html>
