@@ -307,36 +307,100 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .insight-text b{font-weight:600}
 .footer-note{margin-top:18px;padding:0 22px;text-align:center;font-size:11px;line-height:1.5;color:var(--muted)}
 
-/* bottom navigation */
-.mobile-nav{
+/* Floating icon dock — a lightweight native HTML/CSS adaptation */
+.mobile-nav.dock-nav{
   position:fixed;
   left:50%;
-  transform:translateX(-50%);
-  bottom:14px;
+  bottom:calc(12px + env(safe-area-inset-bottom, 0px));
+  transform:translateX(-50%) translateY(0);
   display:flex;
+  align-items:center;
+  justify-content:center;
   gap:4px;
-  padding:5px;
-  border:1px solid rgba(255,255,255,.75);
-  border-radius:16px;
-  background:rgba(244,246,251,.55);
-
-  box-shadow:0 14px 38px rgba(35,42,77,.14),inset 0 1px 0 rgba(255,255,255,.9);
-  z-index:40
+  padding:6px;
+  border:1px solid rgba(255,255,255,.82);
+  border-radius:23px;
+  background:rgba(248,249,253,.78);
+  -webkit-backdrop-filter:blur(18px) saturate(1.22);
+  backdrop-filter:blur(18px) saturate(1.22);
+  box-shadow:0 12px 34px rgba(35,42,77,.16),inset 0 1px 0 rgba(255,255,255,.96);
+  z-index:40;
+  animation:dock-float 4s ease-in-out infinite;
+  will-change:transform;
 }
-.mobile-tab{
+.dock-item{
+  position:relative;
+  display:grid;
+  place-items:center;
+  flex:0 0 auto;
+  width:50px;
+  height:50px;
+  margin:0;
+  padding:0;
   border:0;
+  border-radius:16px;
+  color:#777b88;
   background:transparent;
-  color:var(--muted);
-  font-size:12px;
-  font-weight:400;
-  padding:7px 11px;
-  border-radius:11px;
-  transition:background-color .12s ease,opacity .12s ease
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:color .18s ease,background-color .18s ease,transform .18s cubic-bezier(.2,.8,.2,1);
 }
-.mobile-tab.active{
-  color:var(--ink);
-  background:rgba(255,255,255,.76);
-  box-shadow:0 3px 10px rgba(45,50,77,.08),inset 0 1px 0 rgba(255,255,255,.9)
+.dock-icon{
+  display:grid;
+  place-items:center;
+  width:42px;
+  height:42px;
+  border-radius:14px;
+  transition:background-color .18s ease,box-shadow .18s ease,transform .18s cubic-bezier(.2,.8,.2,1);
+}
+.dock-icon svg{display:block;width:21px;height:21px;overflow:visible}
+.dock-item.active{color:#202230}
+.dock-item.active .dock-icon{
+  background:rgba(255,255,255,.96);
+  box-shadow:0 3px 10px rgba(45,50,77,.10),inset 0 1px 0 rgba(255,255,255,.98);
+}
+.dock-tooltip{
+  position:absolute;
+  left:50%;
+  bottom:calc(100% + 11px);
+  z-index:2;
+  padding:6px 9px;
+  border:1px solid rgba(255,255,255,.13);
+  border-radius:9px;
+  color:#fff;
+  background:rgba(25,28,42,.96);
+  box-shadow:0 6px 18px rgba(20,24,43,.15);
+  font-size:11px;
+  line-height:1.2;
+  font-weight:500;
+  white-space:nowrap;
+  pointer-events:none;
+  opacity:0;
+  transform:translate(-50%,4px) scale(.98);
+  transition:opacity .14s ease,transform .14s ease;
+}
+.dock-item:focus-visible{outline:2px solid rgba(95,99,255,.62);outline-offset:2px}
+@keyframes dock-float{
+  0%,100%{transform:translateX(-50%) translateY(-1px)}
+  50%{transform:translateX(-50%) translateY(2px)}
+}
+@media(hover:hover) and (pointer:fine){
+  .dock-item:hover{color:#242637}
+  .dock-item:hover .dock-icon{transform:translateY(-2px) scale(1.08);background:rgba(255,255,255,.78);box-shadow:0 4px 11px rgba(45,50,77,.08)}
+  .dock-item.active:hover .dock-icon{background:#fff}
+  .dock-item:hover .dock-tooltip,.dock-item:focus-visible .dock-tooltip{opacity:1;transform:translate(-50%,0) scale(1)}
+}
+@media(hover:none){
+  .dock-item:active .dock-icon{transform:scale(.93)}
+}
+@media(max-width:360px){
+  .mobile-nav.dock-nav{gap:1px;padding:5px;border-radius:21px}
+  .dock-item{width:46px;height:46px}
+  .dock-icon{width:40px;height:40px}
+}
+@media(prefers-reduced-motion:reduce){
+  .mobile-nav.dock-nav{animation:none;will-change:auto}
+  .dock-item,.dock-icon,.dock-tooltip{transition:none}
 }
 
 /* modal and menus */
