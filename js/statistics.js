@@ -61,13 +61,20 @@
 
       var cutoffObj=dateObj(todayKey);cutoffObj.setDate(cutoffObj.getDate()-29);
       var cutoffKey=localDate(cutoffObj);
-      var last30Total=0,last30Sessions=0,last30ActiveDays=0,bestDayDate='',bestDayTotal=0;
+      var previousEndObj=dateObj(todayKey);previousEndObj.setDate(previousEndObj.getDate()-30);
+      var previousStartObj=dateObj(todayKey);previousStartObj.setDate(previousStartObj.getDate()-59);
+      var previousStartKey=localDate(previousStartObj),previousEndKey=localDate(previousEndObj);
+      var last30Total=0,last30Sessions=0,last30ActiveDays=0,previous30Total=0,previous30Sessions=0,previous30ActiveDays=0,bestDayDate='',bestDayTotal=0;
       for(var dki=0;dki<dateKeys.length;dki++){
         var dk=dateKeys[dki],dayValue=byDate[dk]||0;
         if(dk>=cutoffKey&&dk<=todayKey){
           last30Total+=dayValue;
           last30Sessions+=countByDate[dk]||0;
           last30ActiveDays++;
+        }else if(dk>=previousStartKey&&dk<=previousEndKey){
+          previous30Total+=dayValue;
+          previous30Sessions+=countByDate[dk]||0;
+          previous30ActiveDays++;
         }
         if(dayValue>bestDayTotal){bestDayTotal=dayValue;bestDayDate=dk}
       }
@@ -94,6 +101,9 @@
         last30Total:last30Total,
         last30Sessions:last30Sessions,
         last30ActiveDays:last30ActiveDays,
+        previous30Total:previous30Total,
+        previous30Sessions:previous30Sessions,
+        previous30ActiveDays:previous30ActiveDays,
         bestDayDate:bestDayDate,
         bestDayTotal:bestDayTotal
       };
@@ -127,9 +137,14 @@
       for(var w=7;w>=0;w--){
         var end=new Date(today);end.setDate(today.getDate()-w*7);
         var start=new Date(end);start.setDate(end.getDate()-6);
-        var total=0;
-        for(var d=new Date(start);d<=end;d.setDate(d.getDate()+1))total+=stats.byDate[localDate(d)]||0;
-        out.push({start:localDate(start),end:localDate(end),total:total});
+        var total=0,sessions=0,activeDays=0;
+        for(var d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
+          var key=localDate(d),dayValue=stats.byDate[key]||0;
+          total+=dayValue;
+          sessions+=stats.countByDate[key]||0;
+          if(dayValue>0)activeDays++;
+        }
+        out.push({start:localDate(start),end:localDate(end),total:total,sessions:sessions,activeDays:activeDays,average:sessions?total/sessions:0});
       }
       return out;
     }
