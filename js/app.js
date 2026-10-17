@@ -812,7 +812,10 @@
     }
     for(var j=0;j<domCache.navs.length;j++){
       var b=domCache.navs[j];
-      b.classList.toggle('active',b.getAttribute('data-view')===currentView);
+      var isActive=b.getAttribute('data-view')===currentView;
+      b.classList.toggle('active',isActive);
+      if(isActive)b.setAttribute('aria-current','page');
+      else b.removeAttribute('aria-current');
     }
   }
 
