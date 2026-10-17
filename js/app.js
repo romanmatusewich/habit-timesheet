@@ -538,22 +538,18 @@
 
   function ensureChartNodes(){
     if(chartNodes)return;
-    chartNodes={bars:[],labels:[]};
+    chartNodes={bars:[],previousBars:[],days:[],labels:[]};
     var chart=$('weekChart'),labels=$('chartLabels');
     chart.textContent='';
     labels.textContent='';
     for(var i=0;i<7;i++){
-      var day=document.createElement('div');
-      day.className='day';
-      var bar=document.createElement('div');
-      day.appendChild(bar);
-      chart.appendChild(day);
-      chartNodes.bars.push(bar);
-
-      var label=document.createElement('div');
-      label.className='chart-label';
-      labels.appendChild(label);
-      chartNodes.labels.push(label);
+      var day=document.createElement('div');day.className='day';
+      var pair=document.createElement('div');pair.className='day-bars';
+      var previousBar=document.createElement('div');previousBar.className='bar previous-bar';
+      var bar=document.createElement('div');bar.className='bar current-bar';
+      pair.appendChild(previousBar);pair.appendChild(bar);day.appendChild(pair);chart.appendChild(day);
+      chartNodes.bars.push(bar);chartNodes.previousBars.push(previousBar);chartNodes.days.push(day);
+      var label=document.createElement('div');label.className='chart-label';labels.appendChild(label);chartNodes.labels.push(label);
     }
   }
 
@@ -588,25 +584,37 @@
 
   function renderChart(){
     ensureChartNodes();
-    var stats=getStats();
-    var dates=weekDates(currentDate),totals=dates.map(function(date){return stats.byDate[date]||0;}),weekTotal=totals.reduce(function(a,b){return a+b},0);
-    $('weekSummary').textContent=russianHours(weekTotal)+' за эту неделю';
+    var stats=getStats(),dates=weekDates(currentDate);
+    var previousDates=dates.map(function(date){var d=dateObj(date);d.setDate(d.getDate()-7);return localDate(d)});
+    var totals=dates.map(function(date){return stats.byDate[date]||0});
+    var previousTotals=previousDates.map(function(date){return stats.byDate[date]||0});
+    var weekTotal=totals.reduce(function(a,b){return a+b},0);
+    $('weekSummary').textContent=russianHours(weekTotal);
 
-    var max=Math.max(60,Math.max.apply(Math,totals));
-    var names=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+    var compareIndex=(dateObj(currentDate).getDay()+6)%7;
+    var currentComparable=totals.slice(0,compareIndex+1).reduce(function(a,b){return a+b},0);
+    var previousComparable=previousTotals.slice(0,compareIndex+1).reduce(function(a,b){return a+b},0);
+    var comparison=$('weekComparison');comparison.className='chart-comparison';
+    if(previousComparable>0){
+      var delta=currentComparable-previousComparable,percent=Math.round(Math.abs(delta)/previousComparable*1000)/10;
+      if(delta>0){comparison.textContent='↗ +'+percent.toFixed(1).replace('.',',')+'% к той же части прошлой недели';comparison.classList.add('positive')}
+      else if(delta<0){comparison.textContent='↘ −'+percent.toFixed(1).replace('.',',')+'% к той же части прошлой недели';comparison.classList.add('negative')}
+      else{comparison.textContent='→ Без изменений к той же части прошлой недели';comparison.classList.add('neutral')}
+    }else if(currentComparable>0){comparison.textContent='Новая активность за этот период';comparison.classList.add('positive')}
+    else{comparison.textContent='Пока нет активности для сравнения';comparison.classList.add('neutral')}
+
+    var max=Math.max(60,Math.max.apply(Math,totals.concat(previousTotals))),names=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
     var note=$('chartDayHoverNote');
-    if(note){
-      note.classList.remove('active','below');
-      note.style.setProperty('--tip-shift','0px');
-    }
+    if(note){note.classList.remove('active','below');note.style.setProperty('--tip-shift','0px')}
     for(var i=0;i<7;i++){
-      var date=dates[i],total=totals[i],bar=chartNodes.bars[i],day=bar.parentNode;
-      day.setAttribute('data-chart-date',date);
-      bar.className='bar'+(date===currentDate?' today':' muted');
-      bar.style.height=total?Math.max(5,Math.round(total/max*100))+'%':'0%';
-      bar.style.display=total?'block':'none';
+      var date=dates[i],total=totals[i],previousTotal=previousTotals[i],bar=chartNodes.bars[i],previousBar=chartNodes.previousBars[i],day=chartNodes.days[i];
+      day.setAttribute('data-chart-date',date);day.setAttribute('data-chart-previous-date',previousDates[i]);
+      bar.className='bar current-bar'+(date===currentDate?' today':'');
+      bar.style.height=total?Math.max(4,Math.round(total/max*100))+'%':'0%';bar.style.display=total?'block':'none';
       bar.style.background=gradientForDay(date,total)||'linear-gradient(180deg,#747aff 0%,#626cf6 36%,#505fe9 68%,#45bff2 100%)';
-      bar.removeAttribute('title');
+      bar.setAttribute('role','img');bar.setAttribute('aria-label',names[i]+', эта неделя: '+fmt(total));bar.removeAttribute('title');
+      previousBar.style.height=previousTotal?Math.max(4,Math.round(previousTotal/max*100))+'%':'0%';previousBar.style.display=previousTotal?'block':'none';
+      previousBar.setAttribute('role','img');previousBar.setAttribute('aria-label',names[i]+', прошлая неделя: '+fmt(previousTotal));
       chartNodes.labels[i].textContent=names[i];
     }
     $('chartMark').textContent=Math.round(max*.55);
@@ -865,7 +873,7 @@
 
   $('weekChart').addEventListener('mouseover',function(e){
     var day=e.target.closest('[data-chart-date]');
-    if(!day||day===chartHoverDay||!day.querySelector('.bar:not([style*="display: none"])'))return;
+    if(!day||day===chartHoverDay||!day.querySelector('.current-bar:not([style*="display: none"])'))return;
     var date=day.getAttribute('data-chart-date'),stats=getStats();
     if(!(stats.byDate[date]||0))return;
     clearTimeout(chartHoverTimer);
