@@ -1,6 +1,13 @@
 (function(){
   'use strict';
 
+  document.addEventListener('click',function(event){
+    var busyButton=event.target&&event.target.closest?event.target.closest('.ui-button[aria-busy="true"],.ui-button[aria-disabled="true"]'):null;
+    if(!busyButton)return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  },true);
+
   var HABITS_KEY='habit-timesheet-habits';
   var ENTRIES_KEY='habit-timesheet-entries';
   var UI_STATE_KEY='habit-timesheet-ui-state';
@@ -513,7 +520,7 @@
     undoAction=action;
     clearTimeout(showToast.t);
     clearTimeout(showUndoToast.t);
-    el.innerHTML='<div class="toast-inner"><span>'+clean(text)+'</span><button type="button" class="toast-undo">Отменить</button></div>';
+    el.innerHTML='<div class="toast-inner"><span>'+clean(text)+'</span><button type="button" class="toast-undo ui-button ui-button--secondary ui-button--sm">Отменить</button></div>';
     el.style.opacity='1';
     el.querySelector('.toast-undo').onclick=function(){
       var fn=undoAction;undoAction=null;
@@ -685,7 +692,7 @@
     var settingsHabits=habits.slice();
     $('settingsRows').innerHTML=settingsHabits.map(function(h){
       var color=habitColor(h);
-      return '<div class="break-row"><div class="break-left"><div class="break-name" title="'+clean(h.name)+'"><span class="color-dot" style="background:'+color+';margin-right:7px;vertical-align:1px"></span>'+clean(h.name)+'</div></div><button class="secondary-action" data-remove-habit="'+h.id+'">Удалить</button></div>';
+      return '<div class="break-row"><div class="break-left"><div class="break-name" title="'+clean(h.name)+'"><span class="color-dot" style="background:'+color+';margin-right:7px;vertical-align:1px"></span>'+clean(h.name)+'</div></div><button class="secondary-action ui-button ui-button--secondary ui-button--md" data-remove-habit="'+h.id+'">Удалить</button></div>';
     }).join('')||'<div class="empty">Нет привычек.</div>';
 
     var habitMap={};
