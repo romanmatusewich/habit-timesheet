@@ -639,33 +639,84 @@
     $('insights').innerHTML=insights.map(function(t){return '<div class="insight"><span class="insight-mark"></span><div class="insight-text">'+t+'</div></div>'}).join('');
   }
 
+  function statsKpiSparkline(values){
+    var width=320,height=44,left=5,right=315,top=5,bottom=35;
+    var nums=values.map(function(v){return Math.max(0,Number(v)||0)});
+    if(!nums.length)nums=[0,0];
+    var min=Math.min.apply(Math,nums),max=Math.max.apply(Math,nums),range=max-min||1;
+    var points=nums.map(function(value,index){
+      return {
+        x:left+(right-left)*(nums.length===1?0.5:index/(nums.length-1)),
+        y:bottom-((value-min)/range)*(bottom-top)
+      };
+    });
+    var line='M '+points[0].x.toFixed(2)+' '+points[0].y.toFixed(2);
+    for(var i=0;i<points.length-1;i++){
+      var prev=points[Math.max(0,i-1)],a=points[i],b=points[i+1],next=points[Math.min(points.length-1,i+2)];
+      var c1x=a.x+(b.x-prev.x)/6,c1y=a.y+(b.y-prev.y)/6;
+      var c2x=b.x-(next.x-a.x)/6,c2y=b.y-(next.y-a.y)/6;
+      line+=' C '+c1x.toFixed(2)+' '+c1y.toFixed(2)+', '+c2x.toFixed(2)+' '+c2y.toFixed(2)+', '+b.x.toFixed(2)+' '+b.y.toFixed(2);
+    }
+    var last=points[points.length-1],area=line+' L '+last.x.toFixed(2)+' 41 L '+points[0].x.toFixed(2)+' 41 Z';
+    return '<svg class="stats-kpi-spark-svg" viewBox="0 0 320 44" preserveAspectRatio="none" focusable="false" aria-hidden="true">'+
+      '<path class="stats-kpi-spark-area" d="'+area+'"></path>'+
+      '<path class="stats-kpi-spark-line" d="'+line+'"></path>'+
+      '<circle class="stats-kpi-spark-end" cx="'+last.x.toFixed(2)+'" cy="'+last.y.toFixed(2)+'" r="3.1"></circle>'+
+      '</svg>';
+  }
+
+  function statsKpiComparison(id,current,previous,mode){
+    var el=$(id),delta=current-previous,arrow=delta>0?'↗':delta<0?'↘':'→',text='';
+    el.className='stats-kpi-change';
+    if(previous===0){
+      if(current===0){
+        text='Нет изменений за предыдущие 30 дней';
+        el.classList.add('neutral');
+      }else{
+        text='Новые данные за этот период';
+        el.classList.add('positive');
+      }
+    }else if(mode==='percent'){
+      var percent=Math.round((delta/previous)*1000)/10;
+      var percentText=(percent>0?'+':percent<0?'−':'')+Math.abs(percent).toFixed(1).replace('.',',')+'%';
+      text=arrow+' '+percentText+' · к прошлым 30 дням';
+      el.classList.add(delta>0?'positive':delta<0?'negative':'neutral');
+    }else if(mode==='days'){
+      var days=Math.round(delta);
+      text=(days>0?'+':days<0?'−':'')+Math.abs(days)+' '+(Math.abs(days)===1?'день':Math.abs(days)>=2&&Math.abs(days)<=4?'дня':'дней')+' · к прошлым 30 дням';
+      el.classList.add(delta>0?'positive':delta<0?'negative':'neutral');
+    }else{
+      var minutes=Math.round(delta);
+      if(minutes===0){
+        text='Без заметных изменений · к прошлым 30 дням';
+        el.classList.add('neutral');
+      }else{
+        text=arrow+' '+(minutes>0?'+':'−')+Math.abs(minutes)+' мин · к прошлым 30 дням';
+        el.classList.add('neutral');
+      }
+    }
+    el.textContent=text;
+  }
+
   function renderStats(){
-    var stats=getStats(),total=stats.total,active=stats.activeDays;
-    var activeMonths=Object.keys(stats.activeByMonth||{}).length;
-    $('allTotal').textContent=fmt(total);
-    $('activeMonthsLabel').textContent=activeMonths+' '+(activeMonths===1?'месяц':activeMonths>=2&&activeMonths<=4?'месяца':'месяцев');
-    $('activeDays').textContent=active;
-    $('allSessions').textContent=stats.sessionCount;
-    $('avgDay').textContent=fmt(active?total/active:0);
+    var stats=getStats(),total=stats.total;
+    var currentAverage=stats.last30Sessions?stats.last30Total/stats.last30Sessions:0;
+    var previousAverage=stats.previous30Sessions?stats.previous30Total/stats.previous30Sessions:0;
+    $('kpi30Time').textContent=shortHours(stats.last30Total||0).replace('.',',');
+    $('kpi30Sessions').textContent=String(stats.last30Sessions||0);
+    $('kpi30Average').textContent=fmt(Math.round(currentAverage));
+    $('kpi30ActiveDays').textContent=(stats.last30ActiveDays||0)+' / 30';
 
-    var avgSession=stats.sessionCount?Math.round(total/stats.sessionCount):0;
-    $('avgSessionStats').textContent=fmt(avgSession);
-    $('sessionCountNote').textContent=stats.sessionCount+' '+(stats.sessionCount===1?'занятие':'занятий');
-
-    $('last30Total').textContent=fmt(stats.last30Total||0);
-    $('last30ActiveDaysValue').textContent=stats.last30ActiveDays||0;
-    $('last30Avg').textContent=fmt(stats.last30Sessions?stats.last30Total/stats.last30Sessions:0);
-    $('last30SessionNote').textContent=(stats.last30Sessions||0)+' '+(stats.last30Sessions===1?'занятие':'занятий');
-
-    $('bestDayTime').textContent=fmt(stats.bestDayTotal||0);
-    $('bestDayDate').textContent=stats.bestDayDate?formatFullDate(stats.bestDayDate):'Нет данных';
-    $('longestSession').textContent=fmt(stats.longest||0);
+    statsKpiComparison('kpi30TimeChange',stats.last30Total||0,stats.previous30Total||0,'percent');
+    statsKpiComparison('kpi30SessionsChange',stats.last30Sessions||0,stats.previous30Sessions||0,'percent');
+    statsKpiComparison('kpi30AverageChange',currentAverage,previousAverage,'minutes');
+    statsKpiComparison('kpi30ActiveDaysChange',stats.last30ActiveDays||0,stats.previous30ActiveDays||0,'days');
 
     var weeks=weeklyStatsTotals(),maxWeek=Math.max(60,Math.max.apply(Math,weeks.map(function(x){return x.total})));
-    $('statsHeroSpark').innerHTML=weeks.map(function(x){
-      var pct=x.total?Math.max(8,Math.round(x.total/maxWeek*100)):3;
-      return '<span class="stats-hero-spark-bar" style="height:'+pct+'%"></span>';
-    }).join('');
+    $('kpi30TimeSpark').innerHTML=statsKpiSparkline(weeks.map(function(x){return x.total}));
+    $('kpi30SessionsSpark').innerHTML=statsKpiSparkline(weeks.map(function(x){return x.sessions}));
+    $('kpi30AverageSpark').innerHTML=statsKpiSparkline(weeks.map(function(x){return x.average}));
+    $('kpi30ActiveDaysSpark').innerHTML=statsKpiSparkline(weeks.map(function(x){return x.activeDays}));
 
     $('statsBreakdown').innerHTML=getStatsBreakdownHTML(allTotals().filter(function(x){return x.total>0}));
 
@@ -753,6 +804,8 @@
   }
 
   function updateViewVisibility(){
+    var appShell=document.querySelector('.shell');
+    if(appShell)appShell.classList.toggle('stats-layout-wide',currentView==='stats');
     for(var i=0;i<domCache.views.length;i++){
       var v=domCache.views[i];
       v.classList.toggle('active',v.id===currentView+'View');
