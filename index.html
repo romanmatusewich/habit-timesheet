@@ -7,11 +7,11 @@
 <meta name="color-scheme" content="light">
 <link rel="manifest" href="manifest.webmanifest">
 <title>Habit Timesheet</title>
-<link rel="stylesheet" href="css/app.css?v=0.3.75">
+<link rel="stylesheet" href="css/app.css?v=0.3.76">
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.75</div>
+<div class="app-version" aria-label="Версия">v0.3.76</div>
 
 <main class="shell">
   <header class="top">
@@ -24,8 +24,15 @@
     <div class="hero">
       <div class="chart-card">
         <div class="chart-head">
-          <h2 class="chart-title" id="weekSummary">0 часов за эту неделю</h2>
-          <div class="chart-unit">минуты</div>
+          <div class="chart-metric">
+            <div class="chart-eyebrow">Активность за неделю</div>
+            <h2 class="chart-title" id="weekSummary">0 часов</h2>
+            <div class="chart-comparison neutral" id="weekComparison" aria-live="polite">Сравнение с прошлой неделей</div>
+          </div>
+          <div class="chart-legend" aria-label="Сравнение по неделям">
+            <span><i class="chart-legend-current"></i>Эта неделя</span>
+            <span><i class="chart-legend-previous"></i>Прошлая неделя</span>
+          </div>
         </div>
         <div class="chart-wrap">
           <div class="chart" id="weekChart"></div>
@@ -275,9 +282,9 @@
   </section>
 </div>
 
-<script src="js/storage.js?v=0.3.75"></script>
-<script src="js/calendar.js?v=0.3.75"></script>
-<script src="js/statistics.js?v=0.3.75"></script>
-<script src="js/app.js?v=0.3.75"></script>
+<script src="js/storage.js?v=0.3.76"></script>
+<script src="js/calendar.js?v=0.3.76"></script>
+<script src="js/statistics.js?v=0.3.76"></script>
+<script src="js/app.js?v=0.3.76"></script>
 </body>
 </html>
