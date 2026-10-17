@@ -7,11 +7,11 @@
 <meta name="color-scheme" content="light">
 <link rel="manifest" href="manifest.webmanifest">
 <title>Habit Timesheet</title>
-<link rel="stylesheet" href="css/app.css?v=0.3.73">
+<link rel="stylesheet" href="css/app.css?v=0.3.74">
 </head>
 <body>
 
-<div class="app-version" aria-label="Версия">v0.3.73</div>
+<div class="app-version" aria-label="Версия">v0.3.74</div>
 
 <main class="shell">
   <header class="top">
@@ -52,59 +52,40 @@
   </section>
 
   <section id="statsView" class="view">
-    <section class="stats-section stats-reference" style="margin-top:44px">
+    <section class="stats-section stats-reference">
       <h2 class="stats-title">Статистика</h2>
 
-      <div class="stats-reference-stack">
-        <article class="stats-hero-card">
-          <div class="stats-hero-main">
-            <div class="stats-card-label">Всего времени</div>
-            <div class="stats-hero-value" id="allTotal">0 ч</div>
-            <div class="stats-hero-sub" id="activeMonthsLabel">0 месяцев</div>
-          </div>
-          <div class="stats-hero-side">
-            <div class="stats-hero-side-label">активность</div>
-            <div class="stats-hero-spark" id="statsHeroSpark"></div>
-            <div class="stats-hero-axis"><span>н</span><span>в</span><span>с</span><span>ч</span><span>п</span><span>с</span><span>в</span><span>т</span></div>
-          </div>
+      <div class="stats-kpi-grid" aria-label="Ключевые показатели за последние 30 дней">
+        <article class="stats-kpi-card">
+          <div class="stats-kpi-label">Время за 30 дней</div>
+          <div class="stats-kpi-value" id="kpi30Time">0 ч</div>
+          <div class="stats-kpi-change" id="kpi30TimeChange">Сравнение с предыдущими 30 днями</div>
+          <div class="stats-kpi-spark" id="kpi30TimeSpark" aria-hidden="true"></div>
         </article>
-
-        <div class="stats-accent-grid">
-          <article class="stats-accent-card stats-accent-red">
-            <div class="stats-card-label">Активных дней</div>
-            <div class="stats-accent-value" id="activeDays">0</div>
-            <div class="stats-accent-sub">за весь период</div>
-          </article>
-          <article class="stats-accent-card stats-accent-coral">
-            <div class="stats-card-label">Всего занятий</div>
-            <div class="stats-accent-value" id="allSessions">0</div>
-            <div class="stats-accent-sub">за весь период</div>
-          </article>
-          <article class="stats-accent-card stats-accent-blue">
-            <div class="stats-card-label">Последние 30 дней</div>
-            <div class="stats-accent-value" id="last30Total">0 ч</div>
-            <div class="stats-accent-sub">объём активности</div>
-          </article>
-          <article class="stats-accent-card stats-accent-violet">
-            <div class="stats-card-label">Лучший день</div>
-            <div class="stats-accent-value" id="bestDayTime">0 мин</div>
-            <div class="stats-accent-sub" id="bestDayDate">Нет данных</div>
-          </article>
-        </div>
-
-        <div class="stats-metric-grid">
-          <article class="stats-metric-card"><div class="stats-card-label">Среднее / день</div><div class="stats-metric-value" id="avgDay">0 мин</div><div class="stats-metric-sub">за весь период</div></article>
-          <article class="stats-metric-card"><div class="stats-card-label">Среднее занятие</div><div class="stats-metric-value" id="avgSessionStats">0 мин</div><div class="stats-metric-sub" id="sessionCountNote">0 занятий</div></article>
-          <article class="stats-metric-card"><div class="stats-card-label">Активных дней / 30</div><div class="stats-metric-value" id="last30ActiveDaysValue">0</div><div class="stats-metric-sub">из последних 30</div></article>
-          <article class="stats-metric-card"><div class="stats-card-label">Среднее / 30 дней</div><div class="stats-metric-value" id="last30Avg">0 мин</div><div class="stats-metric-sub" id="last30SessionNote">0 занятий</div></article>
-          <article class="stats-metric-card"><div class="stats-card-label">Рекорд занятия</div><div class="stats-metric-value" id="longestSession">0 мин</div><div class="stats-metric-sub">за весь период</div></article>
-        </div>
+        <article class="stats-kpi-card">
+          <div class="stats-kpi-label">Занятий за 30 дней</div>
+          <div class="stats-kpi-value" id="kpi30Sessions">0</div>
+          <div class="stats-kpi-change" id="kpi30SessionsChange">Сравнение с предыдущими 30 днями</div>
+          <div class="stats-kpi-spark" id="kpi30SessionsSpark" aria-hidden="true"></div>
+        </article>
+        <article class="stats-kpi-card">
+          <div class="stats-kpi-label">Среднее занятие</div>
+          <div class="stats-kpi-value" id="kpi30Average">0 мин</div>
+          <div class="stats-kpi-change" id="kpi30AverageChange">Сравнение с предыдущими 30 днями</div>
+          <div class="stats-kpi-spark" id="kpi30AverageSpark" aria-hidden="true"></div>
+        </article>
+        <article class="stats-kpi-card">
+          <div class="stats-kpi-label">Активных дней</div>
+          <div class="stats-kpi-value" id="kpi30ActiveDays">0 / 30</div>
+          <div class="stats-kpi-change" id="kpi30ActiveDaysChange">Сравнение с предыдущими 30 днями</div>
+          <div class="stats-kpi-spark" id="kpi30ActiveDaysSpark" aria-hidden="true"></div>
+        </article>
       </div>
 
       <div class="stats-charts">
         <div class="stats-chart-card">
           <div class="stats-chart-title">Динамика по неделям</div>
-          <div class="stats-chart-note">Последние 8 календарных недель</div>
+          <div class="stats-chart-note">Последние 8 недель</div>
           <div class="weekly-chart" id="weeklyStatsChart"></div>
           <div class="weekly-labels" id="weeklyStatsLabels"></div>
           <div class="weekly-hover-note" id="weeklyStatsHoverNote" aria-hidden="true"></div>
@@ -286,9 +267,9 @@
   </section>
 </div>
 
-<script src="js/storage.js?v=0.3.73"></script>
-<script src="js/calendar.js?v=0.3.73"></script>
-<script src="js/statistics.js?v=0.3.73"></script>
-<script src="js/app.js?v=0.3.73"></script>
+<script src="js/storage.js?v=0.3.74"></script>
+<script src="js/calendar.js?v=0.3.74"></script>
+<script src="js/statistics.js?v=0.3.74"></script>
+<script src="js/app.js?v=0.3.74"></script>
 </body>
 </html>
